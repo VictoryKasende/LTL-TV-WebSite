@@ -2,19 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #0f172a;
+@layer base {
+  :root {
+    --background: #FFFFFF;
+    --foreground: #1B2637;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html,
+  body {
+    padding: 0;
+    margin: 0;
+    color: var(--foreground);
+    background: var(--background);
+  }
+
+  body {
+    font-feature-settings: 'ss01', 'ss02', 'cv11';
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: #F5A623;
+    color: #0D1B2A;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
-html,
-body {
-  padding: 0;
-  margin: 0;
-  color: var(--foreground);
-  background: var(--background);
-}
+@layer utilities {
+  .rule-gold {
+    height: 1px;
+    width: 40px;
+    background: #F5A623;
+  }
 
-* {
-  box-sizing: border-box;
+  .prose-editorial {
+    font-size: 1.125rem;
+    line-height: 1.75;
+    color: #1B2637;
+  }
+
+  .prose-editorial p { margin-bottom: 1.25em; }
+  .prose-editorial h2 { font-family: var(--font-fraunces); font-size: 2rem; margin: 2em 0 0.75em; letter-spacing: -0.02em; }
+  .prose-editorial h3 { font-family: var(--font-fraunces); font-size: 1.5rem; margin: 1.8em 0 0.6em; letter-spacing: -0.015em; }
+  .prose-editorial a { color: #D48A0F; text-decoration: underline; text-underline-offset: 3px; }
+  .prose-editorial blockquote {
+    border-left: 3px solid #F5A623;
+    padding-left: 1.25em;
+    font-family: var(--font-fraunces);
+    font-style: italic;
+    font-size: 1.35em;
+    color: #0D1B2A;
+    margin: 1.5em 0;
+  }
 }
