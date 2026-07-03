@@ -12,5 +12,7 @@ Thumbs.db
 
 # Docker
 *.log
+docker-compose.override.yml
+docker-compose.override.yaml
 
 # Python / Node handled per-app .gitignore
