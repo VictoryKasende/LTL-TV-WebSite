@@ -181,3 +181,16 @@ CSRF_TRUSTED_ORIGINS = config(
     default='http://localhost:3000,https://ltltv.com,https://www.ltltv.com',
     cast=Csv(),
 )
+
+# ---------------------------------------------------------------------------
+# Behind a reverse proxy (nginx) that terminates TLS
+# ---------------------------------------------------------------------------
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = False
