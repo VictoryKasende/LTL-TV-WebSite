@@ -1,0 +1,16 @@
+# Environment
+.env
+.env.local
+.env.production
+.env.development
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Docker
+*.log
+
+# Python / Node handled per-app .gitignore
