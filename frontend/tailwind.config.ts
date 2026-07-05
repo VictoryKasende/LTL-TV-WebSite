@@ -8,50 +8,62 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Deep royal navy = main brand (from PC logo #212870)
+        brand: {
+          50:  '#EEF0FF',
+          100: '#D8DDFF',
+          200: '#B0BAFF',
+          300: '#8492FF',
+          400: '#5C6EF5',
+          500: '#3D53EA', // bright blue accent / CTA
+          600: '#2D40D0',
+          700: '#212870', // primary deep navy
+          800: '#1B2058',
+          900: '#141640',
+        },
         ink: {
-          950: '#080F19',
-          900: '#0D1B2A',
-          800: '#152238',
-          700: '#1B2637',
-          600: '#334155',
-          500: '#4C566A',
+          950: '#0F1114',
+          900: '#242428', // deep dark section (contact block)
+          800: '#2C2C2C',
+          700: '#3D3E49',
+          500: '#707070',
+          400: '#7E7E7E',
+          300: '#9C9CA5',
         },
-        gold: {
-          50:  '#FEF9E7',
-          100: '#FCE9B1',
-          200: '#F9D678',
-          300: '#F7C34E',
-          400: '#F5B333',
+        paper: {
+          50:  '#FFFFFF',
+          100: '#FAFAFA',
+          200: '#F1F1F3',
+          300: '#E4E4E8',
+        },
+        dlp:  '#E85521', // Dans Les Profondeurs
+        raf:  '#3D53EA', // Rafraîchissement
+        live: '#E23737', // LIVE badge
+        amber: {
+          400: '#F5C24E',
           500: '#F5A623',
-          600: '#D48A0F',
-          700: '#A76B08',
-        },
-        cream: {
-          50:  '#FDFBF7',
-          100: '#F8F5EF',
-          200: '#EFE9DE',
-          300: '#E4DAC7',
         },
       },
       fontFamily: {
-        serif: ['var(--font-fraunces)', 'ui-serif', 'Georgia', 'serif'],
         sans: ['var(--font-manrope)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['var(--font-anton)', 'Impact', 'sans-serif'],
       },
       fontSize: {
-        'display-xl': ['clamp(3.5rem, 7vw, 6.5rem)', { lineHeight: '1.02', letterSpacing: '-0.03em' }],
-        'display-lg': ['clamp(2.5rem, 5vw, 4.5rem)', { lineHeight: '1.05', letterSpacing: '-0.025em' }],
-        'display-md': ['clamp(2rem, 3.5vw, 3rem)', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'display-xl': ['clamp(3rem, 8vw, 6rem)',    { lineHeight: '0.95', letterSpacing: '-0.01em' }],
+        'display-lg': ['clamp(2.25rem, 5vw, 4rem)', { lineHeight: '1',    letterSpacing: '-0.01em' }],
+        'display-md': ['clamp(1.75rem, 3.2vw, 2.75rem)', { lineHeight: '1.05', letterSpacing: '-0.005em' }],
       },
       borderRadius: {
-        sm: '4px',
-        DEFAULT: '6px',
-        md: '10px',
-        lg: '16px',
-        xl: '24px',
+        sm: '6px',
+        DEFAULT: '10px',
+        md: '14px',
+        lg: '20px',
+        xl: '28px',
       },
       boxShadow: {
-        card: '0 4px 24px -8px rgba(13, 27, 42, 0.12)',
-        'card-hover': '0 12px 40px -12px rgba(13, 27, 42, 0.24)',
+        card: '0 6px 24px -8px rgba(15, 17, 20, 0.08)',
+        'card-hover': '0 16px 40px -12px rgba(15, 17, 20, 0.18)',
+        'brand-glow': '0 12px 40px -8px rgba(61, 83, 234, 0.35)',
       },
       transitionTimingFunction: {
         'out-editorial': 'cubic-bezier(0.22, 1, 0.36, 1)',
@@ -59,7 +71,7 @@ const config: Config = {
       keyframes: {
         'pulse-dot': {
           '0%, 100%': { opacity: '1', transform: 'scale(1)' },
-          '50%': { opacity: '0.4', transform: 'scale(0.85)' },
+          '50%':      { opacity: '0.4', transform: 'scale(0.85)' },
         },
       },
       animation: {

@@ -1,35 +1,34 @@
 import type { Metadata } from 'next';
-import { Fraunces, Manrope } from 'next/font/google';
+import { Manrope, Anton } from 'next/font/google';
 import '../styles/globals.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
-const fraunces = Fraunces({
+const manrope = Manrope({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-fraunces',
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-manrope',
   display: 'swap',
 });
 
-const manrope = Manrope({
+const anton = Anton({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-manrope',
+  weight: '400',
+  variable: '--font-anton',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: {
-    default: 'LTL TV — La chaîne qui inspire',
+    default: 'LTL TV — La chaîne chrétienne',
     template: '%s · LTL TV',
   },
   description:
-    'Programmes, témoignages et articles qui inspirent et transforment. LTL TV, la chaîne au service de la lumière et de la vie.',
+    'LTL TV, la chaîne chrétienne focalisée à annoncer l\'Évangile par les médias. Programmes, émissions LIVE Zoom et YouTube, témoignages et articles.',
   metadataBase: new URL('https://ltltv.com'),
   openGraph: {
-    title: 'LTL TV — La chaîne qui inspire',
-    description: 'Programmes, témoignages et articles qui inspirent et transforment.',
+    title: 'LTL TV — La chaîne chrétienne',
+    description: 'La chaîne chrétienne focalisée à annoncer l\'Évangile par les médias.',
     url: 'https://ltltv.com',
     siteName: 'LTL TV',
     locale: 'fr_FR',
@@ -43,8 +42,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={`${fraunces.variable} ${manrope.variable}`}>
-      <body className="min-h-screen flex flex-col font-sans bg-white text-ink-700 antialiased">
+    <html lang="fr" className={`${manrope.variable} ${anton.variable}`}>
+      <body className="min-h-screen flex flex-col font-sans bg-white text-ink-800 antialiased">
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />

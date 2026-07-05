@@ -36,16 +36,16 @@ export default function ContactForm() {
 
   if (status === 'success') {
     return (
-      <div className="rounded-lg bg-cream-50 border border-gold-500/40 p-8 text-center">
-        <CheckCircle2 className="h-10 w-10 text-gold-600 mx-auto mb-4" strokeWidth={1.5} />
-        <p className="font-serif text-2xl text-ink-900 mb-2">Message reçu, merci.</p>
-        <p className="text-ink-600 leading-relaxed">
+      <div className="rounded-lg bg-brand-50 border border-brand-500/40 p-8 text-center">
+        <CheckCircle2 className="h-10 w-10 text-brand-500 mx-auto mb-3" strokeWidth={1.5} />
+        <p className="text-xl font-bold text-brand-700">Message reçu, merci.</p>
+        <p className="mt-2 text-ink-500 leading-relaxed">
           Nous vous répondrons dans les plus brefs délais.
         </p>
         <button
           type="button"
           onClick={() => setStatus('idle')}
-          className="mt-6 text-sm font-medium text-gold-700 hover:text-gold-600 transition-colors"
+          className="mt-5 text-sm font-semibold text-brand-500 hover:text-brand-600 transition-colors"
         >
           Envoyer un autre message
         </button>
@@ -54,12 +54,12 @@ export default function ContactForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form onSubmit={onSubmit} className="space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="Votre nom" name="name" required placeholder="Prénom Nom" />
         <Field label="Votre email" name="email" type="email" required placeholder="vous@exemple.com" />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="Téléphone (optionnel)" name="phone" placeholder="+243 …" />
         <Field label="Sujet" name="subject" placeholder="Sujet du message" />
       </div>
@@ -75,7 +75,7 @@ export default function ContactForm() {
       <button
         type="submit"
         disabled={status === 'submitting'}
-        className="inline-flex items-center gap-2 rounded bg-ink-900 text-cream-50 font-semibold px-8 py-4 hover:bg-ink-800 transition-colors disabled:opacity-60 disabled:cursor-wait"
+        className="inline-flex items-center gap-2 rounded bg-brand-500 text-white font-semibold px-8 py-3.5 hover:bg-brand-600 transition-colors disabled:opacity-60 disabled:cursor-wait"
       >
         <Send className="h-4 w-4" strokeWidth={2} />
         {status === 'submitting' ? 'Envoi…' : 'Envoyer le message'}
@@ -90,11 +90,11 @@ function Field({
   label: string; name: string; required?: boolean; placeholder?: string;
   as?: 'textarea'; rows?: number; type?: string;
 }) {
-  const cls = 'w-full rounded border border-cream-300 bg-white px-4 py-3 text-ink-900 placeholder:text-ink-500/60 focus:outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors';
+  const cls = 'w-full rounded border border-paper-300 bg-white px-4 py-3 text-ink-800 placeholder:text-ink-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors';
   return (
     <label className="block">
-      <span className="block text-sm font-medium text-ink-700 mb-2">
-        {label}{required && <span className="text-gold-600"> *</span>}
+      <span className="block text-sm font-semibold text-ink-800 mb-1.5">
+        {label}{required && <span className="text-brand-500"> *</span>}
       </span>
       {as === 'textarea' ? (
         <textarea name={name} required={required} placeholder={placeholder} rows={rows} className={cls} />

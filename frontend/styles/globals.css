@@ -5,7 +5,7 @@
 @layer base {
   :root {
     --background: #FFFFFF;
-    --foreground: #1B2637;
+    --foreground: #2C2C2C;
   }
 
   html {
@@ -22,15 +22,14 @@
   }
 
   body {
-    font-feature-settings: 'ss01', 'ss02', 'cv11';
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   ::selection {
-    background: #F5A623;
-    color: #0D1B2A;
+    background: #3D53EA;
+    color: #FFFFFF;
   }
 
   * {
@@ -48,29 +47,40 @@
 }
 
 @layer utilities {
-  .rule-gold {
-    height: 1px;
-    width: 40px;
-    background: #F5A623;
+  /* Hero card blue gradient (rayons) */
+  .bg-hero-rays {
+    background:
+      radial-gradient(120% 90% at 50% 100%, rgba(245,194,78,0.15), transparent 55%),
+      radial-gradient(90% 70% at 20% 0%, rgba(255,255,255,0.10), transparent 60%),
+      linear-gradient(180deg, #2D40D0 0%, #212870 55%, #141640 100%);
   }
+  .bg-hero-rays::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(90deg,
+      rgba(255,255,255,0.03) 0 2px,
+      transparent 2px 40px);
+    mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
   .prose-editorial {
-    font-size: 1.125rem;
+    font-size: 1.0625rem;
     line-height: 1.75;
-    color: #1B2637;
+    color: #2C2C2C;
   }
-
-  .prose-editorial p { margin-bottom: 1.25em; }
-  .prose-editorial h2 { font-family: var(--font-fraunces); font-size: 2rem; margin: 2em 0 0.75em; letter-spacing: -0.02em; }
-  .prose-editorial h3 { font-family: var(--font-fraunces); font-size: 1.5rem; margin: 1.8em 0 0.6em; letter-spacing: -0.015em; }
-  .prose-editorial a { color: #D48A0F; text-decoration: underline; text-underline-offset: 3px; }
+  .prose-editorial p { margin-bottom: 1.15em; }
+  .prose-editorial h2 { font-weight: 700; font-size: 1.75rem; margin: 1.8em 0 0.6em; letter-spacing: -0.01em; color: #212870; }
+  .prose-editorial h3 { font-weight: 700; font-size: 1.35rem; margin: 1.5em 0 0.5em; letter-spacing: -0.005em; color: #212870; }
+  .prose-editorial a  { color: #3D53EA; text-decoration: underline; text-underline-offset: 3px; }
   .prose-editorial blockquote {
-    border-left: 3px solid #F5A623;
+    border-left: 3px solid #3D53EA;
     padding-left: 1.25em;
-    font-family: var(--font-fraunces);
-    font-style: italic;
-    font-size: 1.35em;
-    color: #0D1B2A;
+    color: #212870;
+    font-weight: 500;
     margin: 1.5em 0;
   }
 }
