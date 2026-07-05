@@ -179,3 +179,23 @@ class PublishableModel(models.Model):
             self.status == self.Status.PUBLISHED
             and (self.published_at is None or self.published_at <= timezone.now())
         )
+
+
+class SeoMixin(models.Model):
+    """SEO/OpenGraph fields for anything that renders as a public page.
+
+    Each field is optional; the frontend falls back to the model's
+    natural title / description / cover when empty.
+    """
+
+    meta_title = models.CharField(max_length=70, blank=True,
+        help_text='Titre HTML (≤ 70 caractères). Si vide, `title` est utilisé.')
+    meta_description = models.CharField(max_length=180, blank=True,
+        help_text='Description meta (≤ 180 caractères).')
+    og_image = models.ImageField(upload_to='seo/og/', blank=True, null=True,
+        help_text='Image Open Graph (1200×630 recommandé).')
+    canonical_url = models.URLField(blank=True,
+        help_text='URL canonique (si le contenu est syndiqué depuis une autre source).')
+
+    class Meta:
+        abstract = True

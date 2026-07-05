@@ -16,6 +16,7 @@ api_v1_patterns = [
     path('auth/token/refresh/', TokenRefreshView.as_view(),    name='token_refresh'),
     path('auth/token/verify/',  TokenVerifyView.as_view(),     name='token_verify'),
     path('accounts/',    include('apps.accounts.urls')),
+    path('emissions/',   include('apps.emissions.urls')),
     path('programmes/',  include('apps.programmes.urls')),
     path('temoignages/', include('apps.temoignages.urls')),
     path('articles/',    include('apps.articles.urls')),

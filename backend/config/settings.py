@@ -43,11 +43,13 @@ THIRD_PARTY_APPS = [
     'django_filters',
     'drf_spectacular',
     'simple_history',
+    'taggit',
 ]
 
 LOCAL_APPS = [
     'apps.common',
     'apps.accounts',
+    'apps.emissions',
     'apps.programmes',
     'apps.temoignages',
     'apps.articles',
@@ -113,6 +115,12 @@ CACHES = {
         'LOCATION': REDIS_URL,
     }
 }
+
+# Tests never touch Redis — swap to in-memory. Also disables DRF
+# throttling side-effects during the suite.
+import sys as _sys  # noqa: E402
+if 'test' in _sys.argv:
+    CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
 
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
