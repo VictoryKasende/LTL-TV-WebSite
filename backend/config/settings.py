@@ -50,6 +50,7 @@ LOCAL_APPS = [
     'apps.common',
     'apps.accounts',
     'apps.emissions',
+    'apps.banners',
     'apps.programmes',
     'apps.temoignages',
     'apps.articles',
