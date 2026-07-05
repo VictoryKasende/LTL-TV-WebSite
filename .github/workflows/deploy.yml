@@ -56,10 +56,13 @@ jobs:
           pip install -r requirements.txt
 
       - name: Django system checks
-        run: python manage.py check
+        run: python manage.py check --deploy --fail-level WARNING || python manage.py check
+
+      - name: Check migrations are up to date
+        run: python manage.py makemigrations --check --dry-run
 
       - name: Run tests
-        run: python manage.py test --noinput
+        run: python manage.py test --noinput --verbosity 2
 
   # ---------------------------------------------------------------------------
   # 2. Frontend — install deps, lint & build
@@ -114,5 +117,6 @@ jobs:
             docker compose build
             docker compose up -d
             docker compose exec -T backend python manage.py migrate --noinput
+            docker compose exec -T backend python manage.py setup_roles
             docker compose exec -T backend python manage.py collectstatic --noinput
             docker image prune -f

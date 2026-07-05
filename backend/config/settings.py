@@ -1,4 +1,6 @@
 """Django settings for the LTL TV project."""
+from __future__ import annotations
+
 from pathlib import Path
 from datetime import timedelta
 
@@ -13,6 +15,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='change-me-in-production')
 DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+
+# Hard fail if we boot in production with the placeholder secret.
+if not DEBUG and SECRET_KEY == 'change-me-in-production':
+    raise RuntimeError(
+        'SECRET_KEY is still the placeholder — refusing to boot in production.',
+    )
 
 # ---------------------------------------------------------------------------
 # Applications
@@ -32,9 +40,13 @@ THIRD_PARTY_APPS = [
     'corsheaders',
     'cloudinary',
     'cloudinary_storage',
+    'django_filters',
+    'drf_spectacular',
+    'simple_history',
 ]
 
 LOCAL_APPS = [
+    'apps.common',
     'apps.accounts',
     'apps.programmes',
     'apps.temoignages',
@@ -56,6 +68,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -113,7 +126,8 @@ CELERY_TIMEZONE = 'UTC'
 # ---------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+     'OPTIONS': {'min_length': 10}},
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
@@ -146,7 +160,7 @@ if CLOUDINARY_URL:
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # ---------------------------------------------------------------------------
-# REST Framework / JWT
+# REST Framework
 # ---------------------------------------------------------------------------
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -155,15 +169,62 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ),
-    'DEFAULT_PAGINATION_CLASS':
-        'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
+    'DEFAULT_PAGINATION_CLASS': 'apps.common.pagination.StandardPagination',
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '60/min',
+        'user': '2000/day',
+        'auth': '10/min',
+        'contact': '5/hour',
+        'testimonial': '3/hour',
+    },
+    'EXCEPTION_HANDLER': 'apps.common.exceptions.custom_exception_handler',
 }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'AUTH_HEADER_TYPES': ('Bearer',),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': False,   # add token blacklist app if we want revocation
+}
+
+# ---------------------------------------------------------------------------
+# drf-spectacular (OpenAPI)
+# ---------------------------------------------------------------------------
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'LTL TV — API',
+    'DESCRIPTION': (
+        'API publique et d\'administration de LTL TV. '
+        'Voir `/api/docs/` (Swagger UI) et `/api/redoc/` (ReDoc).'
+    ),
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'CONTACT': {'email': 'contact@ltltv.com'},
+    'LICENSE': {'name': 'Proprietary'},
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': r'/api/v[0-9]',
+    'ENUM_NAME_OVERRIDES': {},
+    'TAGS': [
+        {'name': 'Auth',        'description': 'Login, refresh, register.'},
+        {'name': 'Accounts',    'description': 'Profil utilisateur.'},
+        {'name': 'Programmes',  'description': 'Programmes hebdomadaires.'},
+        {'name': 'Émissions',   'description': 'Shows YouTube & épisodes.'},
+        {'name': 'Témoignages', 'description': 'Soumission et lecture.'},
+        {'name': 'Articles',    'description': 'Articles et catégories.'},
+        {'name': 'Contacts',    'description': 'Messages de contact.'},
+        {'name': 'Bannières',   'description': 'Carousel dynamique.'},
+    ],
 }
 
 # ---------------------------------------------------------------------------
@@ -194,3 +255,59 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = False
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# ---------------------------------------------------------------------------
+# Logging (JSON in prod, human-friendly in dev)
+# ---------------------------------------------------------------------------
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'json': {'()': 'apps.common.logging.JsonFormatter'},
+        'plain': {
+            'format': '{levelname:<8} {asctime} {name} — {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'plain' if DEBUG else 'json',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'django.request': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'django.security': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'apps':  {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+    },
+}
+
+# ---------------------------------------------------------------------------
+# Sentry (activated only if SENTRY_DSN is set)
+# ---------------------------------------------------------------------------
+SENTRY_DSN = config('SENTRY_DSN', default='')
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(),
+            CeleryIntegration(),
+            LoggingIntegration(level=None, event_level=None),  # capture via handlers only
+        ],
+        traces_sample_rate=config('SENTRY_TRACES_SAMPLE_RATE', default=0.05, cast=float),
+        send_default_pii=False,
+        environment=config('SENTRY_ENV', default='development' if DEBUG else 'production'),
+        release=config('SENTRY_RELEASE', default=''),
+    )
