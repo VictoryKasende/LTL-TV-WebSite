@@ -1,8 +1,9 @@
 from rest_framework.routers import DefaultRouter
 
-from .views import TemoignageViewSet
+from .viewsets import TestimonialAdminViewSet, TestimonialViewSet
 
 router = DefaultRouter()
-router.register(r'', TemoignageViewSet, basename='temoignage')
+router.register(r'admin', TestimonialAdminViewSet, basename='testimonial-admin')
+router.register(r'',      TestimonialViewSet,      basename='testimonial')
 
 urlpatterns = router.urls
