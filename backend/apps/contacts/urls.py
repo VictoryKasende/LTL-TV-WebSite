@@ -1,7 +1,9 @@
-from django.urls import path
+from rest_framework.routers import DefaultRouter
 
-from .views import ContactMessageCreateView
+from .viewsets import ContactAdminViewSet, ContactViewSet
 
-urlpatterns = [
-    path('', ContactMessageCreateView.as_view(), name='contact-create'),
-]
+router = DefaultRouter()
+router.register(r'admin', ContactAdminViewSet, basename='contact-admin')
+router.register(r'',      ContactViewSet,      basename='contact')
+
+urlpatterns = router.urls
