@@ -4,13 +4,14 @@ from __future__ import annotations
 from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html
-from simple_history.admin import SimpleHistoryAdmin
+
+from apps.common.admin import HistoryAdmin
 
 from .models import Testimonial
 
 
 @admin.register(Testimonial)
-class TestimonialAdmin(SimpleHistoryAdmin):
+class TestimonialAdmin(HistoryAdmin):
     list_display = (
         'author_name', 'status_badge', 'country', 'city',
         'is_featured', 'created_at', 'photo_thumb',

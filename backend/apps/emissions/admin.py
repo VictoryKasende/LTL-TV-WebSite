@@ -3,15 +3,14 @@ from __future__ import annotations
 
 from django.contrib import admin
 from django.utils.html import format_html
-from simple_history.admin import SimpleHistoryAdmin
 
-from apps.common.admin import PublishAdminMixin
+from apps.common.admin import BaseAdmin, HistoryAdmin, PublishAdminMixin
 
 from .models import Category, Episode, Show
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(BaseAdmin):
     list_display = ('name', 'slug', 'order')
     list_editable = ('order',)
     prepopulated_fields = {'slug': ('name',)}
@@ -20,7 +19,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Show)
-class ShowAdmin(PublishAdminMixin, SimpleHistoryAdmin):
+class ShowAdmin(PublishAdminMixin, HistoryAdmin):
     list_display = ('title', 'host', 'status', 'is_featured', 'order',
                     'episodes_count_admin', 'created_at')
     list_filter = ('status', 'is_featured', 'created_at')
@@ -50,7 +49,7 @@ class ShowAdmin(PublishAdminMixin, SimpleHistoryAdmin):
 
 
 @admin.register(Episode)
-class EpisodeAdmin(PublishAdminMixin, SimpleHistoryAdmin):
+class EpisodeAdmin(PublishAdminMixin, HistoryAdmin):
     list_display = ('title', 'show', 'speaker', 'aired_at',
                     'status', 'is_featured', 'view_count', 'thumb_preview')
     list_filter = ('show', 'status', 'is_featured', 'categories', 'aired_at')

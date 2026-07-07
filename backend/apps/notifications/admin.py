@@ -4,12 +4,14 @@ from __future__ import annotations
 from django.contrib import admin, messages
 from django.utils.html import format_html
 
+from apps.common.admin import BaseAdmin
+
 from .models import PushCampaign, PushSubscription
 from .tasks import send_campaign
 
 
 @admin.register(PushSubscription)
-class PushSubscriptionAdmin(admin.ModelAdmin):
+class PushSubscriptionAdmin(BaseAdmin):
     list_display = ('endpoint_short', 'user', 'is_active_dot',
                     'locale', 'last_seen_at', 'failed_count')
     list_filter = ('is_active', 'locale')
@@ -36,7 +38,7 @@ class PushSubscriptionAdmin(admin.ModelAdmin):
 
 
 @admin.register(PushCampaign)
-class PushCampaignAdmin(admin.ModelAdmin):
+class PushCampaignAdmin(BaseAdmin):
     list_display = ('title', 'status_badge', 'trigger_type', 'audience',
                     'target_count', 'delivered_count', 'failed_count',
                     'click_count', 'sent_at')

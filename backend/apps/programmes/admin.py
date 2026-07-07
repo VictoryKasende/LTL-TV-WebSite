@@ -3,15 +3,14 @@ from __future__ import annotations
 
 from django.contrib import admin
 from django.utils.html import format_html
-from simple_history.admin import SimpleHistoryAdmin
 
-from apps.common.admin import PublishAdminMixin
+from apps.common.admin import BaseAdmin, HistoryAdmin, PublishAdminMixin
 
 from .models import ProgramType, WeeklyProgram
 
 
 @admin.register(ProgramType)
-class ProgramTypeAdmin(admin.ModelAdmin):
+class ProgramTypeAdmin(BaseAdmin):
     list_display = ('name', 'slug', 'color_swatch', 'icon', 'order')
     list_editable = ('order',)
     prepopulated_fields = {'slug': ('name',)}
@@ -30,7 +29,7 @@ class ProgramTypeAdmin(admin.ModelAdmin):
 
 
 @admin.register(WeeklyProgram)
-class WeeklyProgramAdmin(PublishAdminMixin, SimpleHistoryAdmin):
+class WeeklyProgramAdmin(PublishAdminMixin, HistoryAdmin):
     list_display = (
         'date', 'start_time', 'title', 'program_type', 'mode',
         'location', 'status', 'is_featured', 'image_preview',

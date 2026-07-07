@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from django.contrib import admin
 from django.utils.html import format_html
-from simple_history.admin import SimpleHistoryAdmin
+
+from apps.common.admin import BaseAdmin, BaseStackedInline, HistoryAdmin
 
 from .models import Banner, BannerImage
 
 
-class BannerImageInline(admin.StackedInline):
+class BannerImageInline(BaseStackedInline):
     model = BannerImage
     extra = 1
     max_num = 4  # one per Variant
@@ -27,7 +28,7 @@ class BannerImageInline(admin.StackedInline):
 
 
 @admin.register(Banner)
-class BannerAdmin(SimpleHistoryAdmin):
+class BannerAdmin(HistoryAdmin):
     inlines = [BannerImageInline]
     list_display = (
         'title', 'is_active', 'is_active_now_display',
@@ -58,7 +59,7 @@ class BannerAdmin(SimpleHistoryAdmin):
 
 
 @admin.register(BannerImage)
-class BannerImageAdmin(admin.ModelAdmin):
+class BannerImageAdmin(BaseAdmin):
     """Standalone image editor. In practice most editing is done inline
     on the Banner. Kept for searchability / bulk swap."""
 

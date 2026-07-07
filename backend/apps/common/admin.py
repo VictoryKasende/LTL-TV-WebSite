@@ -1,8 +1,29 @@
-"""Reusable admin mixins."""
+"""Reusable admin base classes and mixins."""
 from __future__ import annotations
 
 from django.contrib import admin
 from django.utils import timezone
+from simple_history.admin import SimpleHistoryAdmin
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
+from unfold.admin import StackedInline as UnfoldStackedInline
+from unfold.admin import TabularInline as UnfoldTabularInline
+
+
+class BaseAdmin(UnfoldModelAdmin):
+    """Every project admin should inherit from this (or a subclass).
+    Gives us Unfold's rich styling out of the box."""
+
+
+class HistoryAdmin(UnfoldModelAdmin, SimpleHistoryAdmin):
+    """Unfold styling + simple_history revision viewer."""
+
+
+class BaseTabularInline(UnfoldTabularInline):
+    """Unfold-styled TabularInline."""
+
+
+class BaseStackedInline(UnfoldStackedInline):
+    """Unfold-styled StackedInline."""
 
 
 class SoftDeleteAdminMixin:

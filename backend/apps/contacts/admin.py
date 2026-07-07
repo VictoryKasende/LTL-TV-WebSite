@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from django.contrib import admin
 from django.utils.html import format_html
-from simple_history.admin import SimpleHistoryAdmin
+
+from apps.common.admin import BaseAdmin, BaseStackedInline, HistoryAdmin
 
 from .models import ContactMessage, ContactReply
 
 
-class ContactReplyInline(admin.StackedInline):
+class ContactReplyInline(BaseStackedInline):
     model = ContactReply
     extra = 0
     fields = ('body', 'author', 'is_sent', 'sent_at', 'created_at')
@@ -16,7 +17,7 @@ class ContactReplyInline(admin.StackedInline):
 
 
 @admin.register(ContactMessage)
-class ContactMessageAdmin(SimpleHistoryAdmin):
+class ContactMessageAdmin(HistoryAdmin):
     inlines = [ContactReplyInline]
     list_display = (
         'name', 'email', 'category', 'priority_badge', 'status_badge',
@@ -113,7 +114,7 @@ class ContactMessageAdmin(SimpleHistoryAdmin):
 
 
 @admin.register(ContactReply)
-class ContactReplyAdmin(admin.ModelAdmin):
+class ContactReplyAdmin(BaseAdmin):
     list_display = ('message', 'author', 'is_sent', 'sent_at', 'created_at')
     list_filter = ('is_sent',)
     search_fields = ('body', 'message__name', 'message__email')

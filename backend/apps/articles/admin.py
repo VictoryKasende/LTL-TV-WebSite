@@ -3,15 +3,14 @@ from __future__ import annotations
 
 from django.contrib import admin
 from django.utils.html import format_html
-from simple_history.admin import SimpleHistoryAdmin
 
-from apps.common.admin import PublishAdminMixin
+from apps.common.admin import BaseAdmin, HistoryAdmin, PublishAdminMixin
 
 from .models import Article, Category
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(BaseAdmin):
     list_display = ('name', 'slug', 'articles_count_display',
                     'color_swatch', 'icon', 'order')
     list_editable = ('order',)
@@ -41,7 +40,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Article)
-class ArticleAdmin(PublishAdminMixin, SimpleHistoryAdmin):
+class ArticleAdmin(PublishAdminMixin, HistoryAdmin):
     list_display = (
         'title', 'status', 'is_featured', 'category', 'author',
         'reading_time_minutes', 'view_count', 'published_at', 'cover_preview',

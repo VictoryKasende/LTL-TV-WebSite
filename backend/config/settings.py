@@ -26,6 +26,10 @@ if not DEBUG and SECRET_KEY == 'change-me-in-production':
 # Applications
 # ---------------------------------------------------------------------------
 DJANGO_APPS = [
+    # Unfold MUST come before django.contrib.admin to override its templates.
+    'unfold',
+    'unfold.contrib.filters',
+    'unfold.contrib.forms',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,6 +60,7 @@ LOCAL_APPS = [
     'apps.articles',
     'apps.contacts',
     'apps.notifications',
+    'apps.dashboard',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -163,6 +168,7 @@ USE_TZ = True
 # ---------------------------------------------------------------------------
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -347,3 +353,137 @@ else:
     VAPID_PRIVATE_KEY = ''
 VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY', default='')
 VAPID_EMAIL = config('VAPID_EMAIL', default='contact@ltltv.com')
+
+# ---------------------------------------------------------------------------
+# Unfold admin theme
+# ---------------------------------------------------------------------------
+from django.templatetags.static import static  # noqa: E402
+from django.urls import reverse_lazy  # noqa: E402
+from django.utils.translation import gettext_lazy as _  # noqa: E402
+
+UNFOLD = {
+    'SITE_TITLE': 'LTL TV — Administration',
+    'SITE_HEADER': 'LTL·TV',
+    'SITE_SUBHEADER': 'Administration éditoriale',
+    'SITE_URL': '/',
+    'SITE_SYMBOL': 'live_tv',
+    'SITE_ICON': {
+        'light': lambda request: static('logo-ltl-blue.svg'),
+        'dark':  lambda request: static('logo-ltl-white.svg'),
+    },
+    'SITE_LOGO': {
+        'light': lambda request: static('logo-ltl-blue.svg'),
+        'dark':  lambda request: static('logo-ltl-white.svg'),
+    },
+    'SHOW_HISTORY': True,
+    'SHOW_VIEW_ON_SITE': True,
+    'SHOW_BACK_BUTTON': True,
+    'BORDER_RADIUS': '8px',
+    'COLORS': {
+        'base': {
+            '50':  '250 250 250',
+            '100': '244 244 245',
+            '200': '228 228 231',
+            '300': '212 212 216',
+            '400': '161 161 170',
+            '500': '113 113 122',
+            '600': '82 82 91',
+            '700': '61 62 73',
+            '800': '44 44 40',
+            '900': '36 36 40',
+            '950': '15 17 20',
+        },
+        'primary': {
+            '50':  '238 240 255',
+            '100': '216 221 255',
+            '200': '176 186 255',
+            '300': '132 146 255',
+            '400': '92 110 245',
+            '500': '61 83 234',
+            '600': '45 64 208',
+            '700': '33 40 112',
+            '800': '27 32 88',
+            '900': '20 22 64',
+            '950': '15 16 45',
+        },
+        'font': {
+            'subtle-light': '113 113 122',
+            'subtle-dark': '156 163 175',
+            'default-light': '44 44 44',
+            'default-dark': '244 244 245',
+            'important-light': '33 40 112',
+            'important-dark': '255 255 255',
+        },
+    },
+    'EXTENSIONS': {
+        'modeltranslation': {'flags': {}},
+    },
+    'DASHBOARD_CALLBACK': 'apps.dashboard.callbacks.dashboard_callback',
+    'SIDEBAR': {
+        'show_search': True,
+        'show_all_applications': False,
+        'navigation': [
+            {
+                'title': _('Vue d\'ensemble'),
+                'separator': True,
+                'items': [
+                    {'title': _('Tableau de bord'), 'icon': 'dashboard',
+                     'link': reverse_lazy('admin:index')},
+                    {'title': _('Utilisateurs'), 'icon': 'group',
+                     'link': reverse_lazy('admin:accounts_user_changelist'),
+                     'permission': lambda r: r.user.is_superuser},
+                ],
+            },
+            {
+                'title': _('Contenu'),
+                'separator': True,
+                'items': [
+                    {'title': _('Émissions'), 'icon': 'live_tv',
+                     'link': reverse_lazy('admin:emissions_show_changelist')},
+                    {'title': _('Épisodes'), 'icon': 'video_library',
+                     'link': reverse_lazy('admin:emissions_episode_changelist')},
+                    {'title': _('Catégories émissions'), 'icon': 'category',
+                     'link': reverse_lazy('admin:emissions_category_changelist')},
+                    {'title': _('Articles'), 'icon': 'article',
+                     'link': reverse_lazy('admin:articles_article_changelist')},
+                    {'title': _('Catégories articles'), 'icon': 'bookmark',
+                     'link': reverse_lazy('admin:articles_category_changelist')},
+                ],
+            },
+            {
+                'title': _('Diffusion'),
+                'separator': True,
+                'items': [
+                    {'title': _('Programmes hebdo'), 'icon': 'calendar_month',
+                     'link': reverse_lazy('admin:programmes_weeklyprogram_changelist')},
+                    {'title': _('Types de programme'), 'icon': 'label',
+                     'link': reverse_lazy('admin:programmes_programtype_changelist')},
+                    {'title': _('Bannières carousel'), 'icon': 'view_carousel',
+                     'link': reverse_lazy('admin:banners_banner_changelist')},
+                ],
+            },
+            {
+                'title': _('Modération'),
+                'separator': True,
+                'items': [
+                    {'title': _('Témoignages'), 'icon': 'reviews',
+                     'link': reverse_lazy('admin:temoignages_testimonial_changelist')},
+                    {'title': _('Messages de contact'), 'icon': 'mail',
+                     'link': reverse_lazy('admin:contacts_contactmessage_changelist')},
+                    {'title': _('Réponses aux contacts'), 'icon': 'reply',
+                     'link': reverse_lazy('admin:contacts_contactreply_changelist')},
+                ],
+            },
+            {
+                'title': _('Notifications push'),
+                'separator': True,
+                'items': [
+                    {'title': _('Campagnes'), 'icon': 'campaign',
+                     'link': reverse_lazy('admin:notifications_pushcampaign_changelist')},
+                    {'title': _('Abonnés'), 'icon': 'notifications_active',
+                     'link': reverse_lazy('admin:notifications_pushsubscription_changelist')},
+                ],
+            },
+        ],
+    },
+}
