@@ -55,6 +55,7 @@ LOCAL_APPS = [
     'apps.temoignages',
     'apps.articles',
     'apps.contacts',
+    'apps.notifications',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -129,6 +130,12 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+
+# Run tasks synchronously in tests (no broker needed).
+import sys as _sys2  # noqa: E402
+if 'test' in _sys2.argv:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
 
 # ---------------------------------------------------------------------------
 # Password validation
@@ -320,3 +327,23 @@ if SENTRY_DSN:
         environment=config('SENTRY_ENV', default='development' if DEBUG else 'production'),
         release=config('SENTRY_RELEASE', default=''),
     )
+
+# ---------------------------------------------------------------------------
+# Web Push (VAPID)
+# ---------------------------------------------------------------------------
+# Generate a key pair with `manage.py generate_vapid_keys` then paste
+# the three lines into backend/.env on the VPS.
+# The private key is stored base64-encoded in the env var; we decode
+# it here so pywebpush gets the original PEM.
+_vapid_private_b64 = config('VAPID_PRIVATE_KEY', default='')
+if _vapid_private_b64:
+    import base64 as _b64
+    try:
+        VAPID_PRIVATE_KEY = _b64.b64decode(_vapid_private_b64).decode('ascii')
+    except Exception:
+        # Assume the value is already the raw PEM (test fixtures, etc.)
+        VAPID_PRIVATE_KEY = _vapid_private_b64
+else:
+    VAPID_PRIVATE_KEY = ''
+VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY', default='')
+VAPID_EMAIL = config('VAPID_EMAIL', default='contact@ltltv.com')

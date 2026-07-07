@@ -22,6 +22,7 @@ api_v1_patterns = [
     path('temoignages/', include('apps.temoignages.urls')),
     path('articles/',    include('apps.articles.urls')),
     path('contacts/',    include('apps.contacts.urls')),
+    path('notifications/', include('apps.notifications.urls')),
 ]
 
 urlpatterns = [

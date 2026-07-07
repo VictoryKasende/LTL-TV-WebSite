@@ -55,6 +55,29 @@ services:
       retries: 10
       start_period: 30s
 
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ltltv-celery
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://ltltv:ltltv@db:5432/ltltv}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      backend:
+        condition: service_healthy
+    volumes:
+      - media_volume:/app/media
+    entrypoint: []
+    command: celery -A config worker --loglevel=info --concurrency=2
+
   frontend:
     build:
       context: ./frontend
