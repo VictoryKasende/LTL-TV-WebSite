@@ -42,19 +42,25 @@ class Category(TimestampedModel, SluggedModel):
 
     SLUG_SOURCE_FIELD = 'name'
 
-    name = models.CharField(max_length=80, unique=True)
-    description = models.CharField(max_length=280, blank=True)
-    cover = models.ImageField(upload_to='articles/categories/', blank=True, null=True)
-    color = models.CharField(max_length=9, blank=True, default='#3D53EA')
+    name = models.CharField('Nom', max_length=80, unique=True)
+    description = models.CharField('Description', max_length=280, blank=True)
+    cover = models.ImageField('Image', upload_to='articles/categories/', blank=True, null=True)
+    color = models.CharField('Couleur (hex)', max_length=9, blank=True, default='#3D53EA')
     icon = models.CharField(
-        max_length=48, blank=True,
-        help_text='Nom d\'icône lucide-react (ex : ``book-open``).',
+        'Icône', max_length=48, blank=True,
+        help_text='Nom d\'icône lucide-react (ex : book-open, church, tv).',
     )
-    order = models.PositiveIntegerField(default=0, db_index=True)
+    order = models.PositiveIntegerField('Ordre d\'affichage', default=0, db_index=True)
 
     # SEO on category pages too
-    meta_title = models.CharField(max_length=70, blank=True)
-    meta_description = models.CharField(max_length=180, blank=True)
+    meta_title = models.CharField(
+        'Titre SEO', max_length=70, blank=True,
+        help_text='Titre affiché dans les résultats Google (≤ 70 caractères).',
+    )
+    meta_description = models.CharField(
+        'Description SEO', max_length=180, blank=True,
+        help_text='Résumé affiché sous le titre dans Google (≤ 180 caractères).',
+    )
 
     class Meta:
         verbose_name = 'Catégorie d\'article'
@@ -71,56 +77,62 @@ class Article(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
     SLUG_SOURCE_FIELD = 'title'
 
     # --- Content --------------------------------------------------
-    title = models.CharField(max_length=220)
-    subtitle = models.CharField(max_length=280, blank=True)
+    title = models.CharField('Titre', max_length=220)
+    subtitle = models.CharField('Sous-titre', max_length=280, blank=True)
     excerpt = models.TextField(
-        blank=True,
-        help_text='Résumé pour vignettes / listes. Auto-tronqué depuis '
-                  '`content_md` si vide.',
+        'Résumé', blank=True,
+        help_text='Court résumé affiché sur les vignettes. Auto-généré depuis '
+                  'le contenu si laissé vide.',
     )
     content_md = models.TextField(
-        help_text='Contenu en Markdown (source de vérité éditée).',
+        'Contenu (Markdown)',
+        help_text='Rédigez votre article en Markdown. Le HTML est généré automatiquement.',
     )
     content_html = models.TextField(
-        blank=True, editable=False,
-        help_text='HTML rendu depuis `content_md`. Auto-généré à la sauvegarde.',
+        'Contenu HTML (auto)', blank=True, editable=False,
+        help_text='HTML rendu depuis le Markdown. Auto-généré à la sauvegarde.',
     )
     reading_time_minutes = models.PositiveIntegerField(
-        default=0, editable=False,
-        help_text='Temps de lecture estimé (200 mots/minute).',
+        'Temps de lecture (min)', default=0, editable=False,
+        help_text='Estimé sur la base de 200 mots par minute.',
     )
 
     # --- Media ----------------------------------------------------
-    cover = models.ImageField(upload_to='articles/', blank=True, null=True)
-    cover_alt = models.CharField(max_length=200, blank=True)
+    cover = models.ImageField('Image de couverture', upload_to='articles/', blank=True, null=True)
+    cover_alt = models.CharField(
+        'Description de la couverture', max_length=200, blank=True,
+        help_text='Texte alternatif pour les lecteurs d\'écran (accessibilité).',
+    )
     cover_credit = models.CharField(
-        max_length=200, blank=True,
-        help_text='Crédit photo / illustration.',
+        'Crédit photo', max_length=200, blank=True,
+        help_text='Crédit du photographe ou de l\'illustrateur.',
     )
 
     # --- Authorship & classification ------------------------------
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='articles',
+        verbose_name='Auteur',
     )
     category = models.ForeignKey(
         Category, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='articles',
+        verbose_name='Catégorie',
     )
-    tags = TaggableManager(blank=True)
+    tags = TaggableManager('Mots-clés', blank=True)
 
     # --- SEO extras (on top of SeoMixin) -------------------------
     focus_keyword = models.CharField(
-        max_length=80, blank=True,
-        help_text='Mot-clé principal (référence outillage SEO). Non enforced.',
+        'Mot-clé principal (SEO)', max_length=80, blank=True,
+        help_text='Mot-clé cible pour le référencement.',
     )
     no_index = models.BooleanField(
-        default=False,
-        help_text='Empêche l\'indexation par les moteurs (`<meta robots="noindex">`).',
+        'Ne pas indexer', default=False,
+        help_text='Cochez pour empêcher l\'indexation par Google et autres moteurs.',
     )
 
     # --- Stats ---------------------------------------------------
-    view_count = models.PositiveIntegerField(default=0, editable=False)
+    view_count = models.PositiveIntegerField('Nombre de vues', default=0, editable=False)
 
     history = HistoricalRecords()
 

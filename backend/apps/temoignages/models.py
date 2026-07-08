@@ -38,60 +38,67 @@ class Testimonial(TimestampedModel, SluggedModel):
         ARCHIVED = 'archived', 'Archivé'
 
     # --- Author -----------------------------------------------------
-    author_name = models.CharField(max_length=120, help_text='Prénom + initiale (ex : Sarah M.).')
+    author_name = models.CharField(
+        'Nom affiché', max_length=120,
+        help_text='Prénom + initiale du nom (ex : Sarah M.).',
+    )
     author_email = models.EmailField(
-        blank=True,
+        'Email (privé)', blank=True,
         help_text='Interne uniquement — jamais affiché publiquement. Sert au suivi.',
     )
     author_phone = models.CharField(
-        max_length=32, blank=True,
+        'Téléphone (privé)', max_length=32, blank=True,
         help_text='Interne uniquement.',
     )
 
     # --- Location ---------------------------------------------------
-    country = models.CharField(max_length=80, blank=True, help_text='Ex : RDC, France, Belgique.')
-    city = models.CharField(max_length=120, blank=True)
+    country = models.CharField(
+        'Pays', max_length=80, blank=True,
+        help_text='Ex : RDC, France, Belgique.',
+    )
+    city = models.CharField('Ville', max_length=120, blank=True)
 
     # --- Story ------------------------------------------------------
     title = models.CharField(
-        max_length=200, blank=True,
-        help_text='Titre optionnel du témoignage (ex : « Comment j\'ai retrouvé la paix »).',
+        'Titre du témoignage', max_length=200, blank=True,
+        help_text='Optionnel (ex : « Comment j\'ai retrouvé la paix »).',
     )
     story_short = models.CharField(
-        max_length=280, blank=True,
-        help_text='Résumé pour vignettes (auto-tronqué depuis `story` si vide).',
+        'Résumé court', max_length=280, blank=True,
+        help_text='Auto-généré depuis le témoignage si laissé vide.',
     )
-    story = models.TextField(help_text='Le témoignage complet.')
+    story = models.TextField('Témoignage complet', help_text='Le récit complet.')
 
     # --- Media ------------------------------------------------------
-    photo = models.ImageField(upload_to='temoignages/', blank=True, null=True)
+    photo = models.ImageField('Photo', upload_to='temoignages/', blank=True, null=True)
     is_photo_public = models.BooleanField(
-        default=True,
-        help_text='L\'auteur autorise l\'affichage public de sa photo.',
+        'Photo publique autorisée', default=True,
+        help_text='L\'auteur a-t-il autorisé l\'affichage public de sa photo ?',
     )
 
     # --- Moderation -------------------------------------------------
     status = models.CharField(
-        max_length=16, choices=Status.choices,
+        'Statut', max_length=16, choices=Status.choices,
         default=Status.PENDING, db_index=True,
     )
     moderation_note = models.TextField(
-        blank=True,
-        help_text='Note interne (raison de rejet, remarque). Jamais publique.',
+        'Note interne', blank=True,
+        help_text='Raison de rejet, remarque… Jamais visible publiquement.',
     )
     moderated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='moderated_testimonials',
+        verbose_name='Modéré par',
     )
-    moderated_at = models.DateTimeField(null=True, blank=True)
+    moderated_at = models.DateTimeField('Modéré le', null=True, blank=True)
 
     # --- Display ----------------------------------------------------
-    is_featured = models.BooleanField(default=False, db_index=True)
-    order = models.PositiveIntegerField(default=0)
+    is_featured = models.BooleanField('Mis en avant', default=False, db_index=True)
+    order = models.PositiveIntegerField('Ordre d\'affichage', default=0)
 
     # --- Audit ------------------------------------------------------
-    submitted_ip = models.GenericIPAddressField(null=True, blank=True)
-    submitted_user_agent = models.CharField(max_length=280, blank=True)
+    submitted_ip = models.GenericIPAddressField('Adresse IP', null=True, blank=True)
+    submitted_user_agent = models.CharField('Navigateur', max_length=280, blank=True)
 
     objects = TestimonialQuerySet.as_manager()
     history = HistoricalRecords()

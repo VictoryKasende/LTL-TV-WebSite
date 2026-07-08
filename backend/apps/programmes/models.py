@@ -27,18 +27,16 @@ class ProgramType(TimestampedModel, SluggedModel):
 
     SLUG_SOURCE_FIELD = 'name'
 
-    name = models.CharField(max_length=80, unique=True)
-    description = models.CharField(max_length=280, blank=True)
+    name = models.CharField('Nom', max_length=80, unique=True)
+    description = models.CharField('Description', max_length=280, blank=True)
     color = models.CharField(
-        max_length=9, blank=True, default='#3D53EA',
-        help_text='Couleur d\'accent (hex).',
+        'Couleur (hex)', max_length=9, blank=True, default='#3D53EA',
     )
     icon = models.CharField(
-        max_length=48, blank=True,
-        help_text='Nom d\'icône lucide-react (ex : ``church``, ``users``, '
-                  '``mic``, ``book-open``).',
+        'Icône', max_length=48, blank=True,
+        help_text='Nom d\'icône lucide-react (ex : church, users, mic, book-open).',
     )
-    order = models.PositiveIntegerField(default=0, db_index=True)
+    order = models.PositiveIntegerField('Ordre d\'affichage', default=0, db_index=True)
 
     class Meta:
         verbose_name = 'Type de programme'

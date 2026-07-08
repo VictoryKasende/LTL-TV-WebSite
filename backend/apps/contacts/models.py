@@ -54,23 +54,24 @@ class ContactMessage(TimestampedModel):
         URGENT = 'urgent', 'Urgente'
 
     # --- Public fields (what the visitor sent) --------------------
-    name = models.CharField(max_length=120)
-    email = models.EmailField()
-    phone = models.CharField(max_length=32, blank=True)
-    subject = models.CharField(max_length=200, blank=True)
-    message = models.TextField()
+    name = models.CharField('Nom', max_length=120)
+    email = models.EmailField('Email')
+    phone = models.CharField('Téléphone', max_length=32, blank=True)
+    subject = models.CharField('Sujet', max_length=200, blank=True)
+    message = models.TextField('Message')
 
     # --- Team classification --------------------------------------
     category = models.CharField(
-        max_length=16, choices=Category.choices,
+        'Catégorie', max_length=16, choices=Category.choices,
         default=Category.OTHER, db_index=True,
+        help_text='Type de message pour aider au tri.',
     )
     priority = models.CharField(
-        max_length=16, choices=Priority.choices,
+        'Priorité', max_length=16, choices=Priority.choices,
         default=Priority.NORMAL, db_index=True,
     )
     status = models.CharField(
-        max_length=16, choices=Status.choices,
+        'Statut', max_length=16, choices=Status.choices,
         default=Status.NEW, db_index=True,
     )
 
@@ -78,24 +79,27 @@ class ContactMessage(TimestampedModel):
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='assigned_contacts',
+        verbose_name='Assigné à',
+        help_text='Membre de l\'équipe responsable du traitement.',
     )
     internal_notes = models.TextField(
-        blank=True,
-        help_text='Notes internes non visibles publiquement (scratchpad équipe).',
+        'Notes internes', blank=True,
+        help_text='Notes de l\'équipe. Non visibles par l\'expéditeur.',
     )
 
     # --- Workflow timestamps -------------------------------------
-    read_at = models.DateTimeField(null=True, blank=True)
-    handled_at = models.DateTimeField(null=True, blank=True)
+    read_at = models.DateTimeField('Lu le', null=True, blank=True)
+    handled_at = models.DateTimeField('Traité le', null=True, blank=True)
     handled_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='handled_contacts',
+        verbose_name='Traité par',
     )
 
     # --- Audit ---------------------------------------------------
-    submitted_ip = models.GenericIPAddressField(null=True, blank=True)
-    submitted_user_agent = models.CharField(max_length=280, blank=True)
-    referrer = models.URLField(blank=True)
+    submitted_ip = models.GenericIPAddressField('Adresse IP', null=True, blank=True)
+    submitted_user_agent = models.CharField('Navigateur', max_length=280, blank=True)
+    referrer = models.URLField('Page d\'origine', blank=True)
 
     objects = ContactMessageQuerySet.as_manager()
     history = HistoricalRecords()

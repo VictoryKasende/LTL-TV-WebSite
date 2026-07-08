@@ -245,12 +245,64 @@ def publications_chart(days: int = 30) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Gauges — health ratios (0-100)
+# ---------------------------------------------------------------------------
+def moderation_gauges() -> list[dict]:
+    """Health gauges as % values, 0-100. Higher = healthier."""
+    from apps.contacts.models import ContactMessage
+    from apps.temoignages.models import Testimonial
+
+    def _ratio(handled: int, total: int) -> int:
+        return int(round(handled / total * 100)) if total else 100
+
+    contacts_total = ContactMessage.objects.count()
+    contacts_open = ContactMessage.objects.open().count()
+    contacts_handled = contacts_total - contacts_open
+    contacts_pct = _ratio(contacts_handled, contacts_total)
+
+    testimonials_total = Testimonial.objects.count()
+    testimonials_pending = Testimonial.objects.filter(status='pending').count()
+    testimonials_processed = testimonials_total - testimonials_pending
+    testimonials_pct = _ratio(testimonials_processed, testimonials_total)
+
+    # Content freshness — how much was published in the last 30 days
+    from apps.articles.models import Article
+    fresh_articles = Article.objects.filter(
+        status='published', published_at__gte=_delta(_now(), 30),
+    ).count()
+    total_articles = Article.objects.filter(status='published').count()
+    freshness_pct = min(100, fresh_articles * 10) if total_articles else 0
+
+    return [
+        {
+            'label': 'Contacts traités',
+            'sublabel': f'{contacts_handled} / {contacts_total}',
+            'value': contacts_pct,
+            'tone': 'success' if contacts_pct >= 80 else 'warning' if contacts_pct >= 50 else 'danger',
+        },
+        {
+            'label': 'Témoignages modérés',
+            'sublabel': f'{testimonials_processed} / {testimonials_total}',
+            'value': testimonials_pct,
+            'tone': 'success' if testimonials_pct >= 80 else 'warning' if testimonials_pct >= 50 else 'danger',
+        },
+        {
+            'label': 'Fraîcheur du contenu',
+            'sublabel': f'{fresh_articles} article(s) publié(s) sur 30 jours',
+            'value': freshness_pct,
+            'tone': 'success' if freshness_pct >= 70 else 'warning' if freshness_pct >= 30 else 'danger',
+        },
+    ]
+
+
+# ---------------------------------------------------------------------------
 # Full aggregate — everything the dashboard needs, one call.
 # ---------------------------------------------------------------------------
 def full_snapshot() -> dict:
     return {
         'generated_at': _now().isoformat(),
         'kpi': content_kpis(),
+        'gauges': moderation_gauges(),
         'alerts': moderation_alerts(),
         'recent': recent_content(6),
         'publications_chart': publications_chart(30),
