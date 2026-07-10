@@ -88,55 +88,56 @@ class WeeklyProgram(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
         HYBRID    = 'hybrid',    'Hybride'
 
     # --- Schedule ---------------------------------------------------
-    date = models.DateField(db_index=True, help_text='Date du programme.')
-    start_time = models.TimeField(help_text='Heure de début (fuseau local).')
+    date = models.DateField('Date', db_index=True, help_text='Date du programme.')
+    start_time = models.TimeField('Heure de début', help_text='Heure de début (fuseau local).')
     end_time = models.TimeField(
-        null=True, blank=True,
+        'Heure de fin', null=True, blank=True,
         help_text='Heure de fin (optionnelle).',
     )
 
     # --- Content ----------------------------------------------------
-    title = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
+    title = models.CharField('Titre', max_length=200)
+    description = models.TextField('Description', blank=True)
     responsable = models.CharField(
-        max_length=200, blank=True,
+        'Responsable', max_length=200, blank=True,
         help_text='Responsable / animateur principal.',
     )
     program_type = models.ForeignKey(
         ProgramType, on_delete=models.PROTECT,
         related_name='programs',
         null=True, blank=True,
+        verbose_name='Type de programme',
     )
 
     # --- Mode & location -------------------------------------------
     mode = models.CharField(
-        max_length=16, choices=Mode.choices, default=Mode.IN_PERSON, db_index=True,
+        'Mode', max_length=16, choices=Mode.choices, default=Mode.IN_PERSON, db_index=True,
     )
     location = models.CharField(
-        max_length=200, blank=True,
+        'Lieu', max_length=200, blank=True,
         help_text='Ville / lieu (ex : « Kinshasa — Bandal »).',
     )
     address = models.CharField(
-        max_length=280, blank=True,
+        'Adresse', max_length=280, blank=True,
         help_text='Adresse complète (présentiel).',
     )
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
+    latitude = models.FloatField('Latitude', null=True, blank=True)
+    longitude = models.FloatField('Longitude', null=True, blank=True)
 
     meeting_url = models.URLField(
-        blank=True,
+        'Lien de la réunion', blank=True,
         help_text='Lien Zoom / YouTube / autre (en ligne ou hybride).',
     )
 
     # --- Media ------------------------------------------------------
     image = models.ImageField(
-        upload_to='programmes/', blank=True, null=True,
+        'Image', upload_to='programmes/', blank=True, null=True,
         help_text='Bannière du programme (16:9 recommandé).',
     )
 
     # --- Ordering within a day ------------------------------------
     order = models.PositiveIntegerField(
-        default=0,
+        'Ordre d\'affichage', default=0,
         help_text='Ordre au sein d\'une même date (utile pour plusieurs '
                   'programmes le même jour).',
     )

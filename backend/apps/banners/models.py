@@ -36,11 +36,11 @@ class Banner(TimestampedModel):
     """
 
     title = models.CharField(
-        max_length=200,
+        'Titre', max_length=200,
         help_text='Titre interne (jamais affiché aux visiteurs). Sert à organiser dans l\'admin.',
     )
     link_url = models.URLField(
-        blank=True,
+        'URL du lien', blank=True,
         help_text='URL cible au clic. Vide = image non cliquable. Peut être '
                   'interne (/programmes/prends-courage) ou externe.',
     )
@@ -50,27 +50,27 @@ class Banner(TimestampedModel):
         BLANK = '_blank', 'Nouvel onglet'
 
     link_target = models.CharField(
-        max_length=8, choices=LinkTarget.choices, default=LinkTarget.SELF,
+        'Cible du lien', max_length=8, choices=LinkTarget.choices, default=LinkTarget.SELF,
     )
 
     alt_text = models.CharField(
-        max_length=200,
+        'Texte alternatif', max_length=200,
         help_text='Description de l\'image pour les lecteurs d\'écran (accessibilité). '
                   'Ex. « Campagne LIVE Zoom : Guérison et Restauration ».',
     )
 
-    is_active = models.BooleanField(default=True, db_index=True)
+    is_active = models.BooleanField('Actif', default=True, db_index=True)
     starts_at = models.DateTimeField(
-        null=True, blank=True, db_index=True,
+        'Visible à partir de', null=True, blank=True, db_index=True,
         help_text='À partir de quand la bannière est visible. Vide = immédiatement.',
     )
     ends_at = models.DateTimeField(
-        null=True, blank=True, db_index=True,
+        'Visible jusqu\'à', null=True, blank=True, db_index=True,
         help_text='Jusqu\'à quand (strict). Vide = indéfiniment.',
     )
 
     order = models.PositiveIntegerField(
-        default=0, db_index=True,
+        'Ordre d\'affichage', default=0, db_index=True,
         help_text='Ordre d\'apparition dans le carousel (plus petit = plus tôt).',
     )
 
@@ -122,18 +122,19 @@ class BannerImage(models.Model):
 
     banner = models.ForeignKey(
         Banner, on_delete=models.CASCADE, related_name='images',
+        verbose_name='Bannière',
     )
-    variant = models.CharField(max_length=16, choices=Variant.choices)
+    variant = models.CharField('Variante', max_length=16, choices=Variant.choices)
 
     image = models.ImageField(
-        upload_to='banners/',
+        'Image', upload_to='banners/',
         width_field='width', height_field='height',
     )
-    width = models.PositiveIntegerField(null=True, blank=True, editable=False)
-    height = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    width = models.PositiveIntegerField('Largeur', null=True, blank=True, editable=False)
+    height = models.PositiveIntegerField('Hauteur', null=True, blank=True, editable=False)
 
     min_viewport_width = models.PositiveIntegerField(
-        null=True, blank=True,
+        'Largeur minimale de viewport', null=True, blank=True,
         help_text='Largeur minimale de viewport (px) où cette image sera utilisée. '
                   'Vide = valeur par défaut selon la variante '
                   '(mobile=0, tablet=768, desktop=1280, ultrawide=1920).',

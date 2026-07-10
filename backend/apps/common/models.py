@@ -19,8 +19,8 @@ class TimestampedModel(models.Model):
     """Adds ``created_at`` / ``updated_at``. Indexed on ``created_at``
     for ordering / pagination performance."""
 
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField('Créé le', auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField('Modifié le', auto_now=True)
 
     class Meta:
         abstract = True
@@ -50,7 +50,7 @@ class SluggedModel(models.Model):
     SLUG_SOURCE_FIELD: str = 'title'
     SLUG_MAX_LENGTH: int = 220
 
-    slug = models.SlugField(max_length=220, unique=True, db_index=True, blank=True)
+    slug = models.SlugField('Slug', max_length=220, unique=True, db_index=True, blank=True)
 
     class Meta:
         abstract = True
@@ -101,7 +101,7 @@ class SoftDeleteModel(models.Model):
       - ``all_objects``  : includes deleted (for admin / recovery)
     """
 
-    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    deleted_at = models.DateTimeField('Supprimé le', null=True, blank=True, db_index=True)
 
     objects = SoftDeleteManager()
     all_objects = models.Manager()
@@ -150,11 +150,11 @@ class PublishableModel(models.Model):
         ARCHIVED = 'archived', 'Archivé'
 
     status = models.CharField(
-        max_length=16, choices=Status.choices, default=Status.DRAFT, db_index=True,
+        'Statut', max_length=16, choices=Status.choices, default=Status.DRAFT, db_index=True,
     )
-    published_at = models.DateTimeField(null=True, blank=True, db_index=True,
+    published_at = models.DateTimeField('Publié le', null=True, blank=True, db_index=True,
         help_text='Date de publication (auto-remplie ; peut être future pour programmer).')
-    is_featured = models.BooleanField(default=False, db_index=True,
+    is_featured = models.BooleanField('Mis en avant', default=False, db_index=True,
         help_text='Mise en avant sur la home / rubriques.')
 
     objects = PublishableManager()
@@ -188,13 +188,13 @@ class SeoMixin(models.Model):
     natural title / description / cover when empty.
     """
 
-    meta_title = models.CharField(max_length=70, blank=True,
+    meta_title = models.CharField('Titre SEO', max_length=70, blank=True,
         help_text='Titre HTML (≤ 70 caractères). Si vide, `title` est utilisé.')
-    meta_description = models.CharField(max_length=180, blank=True,
+    meta_description = models.CharField('Description SEO', max_length=180, blank=True,
         help_text='Description meta (≤ 180 caractères).')
-    og_image = models.ImageField(upload_to='seo/og/', blank=True, null=True,
+    og_image = models.ImageField('Image Open Graph', upload_to='seo/og/', blank=True, null=True,
         help_text='Image Open Graph (1200×630 recommandé).')
-    canonical_url = models.URLField(blank=True,
+    canonical_url = models.URLField('URL canonique', blank=True,
         help_text='URL canonique (si le contenu est syndiqué depuis une autre source).')
 
     class Meta:

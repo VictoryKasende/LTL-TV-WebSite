@@ -29,30 +29,31 @@ class PushSubscription(TimestampedModel):
     ``endpoint`` is globally unique — a browser can only have one
     active subscription per site."""
 
-    endpoint = models.URLField(max_length=500, unique=True)
+    endpoint = models.URLField('Endpoint', max_length=500, unique=True)
     p256dh_key = models.CharField(
-        max_length=200,
+        'Clé P256DH', max_length=200,
         help_text='Clé publique ECDH (base64url) fournie par le navigateur.',
     )
     auth_key = models.CharField(
-        max_length=100,
+        'Clé d\'authentification', max_length=100,
         help_text='Secret d\'authentification (base64url).',
     )
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
         null=True, blank=True, related_name='push_subscriptions',
+        verbose_name='Utilisateur',
     )
-    user_agent = models.CharField(max_length=280, blank=True)
-    locale = models.CharField(max_length=8, default='fr')
+    user_agent = models.CharField('Navigateur', max_length=280, blank=True)
+    locale = models.CharField('Langue', max_length=8, default='fr')
 
-    is_active = models.BooleanField(default=True, db_index=True)
-    last_seen_at = models.DateTimeField(default=timezone.now)
-    unsubscribed_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField('Actif', default=True, db_index=True)
+    last_seen_at = models.DateTimeField('Vu pour la dernière fois le', default=timezone.now)
+    unsubscribed_at = models.DateTimeField('Désabonné le', null=True, blank=True)
 
-    failed_count = models.PositiveIntegerField(default=0)
-    last_failure_at = models.DateTimeField(null=True, blank=True)
-    last_failure_status = models.PositiveIntegerField(null=True, blank=True)
+    failed_count = models.PositiveIntegerField('Nombre d\'échecs', default=0)
+    last_failure_at = models.DateTimeField('Dernier échec le', null=True, blank=True)
+    last_failure_status = models.PositiveIntegerField('Code du dernier échec', null=True, blank=True)
 
     objects = PushSubscriptionQuerySet.as_manager()
 
@@ -112,57 +113,58 @@ class PushCampaign(TimestampedModel):
         PROGRAMME = 'programme', 'Nouveau programme'
 
     # --- Payload -----------------------------------------------
-    title = models.CharField(max_length=100)
+    title = models.CharField('Titre', max_length=100)
     body = models.CharField(
-        max_length=280,
+        'Corps du message', max_length=280,
         help_text='Texte de la notification (280 chars max — style tweet).',
     )
     icon = models.URLField(
-        blank=True,
+        'Icône', blank=True,
         help_text='URL d\'icône affichée dans la notif (192×192 recommandé).',
     )
     image = models.URLField(
-        blank=True,
+        'Image', blank=True,
         help_text='Grande image (optionnelle, s\'affiche dans les notifs riches).',
     )
     url = models.CharField(
-        max_length=500, blank=True,
+        'URL de destination', max_length=500, blank=True,
         help_text='URL de destination au clic — chemin relatif (`/articles/...`) '
                   'ou absolu (`https://ltltv.com/...`).',
     )
 
     # --- Targeting ---------------------------------------------
     audience = models.CharField(
-        max_length=20, choices=Audience.choices, default=Audience.ALL,
+        'Audience', max_length=20, choices=Audience.choices, default=Audience.ALL,
     )
 
     # --- Origin ------------------------------------------------
     trigger_type = models.CharField(
-        max_length=20, choices=TriggerType.choices, default=TriggerType.MANUAL,
+        'Type de déclencheur', max_length=20, choices=TriggerType.choices, default=TriggerType.MANUAL,
     )
     trigger_ref = models.CharField(
-        max_length=100, blank=True, db_index=True,
+        'Référence du déclencheur', max_length=100, blank=True, db_index=True,
         help_text='Référence unique de l\'origine (ex : ``article:42``). '
                   'Évite les doublons quand un contenu est modifié plusieurs fois.',
     )
 
     # --- Workflow ----------------------------------------------
     status = models.CharField(
-        max_length=16, choices=Status.choices, default=Status.DRAFT, db_index=True,
+        'Statut', max_length=16, choices=Status.choices, default=Status.DRAFT, db_index=True,
     )
-    scheduled_at = models.DateTimeField(null=True, blank=True)
-    sent_at = models.DateTimeField(null=True, blank=True)
+    scheduled_at = models.DateTimeField('Programmée pour le', null=True, blank=True)
+    sent_at = models.DateTimeField('Envoyée le', null=True, blank=True)
 
     # --- Stats --------------------------------------------------
-    target_count = models.PositiveIntegerField(default=0, editable=False)
-    delivered_count = models.PositiveIntegerField(default=0, editable=False)
-    failed_count = models.PositiveIntegerField(default=0, editable=False)
-    click_count = models.PositiveIntegerField(default=0, editable=False)
+    target_count = models.PositiveIntegerField('Nombre de destinataires', default=0, editable=False)
+    delivered_count = models.PositiveIntegerField('Nombre de livraisons', default=0, editable=False)
+    failed_count = models.PositiveIntegerField('Nombre d\'échecs', default=0, editable=False)
+    click_count = models.PositiveIntegerField('Nombre de clics', default=0, editable=False)
 
     # --- Ownership ---------------------------------------------
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='push_campaigns',
+        verbose_name='Créée par',
     )
 
     class Meta:

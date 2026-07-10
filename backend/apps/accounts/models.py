@@ -8,17 +8,19 @@ class User(AbstractUser):
     """Extends the default Django user with profile fields used across
     the CMS and public site (author bio, avatar, phone…)."""
 
-    email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=32, blank=True)
-    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
-    bio = models.TextField(blank=True,
+    email = models.EmailField('Adresse email', unique=True)
+    phone = models.CharField('Téléphone', max_length=32, blank=True)
+    avatar = models.ImageField('Avatar', upload_to='avatars/', blank=True, null=True)
+    bio = models.TextField('Biographie', blank=True,
         help_text='Biographie publique (utilisée pour l\'affichage des auteurs).')
-    is_email_verified = models.BooleanField(default=False, db_index=True)
+    is_email_verified = models.BooleanField('Email vérifié', default=False, db_index=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
     class Meta:
+        verbose_name = 'Utilisateur'
+        verbose_name_plural = 'Utilisateurs'
         indexes = [
             models.Index(fields=['is_email_verified', 'is_active']),
         ]
