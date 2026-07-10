@@ -39,13 +39,13 @@ class ContactMessage(TimestampedModel):
         SPAM        = 'spam',        'Spam'
 
     class Category(models.TextChoices):
-        QUESTION    = 'question',    'Question'
-        PRAYER      = 'prayer',      'Demande de prière'
-        DONATION    = 'donation',    'Don'
-        PARTNERSHIP = 'partnership', 'Partenariat'
-        TECHNICAL   = 'technical',   'Question technique'
-        FEEDBACK    = 'feedback',    'Feedback / suggestion'
-        OTHER       = 'other',       'Autre'
+        TESTIMONY         = 'testimony',         'Témoignage'
+        PRAYER_REQUEST    = 'prayer_request',    'Demande de prière'
+        OFFERING          = 'offering',          'Offrande / don'
+        CONTENT_PROPOSAL  = 'content_proposal',  'Proposition de contenu'
+        BIBLICAL_QUESTION = 'biblical_question', 'Question biblique'
+        FEEDBACK          = 'feedback',          'Feedback sur LTL·TV'
+        OTHER             = 'other',             'Autre'
 
     class Priority(models.TextChoices):
         LOW    = 'low',    'Basse'
@@ -62,7 +62,7 @@ class ContactMessage(TimestampedModel):
 
     # --- Team classification --------------------------------------
     category = models.CharField(
-        'Catégorie', max_length=16, choices=Category.choices,
+        'Catégorie', max_length=20, choices=Category.choices,
         default=Category.OTHER, db_index=True,
         help_text='Type de message pour aider au tri.',
     )

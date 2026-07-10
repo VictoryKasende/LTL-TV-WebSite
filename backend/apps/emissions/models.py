@@ -47,6 +47,69 @@ class Category(TimestampedModel, SluggedModel):
         return self.name
 
 
+class Series(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
+    """A themed run of episodes within a ``Show`` — e.g. a month-long
+    teaching series on a single topic (« La foi qui déplace les
+    montagnes », 6 épisodes sur 3 semaines).
+
+    Distinct from ``Category``: a category is a cross-cutting tag,
+    a series is a bounded, chronological arc within one show.
+    """
+
+    SLUG_SOURCE_FIELD = 'title'
+
+    show = models.ForeignKey(
+        'emissions.Show', on_delete=models.CASCADE, related_name='series',
+        verbose_name='Émission',
+    )
+    title = models.CharField('Titre', max_length=220)
+    theme = models.CharField(
+        'Thème général', max_length=280, blank=True,
+        help_text='Le fil rouge de la série (ex : « La foi qui déplace les montagnes »).',
+    )
+    description = models.TextField(
+        'Description', blank=True,
+        help_text='Présentation longue affichée en tête de la série.',
+    )
+    cover = models.ImageField(
+        'Image de couverture', upload_to='emissions/series/', blank=True, null=True,
+        help_text='Bannière large (16:9 recommandé).',
+    )
+
+    starts_on = models.DateField(
+        'Début', null=True, blank=True,
+        help_text='Date de début de la série (ex : début du mois).',
+    )
+    ends_on = models.DateField(
+        'Fin', null=True, blank=True,
+        help_text='Date de fin (optionnelle — laissez vide si la série est en cours).',
+    )
+
+    order = models.PositiveIntegerField(
+        'Ordre d\'affichage', default=0, db_index=True,
+        help_text='Ordre d\'affichage parmi les séries du même show.',
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = 'Série'
+        verbose_name_plural = 'Séries'
+        ordering = ['-starts_on', 'order', '-created_at']
+        indexes = [
+            models.Index(fields=['show', 'status']),
+        ]
+
+    def __str__(self) -> str:
+        return f'{self.show.title} — {self.title}'
+
+    @property
+    def episode_count(self) -> int:
+        if 'episodes' in getattr(self, '_prefetched_objects_cache', {}):
+            return len(self.episodes.all())
+        return self.episodes.count()
+
+
 class Show(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
     """A recurring show — a "chaîne dans la chaîne".
 
@@ -119,6 +182,15 @@ class Episode(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
         Show, on_delete=models.CASCADE, related_name='episodes',
         verbose_name='Émission',
     )
+    series = models.ForeignKey(
+        Series, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='episodes', verbose_name='Série',
+        help_text='Série d\'enseignement à laquelle appartient cet épisode (optionnel).',
+    )
+    episode_number = models.PositiveIntegerField(
+        'Numéro dans la série', null=True, blank=True,
+        help_text='Position de l\'épisode au sein de la série (1, 2, 3…).',
+    )
     title = models.CharField('Titre', max_length=220)
     subtitle = models.CharField('Sous-titre', max_length=280, blank=True)
     excerpt = models.TextField(
@@ -190,6 +262,10 @@ class Episode(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
             raise ValidationError({
                 'youtube_url': "URL YouTube non reconnue. Formats supportés : "
                                "watch?v=, youtu.be, /embed/, /shorts/, /live/."
+            })
+        if self.series_id and self.show_id and self.series.show_id != self.show_id:
+            raise ValidationError({
+                'series': 'Cette série appartient à une autre émission.',
             })
 
     def save(self, *args, **kwargs):

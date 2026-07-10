@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import django_filters
 
-from .models import Episode, Show
+from .models import Episode, Series, Show
 
 
 class ShowFilter(django_filters.FilterSet):
@@ -16,8 +16,19 @@ class ShowFilter(django_filters.FilterSet):
         fields = ('is_featured', 'status', 'tag')
 
 
+class SeriesFilter(django_filters.FilterSet):
+    show = django_filters.CharFilter(field_name='show__slug', lookup_expr='iexact')
+    status = django_filters.CharFilter()
+    is_featured = django_filters.BooleanFilter()
+
+    class Meta:
+        model = Series
+        fields = ('show', 'status', 'is_featured')
+
+
 class EpisodeFilter(django_filters.FilterSet):
     show = django_filters.CharFilter(field_name='show__slug', lookup_expr='iexact')
+    series = django_filters.CharFilter(field_name='series__slug', lookup_expr='iexact')
     category = django_filters.CharFilter(field_name='categories__slug', lookup_expr='iexact')
     tag = django_filters.CharFilter(field_name='tags__name', lookup_expr='iexact')
     is_featured = django_filters.BooleanFilter()
@@ -28,6 +39,6 @@ class EpisodeFilter(django_filters.FilterSet):
     class Meta:
         model = Episode
         fields = (
-            'show', 'category', 'tag', 'is_featured',
+            'show', 'series', 'category', 'tag', 'is_featured',
             'aired_after', 'aired_before', 'speaker',
         )

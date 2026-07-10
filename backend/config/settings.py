@@ -60,6 +60,7 @@ LOCAL_APPS = [
     'apps.articles',
     'apps.contacts',
     'apps.notifications',
+    'apps.about',
     'apps.dashboard',
 ]
 
@@ -440,6 +441,8 @@ UNFOLD = {
                 'items': [
                     {'title': _('Émissions'), 'icon': 'live_tv',
                      'link': reverse_lazy('admin:emissions_show_changelist')},
+                    {'title': _('Séries d\'enseignement'), 'icon': 'video_stable',
+                     'link': reverse_lazy('admin:emissions_series_changelist')},
                     {'title': _('Épisodes'), 'icon': 'video_library',
                      'link': reverse_lazy('admin:emissions_episode_changelist')},
                     {'title': _('Catégories émissions'), 'icon': 'category',
@@ -482,6 +485,18 @@ UNFOLD = {
                      'link': reverse_lazy('admin:notifications_pushcampaign_changelist')},
                     {'title': _('Abonnés'), 'icon': 'notifications_active',
                      'link': reverse_lazy('admin:notifications_pushsubscription_changelist')},
+                ],
+            },
+            {
+                'title': _('À propos'),
+                'separator': True,
+                'items': [
+                    {'title': _('Page « À propos »'), 'icon': 'info',
+                     'link': reverse_lazy('admin:about_aboutpage_changelist')},
+                    {'title': _('Valeurs'), 'icon': 'diversity_3',
+                     'link': reverse_lazy('admin:about_corevalue_changelist')},
+                    {'title': _('Équipe'), 'icon': 'groups',
+                     'link': reverse_lazy('admin:about_teammember_changelist')},
                 ],
             },
         ],

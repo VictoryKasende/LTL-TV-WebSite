@@ -89,6 +89,23 @@ class ContactPublicApiTests(TestCase):
         self.assertEqual(m.submitted_user_agent, 'TestUA/1.0')
         self.assertEqual(m.referrer, 'https://ltltv.com/contact')
 
+    def test_submit_with_category(self):
+        r = self.client.post('/api/v1/contacts/', {
+            'name': 'Marie', 'email': 'm@x.com', 'message': 'Un témoignage à partager.',
+            'category': ContactMessage.Category.TESTIMONY,
+        }, format='json')
+        self.assertEqual(r.status_code, 201, r.content)
+        m = ContactMessage.objects.get(name='Marie')
+        self.assertEqual(m.category, ContactMessage.Category.TESTIMONY)
+
+    def test_submit_without_category_defaults_to_other(self):
+        r = self.client.post('/api/v1/contacts/', {
+            'name': 'Paul', 'email': 'p@x.com', 'message': 'Question générale.',
+        }, format='json')
+        self.assertEqual(r.status_code, 201, r.content)
+        m = ContactMessage.objects.get(name='Paul')
+        self.assertEqual(m.category, ContactMessage.Category.OTHER)
+
     def test_missing_required_returns_400(self):
         r = self.client.post('/api/v1/contacts/', {'name': 'X'}, format='json')
         self.assertEqual(r.status_code, 400)

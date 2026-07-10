@@ -6,12 +6,13 @@ to avoid slug collisions.
 """
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from rest_framework.test import APIClient
 
 from apps.common.permissions import GROUP_EDITOR
 
-from .models import Category, Episode, Show
+from .models import Category, Episode, Series, Show
 from .youtube import extract_youtube_id, youtube_embed_url, youtube_thumbnail_url
 
 User = get_user_model()
@@ -160,3 +161,92 @@ class EmissionsApiTests(TestCase):
         results = body['results'] if 'results' in body else body
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['slug'], self.ep.slug)
+
+
+class SeriesModelTests(TestCase):
+    def setUp(self):
+        self.show = Show.objects.create(title='Series Host Show', status=Show.Status.PUBLISHED)
+        self.other_show = Show.objects.create(title='Other Series Show')
+
+    def test_slug_auto(self):
+        s = Series.objects.create(show=self.show, title='La foi qui déplace les montagnes')
+        self.assertEqual(s.slug, 'la-foi-qui-deplace-les-montagnes')
+
+    def test_episode_count(self):
+        s = Series.objects.create(show=self.show, title='Série Compteur')
+        self.assertEqual(s.episode_count, 0)
+        Episode.objects.create(
+            show=self.show, series=s, title='Ep 1',
+            youtube_url=f'https://youtu.be/{VALID_ID}',
+        )
+        Episode.objects.create(
+            show=self.show, series=s, title='Ep 2',
+            youtube_url=f'https://youtu.be/{VALID_ID}',
+        )
+        self.assertEqual(s.episode_count, 2)
+
+    def test_episode_series_from_other_show_is_invalid(self):
+        s = Series.objects.create(show=self.other_show, title='Série Étrangère')
+        ep = Episode(
+            show=self.show, series=s, title='Ep Cross Show',
+            youtube_url=f'https://youtu.be/{VALID_ID}',
+        )
+        with self.assertRaises(ValidationError):
+            ep.full_clean()
+
+    def test_episode_series_nullable(self):
+        ep = Episode.objects.create(
+            show=self.show, title='Standalone Ep',
+            youtube_url=f'https://youtu.be/{VALID_ID}',
+        )
+        self.assertIsNone(ep.series)
+
+
+class SeriesApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.show = Show.objects.create(title='Series API Show', status=Show.Status.PUBLISHED)
+        self.series = Series.objects.create(
+            show=self.show, title='Série API', status=Series.Status.PUBLISHED,
+        )
+        self.draft_series = Series.objects.create(show=self.show, title='Série Brouillon')
+        self.ep1 = Episode.objects.create(
+            show=self.show, series=self.series, episode_number=1, title='Ep API 1',
+            youtube_url=f'https://youtu.be/{VALID_ID}', status=Episode.Status.PUBLISHED,
+        )
+        self.ep2 = Episode.objects.create(
+            show=self.show, series=self.series, episode_number=2, title='Ep API 2',
+            youtube_url=f'https://youtu.be/{VALID_ID}', status=Episode.Status.PUBLISHED,
+        )
+
+    def test_anon_sees_only_published_series(self):
+        r = self.client.get('/api/v1/emissions/series/')
+        self.assertEqual(r.status_code, 200)
+        slugs = [s['slug'] for s in r.json()['results']]
+        self.assertIn(self.series.slug, slugs)
+        self.assertNotIn(self.draft_series.slug, slugs)
+
+    def test_show_detail_series_route_wraps_episodes(self):
+        r = self.client.get(f'/api/v1/emissions/shows/{self.show.slug}/series/')
+        self.assertEqual(r.status_code, 200)
+        body = r.json()
+        self.assertEqual(len(body), 1)
+        self.assertEqual(body[0]['slug'], self.series.slug)
+        ep_slugs = [e['slug'] for e in body[0]['episodes']]
+        self.assertEqual(ep_slugs, [self.ep1.slug, self.ep2.slug])
+
+    def test_anon_cannot_create_series(self):
+        r = self.client.post('/api/v1/emissions/series/', {
+            'show': self.show.pk, 'title': 'X',
+        }, format='json')
+        self.assertIn(r.status_code, (401, 403))
+
+    def test_episode_filter_by_series(self):
+        Episode.objects.create(
+            show=self.show, title='No Series Ep',
+            youtube_url=f'https://youtu.be/{VALID_ID}', status=Episode.Status.PUBLISHED,
+        )
+        r = self.client.get(f'/api/v1/emissions/episodes/?series={self.series.slug}')
+        self.assertEqual(r.status_code, 200)
+        results = r.json()['results']
+        self.assertEqual(len(results), 2)

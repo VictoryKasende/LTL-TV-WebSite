@@ -6,7 +6,7 @@ from django.utils.html import format_html
 
 from apps.common.admin import BaseAdmin, HistoryAdmin, PublishAdminMixin
 
-from .models import Category, Episode, Show
+from .models import Category, Episode, Series, Show
 
 
 @admin.register(Category)
@@ -48,15 +48,45 @@ class ShowAdmin(PublishAdminMixin, HistoryAdmin):
         return obj.episodes.filter(status=Show.Status.PUBLISHED).count()
 
 
+@admin.register(Series)
+class SeriesAdmin(PublishAdminMixin, HistoryAdmin):
+    list_display = ('title', 'show', 'starts_on', 'ends_on',
+                    'status', 'is_featured', 'order', 'episode_count_admin')
+    list_filter = ('show', 'status', 'is_featured')
+    list_editable = ('order',)
+    search_fields = ('title', 'theme', 'description')
+    prepopulated_fields = {'slug': ('title',)}
+    autocomplete_fields = ('show',)
+    ordering = ('-starts_on', 'order', '-created_at')
+    fieldsets = (
+        ('Contenu', {
+            'fields': ('show', 'title', 'slug', 'theme', 'description'),
+        }),
+        ('Période', {'fields': ('starts_on', 'ends_on')}),
+        ('Médias', {'fields': ('cover',)}),
+        ('Publication', {
+            'fields': ('status', 'published_at', 'is_featured', 'order'),
+        }),
+        ('SEO', {
+            'classes': ('collapse',),
+            'fields': ('meta_title', 'meta_description', 'og_image', 'canonical_url'),
+        }),
+    )
+
+    @admin.display(description='Épisodes')
+    def episode_count_admin(self, obj: Series) -> int:
+        return obj.episode_count
+
+
 @admin.register(Episode)
 class EpisodeAdmin(PublishAdminMixin, HistoryAdmin):
-    list_display = ('title', 'show', 'speaker', 'aired_at',
+    list_display = ('title', 'show', 'series', 'speaker', 'aired_at',
                     'status', 'is_featured', 'view_count', 'thumb_preview')
-    list_filter = ('show', 'status', 'is_featured', 'categories', 'aired_at')
+    list_filter = ('show', 'series', 'status', 'is_featured', 'categories', 'aired_at')
     list_editable = ('is_featured',)
     search_fields = ('title', 'subtitle', 'excerpt', 'description', 'speaker')
     prepopulated_fields = {'slug': ('title',)}
-    autocomplete_fields = ('show',)
+    autocomplete_fields = ('show', 'series')
     filter_horizontal = ('categories',)
     date_hierarchy = 'aired_at'
     readonly_fields = ('youtube_id', 'view_count', 'thumb_preview')
@@ -65,6 +95,7 @@ class EpisodeAdmin(PublishAdminMixin, HistoryAdmin):
         ('Contenu', {
             'fields': ('show', 'title', 'slug', 'subtitle', 'excerpt', 'description'),
         }),
+        ('Série', {'fields': ('series', 'episode_number')}),
         ('Intervenants', {'fields': ('speaker', 'guests')}),
         ('YouTube', {
             'fields': ('youtube_url', 'youtube_id', 'duration_seconds', 'thumb_preview'),

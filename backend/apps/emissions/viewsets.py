@@ -6,7 +6,7 @@ published items whose ``published_at`` is in the past.
 """
 from __future__ import annotations
 
-from django.db.models import Count, Q
+from django.db.models import Count, Prefetch, Q
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
@@ -14,12 +14,14 @@ from rest_framework.response import Response
 
 from apps.common.permissions import ReadOnlyOrEditor
 
-from .filters import EpisodeFilter, ShowFilter
-from .models import Category, Episode, Show
+from .filters import EpisodeFilter, SeriesFilter, ShowFilter
+from .models import Category, Episode, Series, Show
 from .serializers import (
     CategorySerializer,
     EpisodeDetailSerializer,
     EpisodeListSerializer,
+    SeriesSerializer,
+    SeriesWithEpisodesSerializer,
     ShowDetailSerializer,
     ShowListSerializer,
 )
@@ -81,6 +83,55 @@ class ShowViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(qs)
         ser = EpisodeListSerializer(page or qs, many=True, context={'request': request})
         return self.get_paginated_response(ser.data) if page is not None else Response(ser.data)
+
+    @extend_schema(
+        summary='Épisodes du show, enveloppés par série d\'enseignement',
+        description='Chaque série publiée avec ses épisodes publiés nichés dedans, '
+                    'triés par numéro d\'épisode puis date de diffusion. '
+                    'Utilisé par la page détail de l\'émission.',
+        responses={200: SeriesWithEpisodesSerializer(many=True)},
+    )
+    @action(detail=True, methods=['get'], url_path='series')
+    def list_series(self, request, slug=None):
+        show = self.get_object()
+        staff = _staff(request)
+        series_qs = show.series.all() if staff else show.series.published()
+        episodes_qs = Episode.objects.all() if staff else Episode.objects.published()
+        episodes_qs = (
+            episodes_qs.select_related('show')
+            .prefetch_related('categories', 'tags')
+            .order_by('episode_number', 'aired_at')
+        )
+        series_qs = series_qs.prefetch_related(
+            Prefetch('episodes', queryset=episodes_qs, to_attr='prefetched_episodes'),
+        ).order_by('-starts_on', 'order', '-created_at')
+        ser = SeriesWithEpisodesSerializer(series_qs, many=True, context={'request': request})
+        return Response(ser.data)
+
+
+@extend_schema(tags=['Émissions'])
+class SeriesViewSet(viewsets.ModelViewSet):
+    """CRUD for teaching series (grouping of episodes within a show)."""
+
+    lookup_field = 'slug'
+    filterset_class = SeriesFilter
+    search_fields = ('title', 'theme', 'description')
+    ordering_fields = ('order', 'starts_on', 'created_at')
+    permission_classes = [ReadOnlyOrEditor]
+
+    def get_queryset(self):
+        qs = (
+            Series.objects
+            .select_related('show')
+            .prefetch_related('episodes')
+            .order_by('-starts_on', 'order', '-created_at')
+        )
+        if not _staff(self.request):
+            qs = qs.published()
+        return qs
+
+    def get_serializer_class(self):
+        return SeriesWithEpisodesSerializer if self.action == 'retrieve' else SeriesSerializer
 
 
 @extend_schema(tags=['Émissions'])

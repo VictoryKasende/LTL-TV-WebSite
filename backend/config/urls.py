@@ -23,6 +23,7 @@ api_v1_patterns = [
     path('articles/',    include('apps.articles.urls')),
     path('contacts/',    include('apps.contacts.urls')),
     path('notifications/', include('apps.notifications.urls')),
+    path('about/',          include('apps.about.urls')),
     path('dashboard/',     include('apps.dashboard.urls')),
 ]
 
