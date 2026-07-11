@@ -1,7 +1,7 @@
 import { MessageSquareHeart } from 'lucide-react';
 import Container from '../../components/ui/Container';
 import TemoignageForm from '../../components/TemoignageForm';
-import { apiGet, type Paginated, type Temoignage } from '../../lib/api';
+import { getTestimonials } from '../../lib/api';
 
 export const revalidate = 60;
 
@@ -10,18 +10,9 @@ export const metadata = {
   description: 'Des histoires vraies, des vies transformées. Écoutez et partagez à votre tour.',
 };
 
-const FALLBACK: Temoignage[] = [
-  { id: 1, author: 'Sarah M.',        location: 'Kinshasa',   message: 'J\'ai découvert LTL TV un dimanche matin, et depuis, chaque émission est devenue pour moi une source de paix.', photo: null, created_at: '' },
-  { id: 2, author: 'Emmanuel K.',     location: 'Lubumbashi', message: 'Les témoignages diffusés m\'ont donné le courage de partager le mien. Une famille bienveillante.', photo: null, created_at: '' },
-  { id: 3, author: 'Marie-Claire N.', location: 'Goma',       message: 'Après une période difficile, j\'ai retrouvé espoir en écoutant Rafraîchissement Matinée.', photo: null, created_at: '' },
-  { id: 4, author: 'David M.',        location: 'Bukavu',     message: 'Merci pour la qualité des programmes. Chaque semaine, quelque chose me touche et me fait réfléchir.', photo: null, created_at: '' },
-  { id: 5, author: 'Esther W.',       location: 'Kinshasa',   message: 'Les Live Zoom du Dr Odia sont une bénédiction pour moi et ma famille.', photo: null, created_at: '' },
-  { id: 6, author: 'Patrick B.',      location: 'Matadi',     message: 'La chorale du dimanche m\'a réconcilié avec la louange.', photo: null, created_at: '' },
-];
-
 export default async function TemoignagesPage() {
-  const data = await apiGet<Paginated<Temoignage>>('/temoignages/');
-  const items = data?.results?.length ? data.results : FALLBACK;
+  const data = await getTestimonials();
+  const items = data?.results ?? [];
 
   return (
     <>
@@ -50,14 +41,18 @@ export default async function TemoignagesPage() {
                 key={t.id}
                 className="break-inside-avoid mb-5 md:mb-6 rounded-lg bg-white shadow-card p-6 md:p-7 hover:shadow-card-hover transition-shadow border border-paper-200"
               >
-                <p className="text-lg leading-relaxed text-ink-800">{t.message}</p>
+                <p className="text-lg leading-relaxed text-ink-800">{t.story_short || t.story}</p>
                 <footer className="mt-5 pt-4 border-t border-paper-200 flex items-center gap-3">
-                  <div className="h-11 w-11 rounded-full bg-brand-100 flex items-center justify-center font-bold text-brand-700">
-                    {t.author.charAt(0).toUpperCase()}
-                  </div>
+                  {t.photo ? (
+                    <img src={t.photo} alt={t.author_name} className="h-11 w-11 rounded-full object-cover" />
+                  ) : (
+                    <div className="h-11 w-11 rounded-full bg-brand-100 flex items-center justify-center font-bold text-brand-700">
+                      {t.author_name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div>
-                    <cite className="not-italic font-semibold text-ink-800 block">{t.author}</cite>
-                    {t.location && <p className="text-sm text-ink-500">{t.location}</p>}
+                    <cite className="not-italic font-semibold text-ink-800 block">{t.author_name}</cite>
+                    {t.city && <p className="text-sm text-ink-500">{t.city}</p>}
                   </div>
                 </footer>
               </blockquote>

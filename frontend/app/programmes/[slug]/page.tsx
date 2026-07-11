@@ -1,12 +1,18 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Clock, User, ArrowLeft, Radio } from 'lucide-react';
+import { Clock, User, ArrowLeft, Radio, MapPin } from 'lucide-react';
 import Container from '../../../components/ui/Container';
 import { apiGet, type Programme } from '../../../lib/api';
 
 export const revalidate = 60;
 
 type Params = { params: { slug: string } };
+
+const fmtDate = (iso: string) => {
+  try { return new Date(`${iso}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long' }); }
+  catch { return iso; }
+};
+const fmtTime = (t: string) => t?.slice(0, 5) ?? '';
 
 export async function generateMetadata({ params }: Params) {
   const programme = await apiGet<Programme>(`/programmes/${params.slug}/`);
@@ -22,11 +28,11 @@ export default async function ProgrammeDetailPage({ params }: Params) {
     <>
       <section
         className="relative bg-brand-700 text-white pt-16 pb-14 md:pt-20 md:pb-20 overflow-hidden"
-        style={{ backgroundImage: programme.cover ? undefined : 'linear-gradient(135deg, #212870 0%, #141640 55%, #3D53EA 100%)' }}
+        style={{ backgroundImage: programme.image ? undefined : 'linear-gradient(135deg, #212870 0%, #141640 55%, #3D53EA 100%)' }}
       >
-        {programme.cover && (
+        {programme.image && (
           <>
-            <img src={programme.cover} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />
+            <img src={programme.image} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />
             <div className="absolute inset-0 bg-gradient-to-b from-brand-900/50 to-brand-900" />
           </>
         )}
@@ -37,15 +43,16 @@ export default async function ProgrammeDetailPage({ params }: Params) {
           </Link>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.2em] text-brand-200 mb-5">
             <Radio className="h-3 w-3" strokeWidth={2.5} />
-            Programme
+            {programme.program_type?.name ?? 'Programme'}
           </div>
           <h1 className="font-bold text-display-lg">{programme.title}</h1>
           <div className="mt-6 flex flex-wrap items-center gap-6 text-white/85">
-            {programme.host && (
-              <div className="inline-flex items-center gap-2"><User className="h-4 w-4 text-brand-300" /> <span className="font-medium">{programme.host}</span></div>
+            {programme.responsable && (
+              <div className="inline-flex items-center gap-2"><User className="h-4 w-4 text-brand-300" /> <span className="font-medium">{programme.responsable}</span></div>
             )}
-            {programme.schedule && (
-              <div className="inline-flex items-center gap-2"><Clock className="h-4 w-4 text-brand-300" /> {programme.schedule}</div>
+            <div className="inline-flex items-center gap-2"><Clock className="h-4 w-4 text-brand-300" /> {fmtDate(programme.date)} · {fmtTime(programme.start_time)}</div>
+            {programme.location && (
+              <div className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-brand-300" /> {programme.location}</div>
             )}
           </div>
         </Container>

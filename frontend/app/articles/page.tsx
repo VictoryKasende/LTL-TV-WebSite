@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Calendar, ArrowUpRight, BookOpen, Newspaper } from 'lucide-react';
 import Container from '../../components/ui/Container';
-import { apiGet, type Paginated, type Article } from '../../lib/api';
+import { getArticles } from '../../lib/api';
 
 export const revalidate = 60;
 
@@ -9,15 +9,6 @@ export const metadata = {
   title: 'Articles',
   description: 'Réflexions, portraits et actualités par la rédaction de LTL TV.',
 };
-
-const FALLBACK: Article[] = [
-  { id: 1, slug: 'la-priere-au-quotidien',    title: 'La prière au quotidien : trouver le temps de s\'arrêter', excerpt: 'Dans un monde qui court, apprendre à faire une pause change tout.', content: '', cover: null, author_name: 'Rédaction LTL',    category: { id: 1, name: 'Spiritualité', slug: 'spiritualite' }, published_at: '2026-06-24T09:00:00Z', created_at: '' },
-  { id: 2, slug: 'jeunesse-et-esperance',     title: 'Jeunesse et espérance : ce que nous apprend cette génération', excerpt: 'Portrait d\'une nouvelle génération qui cherche du sens.', content: '', cover: null, author_name: 'Grâce Ilunga',       category: { id: 2, name: 'Société',      slug: 'societe'      }, published_at: '2026-06-15T09:00:00Z', created_at: '' },
-  { id: 3, slug: 'construire-la-paix',        title: 'Construire la paix commence chez soi', excerpt: 'De la famille au quartier, un chemin patient.', content: '', cover: null, author_name: 'Jean-Paul Kalombo', category: { id: 3, name: 'Réflexion',    slug: 'reflexion'    }, published_at: '2026-06-08T09:00:00Z', created_at: '' },
-  { id: 4, slug: 'louange-et-liberation',     title: 'La louange, une école de libération intérieure', excerpt: 'Ce que la musique dit de nous.', content: '', cover: null, author_name: 'Rédaction LTL',    category: { id: 4, name: 'Musique',      slug: 'musique'      }, published_at: '2026-06-01T09:00:00Z', created_at: '' },
-  { id: 5, slug: 'famille-recomposee',        title: 'Famille recomposée : construire ensemble sans effacer', excerpt: 'Inventer une nouvelle unité familiale.', content: '', cover: null, author_name: 'Ruth Mukendi',     category: { id: 5, name: 'Famille',      slug: 'famille'      }, published_at: '2026-05-25T09:00:00Z', created_at: '' },
-  { id: 6, slug: 'silence-et-attention',      title: 'Le silence, cet allié négligé', excerpt: 'Redécouvrir la puissance des moments où l\'on ne dit rien.', content: '', cover: null, author_name: 'Émilie Nsamba',    category: { id: 3, name: 'Réflexion',    slug: 'reflexion'    }, published_at: '2026-05-18T09:00:00Z', created_at: '' },
-];
 
 const fmt = (iso: string | null) => {
   if (!iso) return '';
@@ -33,8 +24,8 @@ const GRADIENTS = [
 ];
 
 export default async function ArticlesPage() {
-  const data = await apiGet<Paginated<Article>>('/articles/');
-  const items = data?.results?.length ? data.results : FALLBACK;
+  const data = await getArticles();
+  const items = data?.results ?? [];
   const [featured, ...rest] = items;
 
   return (
@@ -76,7 +67,7 @@ export default async function ArticlesPage() {
                 </h2>
                 <p className="mt-4 text-lg text-ink-500 leading-relaxed">{featured.excerpt}</p>
                 <div className="mt-6 flex items-center gap-4 text-sm text-ink-500">
-                  {featured.author_name && <span>Par {featured.author_name}</span>}
+                  {featured.author?.display_name && <span>Par {featured.author.display_name}</span>}
                   {featured.published_at && (
                     <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{fmt(featured.published_at)}</span>
                   )}

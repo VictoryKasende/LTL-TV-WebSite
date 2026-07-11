@@ -49,8 +49,8 @@ export default async function ArticleDetailPage({ params }: Params) {
           <h1 className="font-bold text-display-lg leading-tight">{article.title}</h1>
           {article.excerpt && <p className="mt-5 text-xl text-white/85 leading-relaxed">{article.excerpt}</p>}
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/70">
-            {article.author_name && (
-              <span className="inline-flex items-center gap-2"><User className="h-4 w-4 text-brand-300" /> Par <span className="text-white font-medium">{article.author_name}</span></span>
+            {article.author?.display_name && (
+              <span className="inline-flex items-center gap-2"><User className="h-4 w-4 text-brand-300" /> Par <span className="text-white font-medium">{article.author.display_name}</span></span>
             )}
             {article.published_at && (
               <span className="inline-flex items-center gap-2"><Calendar className="h-4 w-4 text-brand-300" /> {fmt(article.published_at)}</span>
@@ -61,11 +61,14 @@ export default async function ArticleDetailPage({ params }: Params) {
 
       <section className="bg-white py-14 md:py-20">
         <Container size="narrow">
-          <article className="prose-editorial">
-            {article.content
-              ? article.content.split('\n').filter(Boolean).map((para, i) => <p key={i}>{para}</p>)
-              : <p className="italic text-ink-500">Contenu à venir.</p>}
-          </article>
+          {article.content_html ? (
+            <article
+              className="prose-editorial"
+              dangerouslySetInnerHTML={{ __html: article.content_html }}
+            />
+          ) : (
+            <p className="italic text-ink-500">Contenu à venir.</p>
+          )}
           <div className="mt-12 pt-6 border-t border-paper-300">
             <Link href="/articles" className="group inline-flex items-center gap-2 text-sm font-medium text-ink-800 hover:text-brand-500 transition-colors">
               <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />

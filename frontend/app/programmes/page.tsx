@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { Clock, User, Radio } from 'lucide-react';
+import { Clock, User, Radio, MapPin } from 'lucide-react';
 import Container from '../../components/ui/Container';
-import { apiGet, type Paginated, type Programme } from '../../lib/api';
+import { getProgrammes, type Programme } from '../../lib/api';
 
 export const revalidate = 60;
 
@@ -10,14 +10,18 @@ export const metadata = {
   description: 'La grille complète des programmes LTL TV : émissions, animateurs et horaires.',
 };
 
-const FALLBACK: Programme[] = [
-  { id: 1, slug: 'prends-courage',        title: 'Prends Courage',        host: 'Pasteur Élie Mbaya',    schedule: 'Lundi — Vendredi · 07h00', description: 'Une méditation matinale pour bien commencer la journée.', cover: null, is_published: true, created_at: '' },
-  { id: 2, slug: 'dans-les-profondeurs',  title: 'Dans Les Profondeurs',  host: 'Grâce Ilunga',          schedule: 'Samedi · 20h30',            description: 'Enseignement approfondi de la Parole, verset par verset.', cover: null, is_published: true, created_at: '' },
-  { id: 3, slug: 'rafraichissement',      title: 'Rafraîchissement Matinée', host: 'Chorale LTL',         schedule: 'Dimanche · 07h00',           description: 'Louange, prière et Parole pour bien démarrer le dimanche.', cover: null, is_published: true, created_at: '' },
-  { id: 4, slug: 'live-zoom-guerison',    title: 'LIVE Zoom Guérison & Restauration', host: 'Dr Jonathan Odia', schedule: 'Mensuel · 18h00',    description: 'Rendez-vous mensuel de délivrance et d\'espérance.', cover: null, is_published: true, created_at: '' },
-  { id: 5, slug: 'famille-au-coeur',      title: 'Famille au cœur',       host: 'Ruth & David Mukendi',  schedule: 'Vendredi · 20h00',          description: 'Les enjeux du couple, de la parentalité et de la vie de famille.', cover: null, is_published: true, created_at: '' },
-  { id: 6, slug: 'jeunesse-en-action',    title: 'Jeunesse en action',    host: 'Émilie Nsamba',          schedule: 'Mercredi · 19h00',          description: 'Un magazine pensé pour et par les jeunes.', cover: null, is_published: true, created_at: '' },
-];
+const MODE_LABEL: Record<Programme['mode'], string> = {
+  in_person: 'Présentiel',
+  online: 'En ligne',
+  hybrid: 'Hybride',
+};
+
+const fmtDate = (iso: string) => {
+  try { return new Date(`${iso}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long' }); }
+  catch { return iso; }
+};
+
+const fmtTime = (t: string) => t?.slice(0, 5) ?? '';
 
 const GRADIENTS = [
   'linear-gradient(135deg, #212870 0%, #3D53EA 100%)',
@@ -27,8 +31,8 @@ const GRADIENTS = [
 ];
 
 export default async function ProgrammesPage() {
-  const data = await apiGet<Paginated<Programme>>('/programmes/');
-  const items = data?.results?.length ? data.results : FALLBACK;
+  const data = await getProgrammes('?ordering=date');
+  const items = data?.results ?? [];
 
   return (
     <>
@@ -60,30 +64,34 @@ export default async function ProgrammesPage() {
               >
                 <div
                   className="relative aspect-[16/10] overflow-hidden"
-                  style={{ background: p.cover ? undefined : GRADIENTS[i % GRADIENTS.length] }}
+                  style={{ background: p.image ? undefined : GRADIENTS[i % GRADIENTS.length] }}
                 >
-                  {p.cover && (
-                    <img src={p.cover} alt={p.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  {p.image && (
+                    <img src={p.image} alt={p.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   )}
-                  {p.schedule && (
-                    <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded bg-ink-900/85 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-brand-200">
-                      <Clock className="h-3.5 w-3.5" strokeWidth={2.5} />
-                      {p.schedule}
-                    </div>
-                  )}
+                  <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded bg-ink-900/85 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-brand-200">
+                    <Clock className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    {fmtDate(p.date)} · {fmtTime(p.start_time)}
+                  </div>
                 </div>
                 <div className="flex flex-1 flex-col gap-2 p-5">
-                  {p.host && (
-                    <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider text-ink-500 font-semibold">
-                      <User className="h-3.5 w-3.5" strokeWidth={2.5} />
-                      {p.host}
-                    </div>
-                  )}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs uppercase tracking-wider text-ink-500 font-semibold">
+                    {p.responsable && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <User className="h-3.5 w-3.5" strokeWidth={2.5} />
+                        {p.responsable}
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      {p.location || MODE_LABEL[p.mode]}
+                    </span>
+                  </div>
                   <h3 className="font-bold text-xl text-ink-800 group-hover:text-brand-700 transition-colors">
                     {p.title}
                   </h3>
-                  {p.description && (
-                    <p className="text-ink-500 leading-relaxed line-clamp-3 text-sm">{p.description}</p>
+                  {p.program_type && (
+                    <span className="text-xs font-bold uppercase tracking-wider text-brand-500">{p.program_type.name}</span>
                   )}
                 </div>
               </Link>

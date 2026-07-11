@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Facebook, Youtube, Instagram, Heart, Handshake } from 'lucide-react';
+import { Youtube, Instagram, Heart, Handshake } from 'lucide-react';
+import { TikTokIcon, WhatsAppIcon } from './icons/SocialIcons';
 
 const col1 = [
   { label: 'Accueil',     href: '/' },
@@ -10,19 +11,19 @@ const col1 = [
 ];
 
 const col2 = [
-  { label: 'À propos',            href: '/#about' },
-  { label: 'Vision',              href: '/#about' },
-  { label: 'Mission & Valeurs',   href: '/#about' },
-  { label: 'Histoire',            href: '/#about' },
-  { label: 'Team LTL TV',         href: '/#about' },
+  { label: 'À propos',            href: '/a-propos' },
+  { label: 'Vision',              href: '/a-propos#mission' },
+  { label: 'Mission & Valeurs',   href: '/a-propos#mission' },
+  { label: 'Histoire',            href: '/a-propos#histoire' },
+  { label: 'Team LTL TV',         href: '/a-propos#equipe' },
 ];
 
 const col3 = [
   { label: 'Grille TV',            href: '/programmes' },
   { label: 'Émissions',            href: '/programmes' },
-  { label: 'Prends Courage',       href: '/programmes' },
-  { label: 'Dans les Profondeurs', href: '/programmes' },
-  { label: 'Rafraîchissement',     href: '/programmes' },
+  { label: 'Prends Courage',       href: '/emissions/prends-courage' },
+  { label: 'Dans les Profondeurs', href: '/emissions/dans-les-profondeurs' },
+  { label: 'Rafraîchissement',     href: '/emissions/rafraichissement' },
 ];
 
 export default function Footer() {
@@ -30,11 +31,19 @@ export default function Footer() {
     <footer className="bg-ink-900 text-white">
       <div className="max-w-6xl mx-auto px-6 md:px-10 pt-16 pb-8">
         {/* Row de marques */}
-        <div className="flex flex-wrap items-center gap-x-10 gap-y-6 pb-12 border-b border-white/10">
-          <img src="/logo-ltl-white.svg" alt="LTL TV" className="h-6 w-auto" />
-          <img src="/logo-dlp.svg" alt="Dans Les Profondeurs" className="h-6 w-auto opacity-90" />
-          <img src="/logo-pc.svg"  alt="Prends Courage"        className="h-7 w-auto opacity-90 invert brightness-0" style={{ filter: 'invert(1) brightness(1.4)' }} />
-          <img src="/logo-raf.svg" alt="Rafraîchissement"      className="h-14 w-auto opacity-90" style={{ filter: 'brightness(1.4)' }} />
+        <div className="flex flex-nowrap items-center justify-between gap-3 md:flex-wrap md:justify-start md:gap-x-10 md:gap-y-6 pb-12 border-b border-white/10">
+          <Link href="/" aria-label="LTL TV" className="shrink-0">
+            <img src="/logo-ltl-white.svg" alt="LTL TV" className="h-5 md:h-6 w-auto" />
+          </Link>
+          <Link href="/emissions/dans-les-profondeurs" aria-label="Dans Les Profondeurs" className="shrink-0">
+            <img src="/logo-dlp.svg" alt="Dans Les Profondeurs" className="h-5 md:h-6 w-auto opacity-90" />
+          </Link>
+          <Link href="/emissions/prends-courage" aria-label="Prends Courage" className="shrink-0">
+            <img src="/logo-pc.svg" alt="Prends Courage" className="h-6 md:h-7 w-auto opacity-90" style={{ filter: 'invert(1) brightness(1.4)' }} />
+          </Link>
+          <Link href="/emissions/rafraichissement" aria-label="Rafraîchissement" className="shrink-0">
+            <img src="/logo-raf.svg" alt="Rafraîchissement" className="h-9 md:h-14 w-auto opacity-90" style={{ filter: 'brightness(1.4)' }} />
+          </Link>
         </div>
 
         {/* Colonnes */}
@@ -65,9 +74,10 @@ export default function Footer() {
 
           <div className="flex gap-2">
             {[
-              { href: 'https://facebook.com',  Icon: Facebook,  label: 'Facebook'  },
-              { href: 'https://youtube.com',   Icon: Youtube,   label: 'YouTube'   },
-              { href: 'https://instagram.com', Icon: Instagram, label: 'Instagram' },
+              { href: 'https://youtube.com/shorts/F4RCRIVNURA?si=ab-KeblDKyKrwn-T', Icon: Youtube, label: 'YouTube' },
+              { href: 'https://www.instagram.com/reel/DZdI4f4iXxE/?igsh=MXhxbTBldGc4bGs2Zg==', Icon: Instagram, label: 'Instagram' },
+              { href: 'https://vt.tiktok.com/ZSQfEk2xa/', Icon: TikTokIcon, label: 'TikTok' },
+              { href: 'https://whatsapp.com/channel/0029VaLQDXoKLaHjRAj7m52H', Icon: WhatsAppIcon, label: 'WhatsApp' },
             ].map(({ href, Icon, label }) => (
               <a
                 key={label}
