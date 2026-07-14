@@ -20,7 +20,7 @@ const col2 = [
 
 const col3 = [
   { label: 'Grille TV',            href: '/programmes' },
-  { label: 'Émissions',            href: '/programmes' },
+  { label: 'Émissions',            href: '/emissions' },
   { label: 'Prends Courage',       href: '/emissions/prends-courage' },
   { label: 'Dans les Profondeurs', href: '/emissions/dans-les-profondeurs' },
   { label: 'Rafraîchissement',     href: '/emissions/rafraichissement' },

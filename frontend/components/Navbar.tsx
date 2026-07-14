@@ -9,6 +9,7 @@ import { TikTokIcon, WhatsAppIcon } from './icons/SocialIcons';
 
 const links = [
   { href: '/',            label: 'Accueil' },
+  { href: '/emissions',   label: 'Émissions' },
   { href: '/programmes',  label: 'Grille TV' },
   { href: '/temoignages', label: 'Témoignage' },
   { href: '/articles',    label: 'Articles' },

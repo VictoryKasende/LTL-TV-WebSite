@@ -32,7 +32,7 @@ class ShowAdmin(PublishAdminMixin, HistoryAdmin):
             'fields': ('title', 'slug', 'tagline', 'description', 'host',
                        'default_schedule', 'color'),
         }),
-        ('Médias', {'fields': ('cover', 'logo')}),
+        ('Médias', {'fields': ('cover', 'logo', 'host_photo')}),
         ('Publication', {
             'fields': ('status', 'published_at', 'is_featured', 'order'),
         }),

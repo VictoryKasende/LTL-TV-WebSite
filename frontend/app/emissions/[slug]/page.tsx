@@ -89,7 +89,7 @@ export default async function ShowDetailPage({ params }: Params) {
           </>
         )}
         <Container className="relative">
-          <Link href="/programmes" className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors mb-6">
+          <Link href="/emissions" className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors mb-6">
             <ArrowLeft className="h-4 w-4" />
             Toutes les émissions
           </Link>

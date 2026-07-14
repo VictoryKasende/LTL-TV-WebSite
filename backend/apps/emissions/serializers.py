@@ -23,7 +23,7 @@ class ShowListSerializer(TaggitSerializer, serializers.ModelSerializer):
     class Meta:
         model = Show
         fields = (
-            'id', 'slug', 'title', 'tagline', 'host',
+            'id', 'slug', 'title', 'tagline', 'host', 'host_photo',
             'cover', 'logo', 'color',
             'default_schedule', 'youtube_channel_url',
             'order', 'status', 'published_at', 'is_featured',

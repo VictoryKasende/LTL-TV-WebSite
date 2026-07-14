@@ -66,6 +66,7 @@ export type Show = {
   title: string;
   tagline: string;
   host: string;
+  host_photo: string | null;
   cover: string | null;
   logo: string | null;
   color: string;

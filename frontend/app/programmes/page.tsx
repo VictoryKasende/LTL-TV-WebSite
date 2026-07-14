@@ -1,7 +1,7 @@
-import Link from 'next/link';
-import { Clock, User, Radio, MapPin } from 'lucide-react';
+import { Radio } from 'lucide-react';
 import Container from '../../components/ui/Container';
-import { getProgrammes, type Programme } from '../../lib/api';
+import WeeklySchedule from '../../components/programmes/WeeklySchedule';
+import { getProgrammes } from '../../lib/api';
 
 export const revalidate = 60;
 
@@ -10,28 +10,24 @@ export const metadata = {
   description: 'La grille complète des programmes LTL TV : émissions, animateurs et horaires.',
 };
 
-const MODE_LABEL: Record<Programme['mode'], string> = {
-  in_person: 'Présentiel',
-  online: 'En ligne',
-  hybrid: 'Hybride',
-};
+function mondayOf(d: Date): Date {
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + diff);
+  return monday;
+}
 
-const fmtDate = (iso: string) => {
-  try { return new Date(`${iso}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long' }); }
-  catch { return iso; }
-};
-
-const fmtTime = (t: string) => t?.slice(0, 5) ?? '';
-
-const GRADIENTS = [
-  'linear-gradient(135deg, #212870 0%, #3D53EA 100%)',
-  'linear-gradient(135deg, #212870 0%, #E85521 130%)',
-  'linear-gradient(135deg, #3D53EA 0%, #F5C24E 130%)',
-  'linear-gradient(135deg, #141640 0%, #3D53EA 100%)',
-];
+const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 export default async function ProgrammesPage() {
-  const data = await getProgrammes('?ordering=date');
+  const monday = mondayOf(new Date());
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const data = await getProgrammes(
+    `?date_from=${iso(monday)}&date_to=${iso(sunday)}&ordering=date,start_time&page_size=100`,
+  );
   const items = data?.results ?? [];
 
   return (
@@ -55,48 +51,7 @@ export default async function ProgrammesPage() {
 
       <section className="bg-paper-100 py-14 md:py-20">
         <Container>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-            {items.map((p, i) => (
-              <Link
-                key={p.id}
-                href={`/programmes/${p.slug}`}
-                className="group flex flex-col overflow-hidden rounded-lg bg-white shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1"
-              >
-                <div
-                  className="relative aspect-[16/10] overflow-hidden"
-                  style={{ background: p.image ? undefined : GRADIENTS[i % GRADIENTS.length] }}
-                >
-                  {p.image && (
-                    <img src={p.image} alt={p.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                  )}
-                  <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded bg-ink-900/85 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-brand-200">
-                    <Clock className="h-3.5 w-3.5" strokeWidth={2.5} />
-                    {fmtDate(p.date)} · {fmtTime(p.start_time)}
-                  </div>
-                </div>
-                <div className="flex flex-1 flex-col gap-2 p-5">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs uppercase tracking-wider text-ink-500 font-semibold">
-                    {p.responsable && (
-                      <span className="inline-flex items-center gap-1.5">
-                        <User className="h-3.5 w-3.5" strokeWidth={2.5} />
-                        {p.responsable}
-                      </span>
-                    )}
-                    <span className="inline-flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5" strokeWidth={2.5} />
-                      {p.location || MODE_LABEL[p.mode]}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-xl text-ink-800 group-hover:text-brand-700 transition-colors">
-                    {p.title}
-                  </h3>
-                  {p.program_type && (
-                    <span className="text-xs font-bold uppercase tracking-wider text-brand-500">{p.program_type.name}</span>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
+          <WeeklySchedule programmes={items} weekStart={iso(monday)} />
         </Container>
       </section>
     </>

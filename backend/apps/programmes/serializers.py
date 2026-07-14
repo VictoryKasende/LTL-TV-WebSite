@@ -26,7 +26,7 @@ class WeeklyProgramListSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'slug',
             'date', 'start_time', 'end_time',
-            'title', 'responsable',
+            'title', 'description', 'responsable',
             'program_type', 'program_type_id',
             'mode', 'location', 'meeting_url',
             'image', 'order',

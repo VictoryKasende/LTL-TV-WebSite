@@ -17,7 +17,7 @@ export default async function ShowsGrid() {
   return (
     <section id="emissions" className="bg-paper-100 py-14 md:py-20">
       <div className="max-w-6xl mx-auto px-6 md:px-8">
-        <SectionHeading title="Émissions" href="/programmes" />
+        <SectionHeading title="Émissions" href="/emissions" />
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
           {shows.map((s) => {
@@ -47,7 +47,7 @@ export default async function ShowsGrid() {
 
         <div className="mt-10 flex justify-center">
           <Link
-            href="/programmes"
+            href="/emissions"
             className="inline-flex items-center justify-center rounded border border-ink-800 text-ink-800 font-semibold text-sm px-12 py-3.5 hover:bg-ink-800 hover:text-white transition-colors"
           >
             EN SAVOIR

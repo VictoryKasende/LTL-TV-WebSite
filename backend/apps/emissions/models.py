@@ -133,6 +133,10 @@ class Show(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
         'Animateur', max_length=200, blank=True,
         help_text='Animateur / pasteur principal.',
     )
+    host_photo = models.ImageField(
+        'Photo de l\'animateur', upload_to='emissions/shows/host/', blank=True, null=True,
+        help_text='Portrait de l\'animateur, utilisé dans les grandes cartes de la page Émissions.',
+    )
 
     cover = models.ImageField(
         'Image de couverture', upload_to='emissions/shows/cover/', blank=True, null=True,
