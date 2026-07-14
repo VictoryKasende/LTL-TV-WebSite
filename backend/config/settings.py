@@ -353,9 +353,20 @@ _vapid_private_b64 = config('VAPID_PRIVATE_KEY', default='')
 if _vapid_private_b64:
     import base64 as _b64
     try:
-        VAPID_PRIVATE_KEY = _b64.b64decode(_vapid_private_b64).decode('ascii')
+        _vapid_pem = _b64.b64decode(_vapid_private_b64).decode('ascii')
+        # pywebpush's Vapid.from_string() expects the DER form, base64url-encoded
+        # without padding — not PEM armor. Convert here so generate_vapid_keys'
+        # PEM output (human-transportable) still works at runtime.
+        from cryptography.hazmat.primitives import serialization as _ser
+        _vapid_key = _ser.load_pem_private_key(_vapid_pem.encode(), password=None)
+        _vapid_der = _vapid_key.private_bytes(
+            encoding=_ser.Encoding.DER,
+            format=_ser.PrivateFormat.PKCS8,
+            encryption_algorithm=_ser.NoEncryption(),
+        )
+        VAPID_PRIVATE_KEY = _b64.urlsafe_b64encode(_vapid_der).rstrip(b'=').decode('ascii')
     except Exception:
-        # Assume the value is already the raw PEM (test fixtures, etc.)
+        # Assume the value is already usable as-is (test fixtures, etc.)
         VAPID_PRIVATE_KEY = _vapid_private_b64
 else:
     VAPID_PRIVATE_KEY = ''

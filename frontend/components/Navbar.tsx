@@ -3,9 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Menu, X, Youtube, Instagram, Heart } from 'lucide-react';
+import { Menu, X, Heart } from 'lucide-react';
 import clsx from 'clsx';
-import { TikTokIcon, WhatsAppIcon } from './icons/SocialIcons';
 
 const links = [
   { href: '/',            label: 'Accueil' },
@@ -14,13 +13,6 @@ const links = [
   { href: '/temoignages', label: 'Témoignage' },
   { href: '/articles',    label: 'Articles' },
   { href: '/contact',     label: 'Contact' },
-];
-
-const socials = [
-  { href: 'https://youtube.com/shorts/F4RCRIVNURA?si=ab-KeblDKyKrwn-T', Icon: Youtube, label: 'YouTube' },
-  { href: 'https://www.instagram.com/reel/DZdI4f4iXxE/?igsh=MXhxbTBldGc4bGs2Zg==', Icon: Instagram, label: 'Instagram' },
-  { href: 'https://vt.tiktok.com/ZSQfEk2xa/', Icon: TikTokIcon, label: 'TikTok' },
-  { href: 'https://whatsapp.com/channel/0029VaLQDXoKLaHjRAj7m52H', Icon: WhatsAppIcon, label: 'WhatsApp' },
 ];
 
 export default function Navbar() {
@@ -77,20 +69,6 @@ export default function Navbar() {
           </nav>
 
           <div className="hidden md:flex items-center gap-4 shrink-0">
-            <div className="flex items-center gap-1.5">
-              {socials.map(({ href, Icon, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-full text-white/70 hover:text-brand-700 hover:bg-amber-400 transition-colors duration-200"
-                >
-                  <Icon className="h-4 w-4" strokeWidth={2} />
-                </a>
-              ))}
-            </div>
             <Link
               href="/contact#don"
               className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 text-brand-800 font-semibold px-4 py-2 text-sm hover:bg-amber-500 transition-colors"
@@ -133,7 +111,7 @@ export default function Navbar() {
             ))}
           </div>
 
-          <div className="px-6 pb-4">
+          <div className="px-6 pb-6 pt-2">
             <Link
               href="/contact#don"
               className="flex items-center justify-center gap-2 rounded-full bg-amber-400 text-brand-800 font-semibold px-5 py-3 text-sm hover:bg-amber-500 transition-colors"
@@ -141,21 +119,6 @@ export default function Navbar() {
               <Heart className="h-4 w-4" strokeWidth={2.5} />
               Faire un don
             </Link>
-          </div>
-
-          <div className="px-6 pb-6 pt-2 flex items-center gap-2">
-            {socials.map(({ href, Icon, label }) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={label}
-                className="h-9 w-9 inline-flex items-center justify-center rounded-full border border-white/15 text-white/70 hover:border-amber-400 hover:text-amber-400 transition-colors"
-              >
-                <Icon className="h-4 w-4" strokeWidth={2} />
-              </a>
-            ))}
           </div>
         </nav>
       </div>

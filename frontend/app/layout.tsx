@@ -3,6 +3,7 @@ import { Manrope, Anton } from 'next/font/google';
 import '../styles/globals.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import NotificationPrompt from '../components/NotificationPrompt';
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -47,6 +48,7 @@ export default function RootLayout({
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
+        <NotificationPrompt />
       </body>
     </html>
   );

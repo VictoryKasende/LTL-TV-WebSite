@@ -46,6 +46,9 @@ def send_push_to_subscription(self, subscription_id: int, payload: dict,
             data=json.dumps(payload),
             vapid_private_key=settings.VAPID_PRIVATE_KEY,
             vapid_claims={'sub': f'mailto:{settings.VAPID_EMAIL}'},
+            # pywebpush defaults to ttl=0, which WNS (Windows/Edge push) rejects
+            # with "Ttl value conflicts with X-WNS-Cache-Policy" — give it a real TTL.
+            ttl=60 * 60 * 4,
             timeout=10,
         )
     except WebPushException as e:
