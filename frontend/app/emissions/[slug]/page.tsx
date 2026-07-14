@@ -19,7 +19,7 @@ export default async function ShowDetailPage({ params }: Params) {
 
   const [series, episodesData, showsData] = await Promise.all([
     getShowSeries(params.slug),
-    getEpisodes(`?show=${params.slug}&page_size=50`),
+    getEpisodes(`?show=${params.slug}&page_size=100`),
     getShows(),
   ]);
 
