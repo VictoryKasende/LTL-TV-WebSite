@@ -41,8 +41,9 @@ class ContactMessage(TimestampedModel):
     class Category(models.TextChoices):
         TESTIMONY         = 'testimony',         'Témoignage'
         PRAYER_REQUEST    = 'prayer_request',    'Demande de prière'
-        OFFERING          = 'offering',          'Offrande / don'
         CONTENT_PROPOSAL  = 'content_proposal',  'Proposition de contenu'
+        OFFER             = 'offer',             'Offre'
+        DONATION          = 'offering',          'Don'
         BIBLICAL_QUESTION = 'biblical_question', 'Question biblique'
         FEEDBACK          = 'feedback',          'Feedback sur LTL·TV'
         OTHER             = 'other',             'Autre'
@@ -59,6 +60,10 @@ class ContactMessage(TimestampedModel):
     phone = models.CharField('Téléphone', max_length=32, blank=True)
     subject = models.CharField('Sujet', max_length=200, blank=True)
     message = models.TextField('Message')
+    country = models.CharField(
+        'Pays', max_length=80, blank=True,
+        help_text='Pays de l\'expéditeur (facultatif).',
+    )
 
     # --- Team classification --------------------------------------
     category = models.CharField(

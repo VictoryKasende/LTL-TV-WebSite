@@ -24,7 +24,7 @@ class ContactMessageAdmin(HistoryAdmin):
         'assigned_to', 'created_at',
     )
     list_filter = ('status', 'priority', 'category', 'assigned_to')
-    search_fields = ('name', 'email', 'phone', 'subject', 'message')
+    search_fields = ('name', 'email', 'phone', 'subject', 'message', 'country')
     autocomplete_fields = ('assigned_to', 'handled_by')
     readonly_fields = (
         'submitted_ip', 'submitted_user_agent', 'referrer',
@@ -34,7 +34,7 @@ class ContactMessageAdmin(HistoryAdmin):
     ordering = ('-created_at',)
     date_hierarchy = 'created_at'
     fieldsets = (
-        ('Expéditeur', {'fields': ('name', 'email', 'phone')}),
+        ('Expéditeur', {'fields': ('name', 'email', 'phone', 'country')}),
         ('Message', {'fields': ('subject', 'message')}),
         ('Classement', {'fields': ('category', 'priority', 'status')}),
         ('Attribution', {

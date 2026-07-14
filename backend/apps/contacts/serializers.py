@@ -22,7 +22,7 @@ class ContactSubmissionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ContactMessage
-        fields = ('name', 'email', 'phone', 'subject', 'message', 'category', 'hp_field')
+        fields = ('name', 'email', 'phone', 'subject', 'message', 'category', 'country', 'hp_field')
 
     def validate(self, attrs):
         attrs.pop('hp_field', None)  # never persisted
@@ -51,7 +51,7 @@ class ContactAdminSerializer(serializers.ModelSerializer):
         model = ContactMessage
         fields = (
             'id',
-            'name', 'email', 'phone', 'subject', 'message',
+            'name', 'email', 'phone', 'subject', 'message', 'country',
             'category', 'priority', 'status',
             'assigned_to', 'assigned_to_name', 'internal_notes',
             'read_at', 'handled_at', 'handled_by', 'handled_by_name',
