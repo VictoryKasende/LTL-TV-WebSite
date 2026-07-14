@@ -15,6 +15,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='change-me-in-production')
 DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+# The frontend's SSR fetches hit the backend over the internal Docker network
+# using the service name below (see frontend `INTERNAL_API_URL` /
+# `NEXT_PUBLIC_API_URL`) — that Host header must be allowed regardless of what
+# public domains are configured via ALLOWED_HOSTS, or every server-rendered
+# page silently loses its data (DisallowedHost -> 400 -> apiGet() -> None).
+if 'backend' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('backend')
 
 # Hard fail if we boot in production with the placeholder secret.
 if not DEBUG and SECRET_KEY == 'change-me-in-production':
