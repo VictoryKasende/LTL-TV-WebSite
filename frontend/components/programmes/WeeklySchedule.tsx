@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import type { Programme } from '../../lib/api';
 
 function addDays(iso: string, n: number): string {
@@ -51,16 +52,20 @@ export default function WeeklySchedule({
           <p className="p-10 text-center text-ink-500">Aucun programme prévu ce jour.</p>
         )}
         {items.map((p) => (
-          <div key={p.id} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
+          <Link
+            key={p.id}
+            href={`/programmes/${p.slug}`}
+            className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 hover:bg-paper-100 transition-colors"
+          >
             <div className="w-11 sm:w-14 shrink-0 text-xs sm:text-sm font-bold text-ink-800">
               {p.start_time.slice(0, 5)}
             </div>
             <div
               className="w-16 h-11 sm:w-24 sm:h-16 shrink-0 rounded overflow-hidden bg-paper-200"
-              style={{ background: p.image ? undefined : (p.program_type?.color ?? '#3D53EA') }}
+              style={{ background: p.thumbnail_url ? undefined : (p.program_type?.color ?? '#3D53EA') }}
             >
-              {p.image && (
-                <img src={p.image} alt={p.title} className="h-full w-full object-cover" />
+              {p.thumbnail_url && (
+                <img src={p.thumbnail_url} alt={p.title} className="h-full w-full object-cover" />
               )}
             </div>
             <div className="min-w-0">
@@ -71,7 +76,7 @@ export default function WeeklySchedule({
                 {p.description || [p.program_type?.name, p.responsable].filter(Boolean).join(' — ')}
               </p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

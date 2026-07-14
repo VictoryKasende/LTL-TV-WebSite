@@ -17,6 +17,7 @@ from apps.common.models import (
     SluggedModel,
     TimestampedModel,
 )
+from apps.emissions.youtube import extract_youtube_id, youtube_embed_url, youtube_thumbnail_url
 
 
 class ProgramType(TimestampedModel, SluggedModel):
@@ -132,7 +133,17 @@ class WeeklyProgram(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
     # --- Media ------------------------------------------------------
     image = models.ImageField(
         'Image', upload_to='programmes/', blank=True, null=True,
-        help_text='Bannière du programme (16:9 recommandé).',
+        help_text='Bannière du programme (16:9 recommandé). '
+                  'Laissez vide pour utiliser la miniature de la vidéo YouTube.',
+    )
+    youtube_url = models.URLField(
+        'URL YouTube', blank=True,
+        help_text='Lien de la vidéo YouTube associée (optionnel). '
+                  'Sa miniature sert de couverture si aucune image n\'est fournie.',
+    )
+    youtube_id = models.CharField(
+        'ID YouTube', max_length=20, blank=True, db_index=True,
+        help_text='Auto-extrait de l\'URL.',
     )
 
     # --- Ordering within a day ------------------------------------
@@ -157,6 +168,21 @@ class WeeklyProgram(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
 
     def __str__(self) -> str:
         return f'{self.date:%Y-%m-%d} · {self.start_time:%H:%M} · {self.title}'
+
+    def save(self, *args, **kwargs):
+        if self.youtube_url and not self.youtube_id:
+            self.youtube_id = extract_youtube_id(self.youtube_url) or ''
+        super().save(*args, **kwargs)
+
+    @property
+    def thumbnail_url(self) -> str:
+        if self.image:
+            return self.image.url
+        return youtube_thumbnail_url(self.youtube_id)
+
+    @property
+    def embed_url(self) -> str:
+        return youtube_embed_url(self.youtube_id)
 
     @property
     def is_upcoming(self) -> bool:

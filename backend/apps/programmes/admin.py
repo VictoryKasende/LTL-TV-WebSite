@@ -40,7 +40,7 @@ class WeeklyProgramAdmin(PublishAdminMixin, HistoryAdmin):
     prepopulated_fields = {'slug': ('title',)}
     autocomplete_fields = ('program_type',)
     date_hierarchy = 'date'
-    readonly_fields = ('image_preview',)
+    readonly_fields = ('youtube_id', 'image_preview')
     ordering = ('-date', 'start_time', 'order')
     fieldsets = (
         ('Planning', {
@@ -53,7 +53,7 @@ class WeeklyProgramAdmin(PublishAdminMixin, HistoryAdmin):
             'fields': ('mode', 'location', 'address', 'latitude', 'longitude',
                        'meeting_url'),
         }),
-        ('Média', {'fields': ('image', 'image_preview')}),
+        ('Média', {'fields': ('image', 'youtube_url', 'youtube_id', 'image_preview')}),
         ('Publication', {
             'fields': ('status', 'published_at', 'is_featured'),
         }),
@@ -65,9 +65,9 @@ class WeeklyProgramAdmin(PublishAdminMixin, HistoryAdmin):
 
     @admin.display(description='Aperçu')
     def image_preview(self, obj: WeeklyProgram | None) -> str:
-        if not obj or not obj.image:
+        if not obj or not obj.thumbnail_url:
             return '—'
         return format_html(
             '<img src="{}" style="max-width:200px;border-radius:6px" />',
-            obj.image.url,
+            obj.thumbnail_url,
         )

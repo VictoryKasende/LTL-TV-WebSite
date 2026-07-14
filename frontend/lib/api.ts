@@ -166,6 +166,10 @@ export type Programme = {
   location: string;
   meeting_url: string;
   image: string | null;
+  youtube_url: string;
+  youtube_id: string;
+  thumbnail_url: string;
+  embed_url: string;
   order: number;
   status: string;
   published_at: string | null;

@@ -20,6 +20,8 @@ class WeeklyProgramListSerializer(serializers.ModelSerializer):
     )
     is_upcoming = serializers.BooleanField(read_only=True)
     is_online_accessible = serializers.BooleanField(read_only=True)
+    thumbnail_url = serializers.CharField(read_only=True)
+    embed_url = serializers.CharField(read_only=True)
 
     class Meta:
         model = WeeklyProgram
@@ -29,11 +31,14 @@ class WeeklyProgramListSerializer(serializers.ModelSerializer):
             'title', 'description', 'responsable',
             'program_type', 'program_type_id',
             'mode', 'location', 'meeting_url',
-            'image', 'order',
+            'image', 'youtube_url', 'youtube_id', 'thumbnail_url', 'embed_url', 'order',
             'status', 'published_at', 'is_featured',
             'is_upcoming', 'is_online_accessible',
         )
-        read_only_fields = ('id', 'slug', 'is_upcoming', 'is_online_accessible')
+        read_only_fields = (
+            'id', 'slug', 'youtube_id', 'thumbnail_url', 'embed_url',
+            'is_upcoming', 'is_online_accessible',
+        )
 
 
 class WeeklyProgramDetailSerializer(WeeklyProgramListSerializer):
