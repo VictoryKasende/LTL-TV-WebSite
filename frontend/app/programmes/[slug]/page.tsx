@@ -17,7 +17,17 @@ const fmtTime = (t: string) => t?.slice(0, 5) ?? '';
 export async function generateMetadata({ params }: Params) {
   const programme = await apiGet<Programme>(`/programmes/${params.slug}/`);
   if (!programme) return { title: 'Programme introuvable' };
-  return { title: programme.title, description: programme.description || `Programme ${programme.title} sur LTL TV.` };
+  const description = programme.description || `Programme ${programme.title} sur LTL TV.`;
+  return {
+    title: programme.title,
+    description,
+    alternates: { canonical: `/programmes/${programme.slug}` },
+    openGraph: {
+      title: programme.title,
+      description,
+      images: programme.image ? [{ url: programme.image }] : undefined,
+    },
+  };
 }
 
 export default async function ProgrammeDetailPage({ params }: Params) {

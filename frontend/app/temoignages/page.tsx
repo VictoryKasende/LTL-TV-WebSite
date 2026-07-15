@@ -8,6 +8,7 @@ export const revalidate = 60;
 export const metadata = {
   title: 'Témoignage',
   description: 'Des histoires vraies, des vies transformées. Écoutez et partagez à votre tour.',
+  alternates: { canonical: '/temoignages' },
 };
 
 function initials(name: string) {

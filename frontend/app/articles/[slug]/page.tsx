@@ -11,7 +11,19 @@ type Params = { params: { slug: string } };
 export async function generateMetadata({ params }: Params) {
   const article = await apiGet<Article>(`/articles/${params.slug}/`);
   if (!article) return { title: 'Article introuvable' };
-  return { title: article.title, description: article.excerpt };
+  return {
+    title: article.title,
+    description: article.excerpt,
+    alternates: { canonical: `/articles/${article.slug}` },
+    openGraph: {
+      title: article.title,
+      description: article.excerpt,
+      type: 'article',
+      publishedTime: article.published_at ?? undefined,
+      authors: article.author?.display_name ? [article.author.display_name] : undefined,
+      images: article.cover ? [{ url: article.cover }] : undefined,
+    },
+  };
 }
 
 const fmt = (iso: string | null) => {
@@ -26,6 +38,28 @@ export default async function ArticleDetailPage({ params }: Params) {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            headline: article.title,
+            description: article.excerpt,
+            image: article.cover ? [article.cover] : undefined,
+            datePublished: article.published_at ?? undefined,
+            author: article.author?.display_name
+              ? { '@type': 'Person', name: article.author.display_name }
+              : undefined,
+            publisher: {
+              '@type': 'Organization',
+              name: 'LTL TV',
+              logo: { '@type': 'ImageObject', url: 'https://ltltv.com/notification-icon-512.png' },
+            },
+            mainEntityOfPage: { '@type': 'WebPage', '@id': `https://ltltv.com/articles/${article.slug}` },
+          }),
+        }}
+      />
       <section
         className="relative pt-16 pb-14 md:pt-20 md:pb-16 overflow-hidden text-white"
         style={{ background: article.cover ? undefined : 'linear-gradient(180deg, #212870 0%, #141640 100%)' }}

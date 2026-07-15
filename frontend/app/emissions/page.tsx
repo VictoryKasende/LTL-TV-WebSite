@@ -8,6 +8,7 @@ export const revalidate = 300;
 export const metadata = {
   title: 'Émissions',
   description: 'Toutes les émissions LTL·TV : animateurs, thèmes et horaires.',
+  alternates: { canonical: '/emissions' },
 };
 
 function ShowCard({ show }: { show: Show }) {

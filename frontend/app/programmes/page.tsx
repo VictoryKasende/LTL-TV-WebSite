@@ -8,6 +8,7 @@ export const revalidate = 60;
 export const metadata = {
   title: 'Grille TV',
   description: 'La grille complète des programmes LTL TV : émissions, animateurs et horaires.',
+  alternates: { canonical: '/programmes' },
 };
 
 function mondayOf(d: Date): Date {

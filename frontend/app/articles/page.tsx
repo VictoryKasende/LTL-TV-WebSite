@@ -8,6 +8,7 @@ export const revalidate = 60;
 export const metadata = {
   title: 'Articles',
   description: 'Réflexions, portraits et actualités par la rédaction de LTL TV.',
+  alternates: { canonical: '/articles' },
 };
 
 const fmt = (iso: string | null) => {

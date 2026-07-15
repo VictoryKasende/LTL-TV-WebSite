@@ -4,10 +4,21 @@ import { getAboutPage, getTeam, getValues, type TeamMember } from '../../lib/api
 
 export const revalidate = 300;
 
-export const metadata = {
-  title: 'À propos',
-  description: 'Vision, mission, valeurs, histoire et équipe de LTL·TV.',
-};
+export async function generateMetadata() {
+  const about = await getAboutPage();
+  const title = about?.meta_title || 'À propos';
+  const description = about?.meta_description || 'Vision, mission, valeurs, histoire et équipe de LTL·TV.';
+  return {
+    title,
+    description,
+    alternates: { canonical: about?.canonical_url || '/a-propos' },
+    openGraph: {
+      title,
+      description,
+      images: (about?.og_image || about?.cover) ? [{ url: (about.og_image || about.cover) as string }] : undefined,
+    },
+  };
+}
 
 const CATEGORY_ORDER: TeamMember['category'][] = [
   'direction', 'coordination', 'pastorale', 'production', 'technique', 'communication', 'benevole',

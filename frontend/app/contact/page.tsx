@@ -5,6 +5,7 @@ import ContactForm from '../../components/ContactForm';
 export const metadata = {
   title: 'Contact',
   description: 'Écrivez à l\'équipe LTL TV.',
+  alternates: { canonical: '/contact' },
 };
 
 export default function ContactPage() {

@@ -10,7 +10,19 @@ type Params = { params: { slug: string } };
 export async function generateMetadata({ params }: Params) {
   const show = await getShow(params.slug);
   if (!show) return { title: 'Émission introuvable' };
-  return { title: show.title, description: show.tagline || `${show.title} sur LTL·TV.` };
+  const title = show.meta_title || show.title;
+  const description = show.meta_description || show.tagline || `${show.title} sur LTL·TV.`;
+  const image = show.og_image || show.cover;
+  return {
+    title,
+    description,
+    alternates: { canonical: show.canonical_url || `/emissions/${show.slug}` },
+    openGraph: {
+      title,
+      description,
+      images: image ? [{ url: image }] : undefined,
+    },
+  };
 }
 
 export default async function ShowDetailPage({ params }: Params) {
