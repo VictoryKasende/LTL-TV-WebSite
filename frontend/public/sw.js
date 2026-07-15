@@ -17,8 +17,10 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'LTL TV';
   const options = {
     body: data.body || '',
-    icon: data.icon || '/notification-icon.svg',
-    badge: '/notification-icon.svg',
+    // Android Chrome can't rasterize SVG for notification icons — falls back to
+    // a blank circle. Use PNG here; the SVG stays as the favicon source.
+    icon: data.icon || '/notification-icon-512.png',
+    badge: '/notification-icon-192.png',
     image: data.image || undefined,
     data: { url: data.url || '/', campaignId: data.campaign_id || null },
   };
