@@ -4,7 +4,7 @@ import { getArticles, getProgrammes, getShows } from '../lib/api';
 // The backend isn't reachable during the isolated `docker build` stage, so the
 // build-time render of this route sees empty data. Revalidate so the first
 // real request (once the container is running, network reachable) refreshes it.
-export const revalidate = 3600;
+export const revalidate = 5;
 
 const BASE_URL = 'https://ltltv.com';
 
