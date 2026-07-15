@@ -43,6 +43,8 @@ const config: Config = {
           400: '#F5C24E',
           500: '#F5A623',
         },
+        cream: '#FBF6EE', // warm wall background (témoignages)
+        terracotta: '#E2711D', // avatar gradient accent (témoignages)
       },
       fontFamily: {
         sans: ['var(--font-manrope)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
@@ -73,9 +75,15 @@ const config: Config = {
           '0%, 100%': { opacity: '1', transform: 'scale(1)' },
           '50%':      { opacity: '0.4', transform: 'scale(0.85)' },
         },
+        marquee: {
+          '0%':   { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
       },
       animation: {
         'pulse-dot': 'pulse-dot 1.6s ease-in-out infinite',
+        'marquee-slow': 'marquee 52s linear infinite',
+        'marquee-fast': 'marquee 38s linear infinite reverse',
       },
     },
   },

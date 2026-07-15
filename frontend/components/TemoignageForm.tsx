@@ -36,7 +36,7 @@ export default function TemoignageForm() {
 
   if (status === 'success') {
     return (
-      <div className="rounded-lg bg-brand-50 border border-brand-500/40 p-8 text-center">
+      <div className="rounded-xl bg-white border border-paper-200 shadow-card p-8 text-center">
         <CheckCircle2 className="h-10 w-10 text-brand-500 mx-auto mb-3" strokeWidth={1.5} />
         <p className="text-xl font-bold text-brand-700">Merci d'avoir partagé.</p>
         <p className="mt-2 text-ink-500 leading-relaxed">
@@ -55,32 +55,34 @@ export default function TemoignageForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <form
+      onSubmit={onSubmit}
+      className="rounded-xl bg-white border border-paper-200 shadow-card p-6 md:p-8"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
         <Field label="Votre prénom / nom" name="author" required placeholder="Sarah M." />
         <Field label="Votre ville (optionnel)" name="location" placeholder="Kinshasa" />
       </div>
       <Field label="Votre témoignage" name="message" required as="textarea" rows={7} placeholder="Partagez votre histoire…" />
 
       {status === 'error' && (
-        <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">
+        <div className="mt-5 flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {message}
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={status === 'submitting'}
-        className="inline-flex items-center gap-2 rounded bg-brand-500 text-white font-semibold px-8 py-3.5 hover:bg-brand-600 transition-colors disabled:opacity-60 disabled:cursor-wait"
-      >
-        <Send className="h-4 w-4" strokeWidth={2} />
-        {status === 'submitting' ? 'Envoi en cours…' : 'Envoyer mon témoignage'}
-      </button>
-
-      <p className="text-xs text-ink-500">
-        Votre message sera relu par notre équipe avant diffusion.
-      </p>
+      <div className="mt-6 flex items-center justify-between gap-4 flex-wrap">
+        <button
+          type="submit"
+          disabled={status === 'submitting'}
+          className="inline-flex items-center gap-2 rounded-full bg-brand-700 text-white font-semibold px-7 py-3 text-sm hover:bg-brand-600 transition-colors disabled:opacity-60 disabled:cursor-wait"
+        >
+          <Send className="h-4 w-4" strokeWidth={2} />
+          {status === 'submitting' ? 'Envoi en cours…' : 'Envoyer mon témoignage'}
+        </button>
+        <p className="text-xs text-ink-400">Relu avant diffusion.</p>
+      </div>
     </form>
   );
 }
@@ -91,7 +93,9 @@ function Field({
   label: string; name: string; required?: boolean; placeholder?: string;
   as?: 'textarea'; rows?: number;
 }) {
-  const cls = 'w-full rounded border border-paper-300 bg-white px-4 py-3 text-ink-800 placeholder:text-ink-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors';
+  const cls = as === 'textarea'
+    ? 'w-full rounded-lg border border-dashed border-paper-300 bg-paper-50 px-4 py-3 text-ink-800 placeholder:text-ink-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-colors leading-relaxed'
+    : 'w-full rounded-lg border border-paper-300 bg-white px-4 py-3 text-ink-800 placeholder:text-ink-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors';
   return (
     <label className="block">
       <span className="block text-sm font-semibold text-ink-800 mb-1.5">
