@@ -1,9 +1,10 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Manrope, Anton } from 'next/font/google';
 import '../styles/globals.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import NotificationPrompt from '../components/NotificationPrompt';
+import PwaServiceWorker from '../components/PwaServiceWorker';
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -35,6 +36,15 @@ export const metadata: Metadata = {
     locale: 'fr_FR',
     type: 'website',
   },
+  appleWebApp: {
+    capable: true,
+    title: 'LTL TV',
+    statusBarStyle: 'black-translucent',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#212870',
 };
 
 export default function RootLayout({
@@ -48,6 +58,7 @@ export default function RootLayout({
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
+        <PwaServiceWorker />
         <NotificationPrompt />
       </body>
     </html>
