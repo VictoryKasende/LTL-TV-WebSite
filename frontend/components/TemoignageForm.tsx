@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import Spinner from './ui/Spinner';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -78,7 +79,7 @@ export default function TemoignageForm() {
           disabled={status === 'submitting'}
           className="inline-flex items-center gap-2 rounded-full bg-brand-700 text-white font-semibold px-7 py-3 text-sm hover:bg-brand-600 transition-colors disabled:opacity-60 disabled:cursor-wait"
         >
-          <Send className="h-4 w-4" strokeWidth={2} />
+          {status === 'submitting' ? <Spinner size="sm" className="text-white" /> : <Send className="h-4 w-4" strokeWidth={2} />}
           {status === 'submitting' ? 'Envoi en cours…' : 'Envoyer mon témoignage'}
         </button>
         <p className="text-xs text-ink-400">Relu avant diffusion.</p>

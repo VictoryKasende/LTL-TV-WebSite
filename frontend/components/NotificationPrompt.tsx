@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Bell, X } from 'lucide-react';
 import clsx from 'clsx';
+import Spinner from './ui/Spinner';
 
 function urlBase64ToUint8Array(base64Url: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64Url.length % 4)) % 4);
@@ -108,8 +109,9 @@ export default function NotificationPrompt() {
           type="button"
           onClick={accept}
           disabled={busy}
-          className="text-sm font-semibold rounded-full bg-brand-700 text-white px-4 py-2 hover:bg-brand-800 transition-colors disabled:opacity-60 disabled:cursor-wait"
+          className="inline-flex items-center gap-2 text-sm font-semibold rounded-full bg-brand-700 text-white px-4 py-2 hover:bg-brand-800 transition-colors disabled:opacity-60 disabled:cursor-wait"
         >
+          {busy && <Spinner size="sm" className="text-white" />}
           {busy ? 'Activation…' : 'Activer'}
         </button>
       </div>

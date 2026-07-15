@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Play, ChevronDown, ChevronRight, ChevronLeft, Calendar, User } from 'lucide-react';
 import type { Episode, Series, Show } from '../../lib/api';
+import VideoEmbed from '../VideoEmbed';
 
 type SortOrder = 'recent' | 'oldest' | 'popular' | 'published';
 
@@ -160,13 +161,7 @@ export default function ShowDetailClient({
 
       <div className="relative h-56 sm:h-80 md:h-96 overflow-hidden" style={{ backgroundColor: show.color }}>
         {isPlaying && playing?.embed_url ? (
-          <iframe
-            src={`${playing.embed_url}?autoplay=1`}
-            title={playing.title}
-            allow="autoplay; encrypted-media; picture-in-picture"
-            allowFullScreen
-            className="absolute inset-0 h-full w-full"
-          />
+          <VideoEmbed key={playing.id} src={`${playing.embed_url}?autoplay=1`} title={playing.title} />
         ) : (
           <>
             {heroImage && (

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Clock, User, ArrowLeft, Radio, MapPin } from 'lucide-react';
 import Container from '../../../components/ui/Container';
+import VideoEmbed from '../../../components/VideoEmbed';
 import { apiGet, type Programme } from '../../../lib/api';
 
 export const revalidate = 60;
@@ -48,13 +49,7 @@ export default async function ProgrammeDetailPage({ params }: Params) {
       <div className="bg-ink-900">
         <div className="relative bg-brand-900 aspect-video w-full max-w-6xl mx-auto">
           {programme.embed_url ? (
-            <iframe
-              src={`${programme.embed_url}?autoplay=1`}
-              title={programme.title}
-              allow="autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-              className="absolute inset-0 h-full w-full"
-            />
+            <VideoEmbed src={`${programme.embed_url}?autoplay=1`} title={programme.title} />
           ) : (
             <>
               {programme.thumbnail_url && (
