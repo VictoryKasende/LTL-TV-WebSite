@@ -9,7 +9,7 @@ const INTERNAL_API_URL = process.env.INTERNAL_API_URL || 'http://backend:8000';
 // left untouched.
 const INTERNAL_ORIGIN_RE = new RegExp(`^${INTERNAL_API_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
 
-function fixMediaUrls<T>(data: T): T {
+export function fixMediaUrls<T>(data: T): T {
   if (typeof data === 'string') {
     return data.replace(INTERNAL_ORIGIN_RE, '') as unknown as T;
   }
@@ -28,16 +28,30 @@ function fixMediaUrls<T>(data: T): T {
 
 type FetchOpts = { revalidate?: number };
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Retries only transient failures (network errors, 5xx) — never a clean 404/400,
+// which is a legitimate "not found" and should return null immediately.
+//
+// Without this, a backend blip during ISR regeneration (e.g. a container
+// restart) gets cached by Next as if it were a real empty result, and stays
+// that way for the full `revalidate` window until the next visitor happens
+// to trigger a regeneration that succeeds.
+const RETRY_DELAYS_MS = [150, 400];
+
 export async function apiGet<T>(path: string, opts: FetchOpts = {}): Promise<T | null> {
-  try {
-    const res = await fetch(`${INTERNAL_API_URL}/api/v1${path}`, {
-      next: { revalidate: opts.revalidate ?? 60 },
-      headers: { Accept: 'application/json' },
-    });
-    if (!res.ok) return null;
-    return fixMediaUrls((await res.json()) as T);
-  } catch {
-    return null;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetch(`${INTERNAL_API_URL}/api/v1${path}`, {
+        next: { revalidate: opts.revalidate ?? 60 },
+        headers: { Accept: 'application/json' },
+      });
+      if (res.ok) return fixMediaUrls((await res.json()) as T);
+      if (res.status < 500 || attempt >= RETRY_DELAYS_MS.length) return null;
+    } catch {
+      if (attempt >= RETRY_DELAYS_MS.length) return null;
+    }
+    await sleep(RETRY_DELAYS_MS[attempt]);
   }
 }
 

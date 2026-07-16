@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import type { Programme } from '../../lib/api';
+import Spinner from '../ui/Spinner';
+import { useResilientData } from '../../lib/useResilientData';
+import type { Paginated, Programme } from '../../lib/api';
 
 function addDays(iso: string, n: number): string {
   const d = new Date(`${iso}T00:00:00`);
@@ -11,9 +13,15 @@ function addDays(iso: string, n: number): string {
 }
 
 export default function WeeklySchedule({
-  programmes, weekStart,
-}: { programmes: Programme[]; weekStart: string }) {
+  initialData, weekStart,
+}: { initialData: Paginated<Programme> | null; weekStart: string }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const weekEnd = days[days.length - 1];
+  const { data, retrying } = useResilientData(
+    initialData,
+    `/api/v1/programmes/?date_from=${weekStart}&date_to=${weekEnd}&ordering=date,start_time&page_size=100`,
+  );
+  const programmes = data?.results ?? [];
   const todayIso = new Date().toISOString().slice(0, 10);
   const [selected, setSelected] = useState(days.includes(todayIso) ? todayIso : days[0]);
 
@@ -48,7 +56,13 @@ export default function WeeklySchedule({
       </div>
 
       <div className="bg-white max-h-[560px] overflow-y-auto divide-y divide-paper-200">
-        {items.length === 0 && (
+        {items.length === 0 && programmes.length === 0 && retrying && (
+          <div className="p-10 flex items-center justify-center gap-3 text-ink-500">
+            <Spinner size="sm" className="text-brand-500" />
+            Chargement…
+          </div>
+        )}
+        {items.length === 0 && !(programmes.length === 0 && retrying) && (
           <p className="p-10 text-center text-ink-500">Aucun programme prévu ce jour.</p>
         )}
         {items.map((p) => (

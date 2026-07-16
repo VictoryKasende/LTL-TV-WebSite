@@ -29,7 +29,6 @@ export default async function ProgrammesPage() {
   const data = await getProgrammes(
     `?date_from=${iso(monday)}&date_to=${iso(sunday)}&ordering=date,start_time&page_size=100`,
   );
-  const items = data?.results ?? [];
 
   return (
     <>
@@ -52,7 +51,7 @@ export default async function ProgrammesPage() {
 
       <section className="bg-paper-100 py-14 md:py-20">
         <Container>
-          <WeeklySchedule programmes={items} weekStart={iso(monday)} />
+          <WeeklySchedule initialData={data} weekStart={iso(monday)} />
         </Container>
       </section>
     </>
