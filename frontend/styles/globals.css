@@ -68,19 +68,30 @@
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
   .prose-editorial {
-    font-size: 1.0625rem;
-    line-height: 1.75;
+    font-size: 1.15rem;
+    line-height: 1.8;
     color: #2C2C2C;
+    max-width: 44rem;
   }
-  .prose-editorial p { margin-bottom: 1.15em; }
+  .prose-editorial p { margin-bottom: 1.3em; }
   .prose-editorial h2 { font-weight: 700; font-size: 1.75rem; margin: 1.8em 0 0.6em; letter-spacing: -0.01em; color: #212870; }
   .prose-editorial h3 { font-weight: 700; font-size: 1.35rem; margin: 1.5em 0 0.5em; letter-spacing: -0.005em; color: #212870; }
   .prose-editorial a  { color: #3D53EA; text-decoration: underline; text-underline-offset: 3px; }
   .prose-editorial blockquote {
-    border-left: 3px solid #3D53EA;
+    border-left: 3px solid #F5A623;
     padding-left: 1.25em;
     color: #212870;
-    font-weight: 500;
-    margin: 1.5em 0;
+    font-style: italic;
+    font-size: 1.15em;
+    margin: 1.8em 0;
+  }
+  /* Drop cap on the article's opening paragraph */
+  .prose-editorial > p:first-child::first-letter {
+    font-family: var(--font-anton), Impact, sans-serif;
+    float: left;
+    font-size: 3.4rem;
+    line-height: 0.82;
+    padding: 0.1rem 0.5rem 0 0;
+    color: #212870;
   }
 }
