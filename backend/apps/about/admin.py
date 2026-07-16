@@ -10,17 +10,18 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.html import format_html
 
-from apps.common.admin import BaseAdmin, HistoryAdmin
+from apps.common.admin import BaseAdmin, HistoryAdmin, SeoFieldsetAdminMixin
+from apps.common.permissions import is_full_site_admin
 
 from .models import AboutPage, CoreValue, TeamMember
 
 
 @admin.register(AboutPage)
-class AboutPageAdmin(HistoryAdmin):
+class AboutPageAdmin(SeoFieldsetAdminMixin, HistoryAdmin):
     fieldsets = (
         ('Mission & vision', {'fields': ('mission', 'vision')}),
         ('Histoire', {'fields': ('history_text', 'founded_year', 'cover')}),
-        ('SEO', {
+        ('Référencement Google (optionnel)', {
             'classes': ('collapse',),
             'fields': ('meta_title', 'meta_description', 'og_image', 'canonical_url'),
         }),
@@ -43,6 +44,16 @@ class CoreValueAdmin(BaseAdmin):
     list_editable = ('order',)
     search_fields = ('title', 'description')
     ordering = ('order', 'title')
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        # The real help text names the lucide-react icon library — only
+        # meaningful to whoever built the frontend. Everyone else just
+        # needs to know it's optional.
+        icon_field = form.base_fields.get('icon')
+        if icon_field and not is_full_site_admin(request.user):
+            icon_field.help_text = 'Facultatif — laisse vide si tu ne sais pas quoi mettre.'
+        return form
 
 
 @admin.register(TeamMember)

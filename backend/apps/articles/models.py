@@ -1,8 +1,10 @@
 """Articles CMS.
 
-Editor writes Markdown in ``content_md``; the ``save()`` hook renders it
-to ``content_html`` once, so read endpoints don't re-render on every hit.
-Reading time is computed from the source markdown at the same time.
+Editor writes rich text (WYSIWYG, see ``ArticleAdmin``) in ``content_md``,
+which despite the name holds HTML directly — not Markdown. The ``save()``
+hook mirrors it into ``content_html`` (kept as a distinct field so the
+public read API's shape doesn't change) and computes reading time /
+auto-excerpt from the plain-text version at the same time.
 """
 from __future__ import annotations
 
@@ -11,6 +13,7 @@ from math import ceil
 from django.conf import settings
 from django.db import models
 from django.db.models import Count, F, Q
+from django.utils.html import strip_tags
 from simple_history.models import HistoricalRecords
 from taggit.managers import TaggableManager
 
@@ -20,21 +23,6 @@ from apps.common.models import (
     SluggedModel,
     TimestampedModel,
 )
-
-
-def _render_markdown(text: str) -> str:
-    """Isolate the markdown call so tests can patch it if needed."""
-    if not text:
-        return ''
-    import markdown as _md
-    return _md.markdown(
-        text,
-        extensions=[
-            'fenced_code', 'tables', 'footnotes', 'toc', 'attr_list',
-            'sane_lists', 'nl2br',
-        ],
-        output_format='html5',
-    )
 
 
 class Category(TimestampedModel, SluggedModel):
@@ -85,12 +73,12 @@ class Article(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
                   'le contenu si laissé vide.',
     )
     content_md = models.TextField(
-        'Contenu (Markdown)',
-        help_text='Rédigez votre article en Markdown. Le HTML est généré automatiquement.',
+        'Contenu',
+        help_text='Le corps de l\'article.',
     )
     content_html = models.TextField(
         'Contenu HTML (auto)', blank=True, editable=False,
-        help_text='HTML rendu depuis le Markdown. Auto-généré à la sauvegarde.',
+        help_text='Copie du contenu ci-dessus, générée automatiquement à la sauvegarde.',
     )
     reading_time_minutes = models.PositiveIntegerField(
         'Temps de lecture (min)', default=0, editable=False,
@@ -123,12 +111,13 @@ class Article(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
 
     # --- SEO extras (on top of SeoMixin) -------------------------
     focus_keyword = models.CharField(
-        'Mot-clé principal (SEO)', max_length=80, blank=True,
-        help_text='Mot-clé cible pour le référencement.',
+        'Mot-clé principal pour Google', max_length=80, blank=True,
+        help_text="Le mot ou l'expression que les gens pourraient taper dans Google "
+                  "pour trouver cet article. Optionnel.",
     )
     no_index = models.BooleanField(
-        'Ne pas indexer', default=False,
-        help_text='Cochez pour empêcher l\'indexation par Google et autres moteurs.',
+        'Cacher cette page à Google', default=False,
+        help_text='Cochez pour empêcher Google et les autres moteurs de recherche d\'afficher cette page.',
     )
 
     # --- Stats ---------------------------------------------------
@@ -150,19 +139,18 @@ class Article(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
         return self.title
 
     def save(self, *args, **kwargs):
-        # Auto-render markdown → HTML + compute reading time.
+        # Mirror the WYSIWYG HTML + compute reading time from its plain text.
         if self.content_md:
-            self.content_html = _render_markdown(self.content_md)
-            word_count = len(self.content_md.split())
+            self.content_html = self.content_md
+            word_count = len(strip_tags(self.content_md).split())
             self.reading_time_minutes = max(1, ceil(word_count / 200))
         else:
             self.content_html = ''
             self.reading_time_minutes = 0
 
-        # Auto-truncate excerpt from markdown if empty.
+        # Auto-truncate excerpt from the content if empty.
         if not self.excerpt and self.content_md:
-            plain = self.content_md.replace('#', '').replace('*', '').replace('`', '')
-            plain = ' '.join(plain.split())
+            plain = ' '.join(strip_tags(self.content_md).split())
             self.excerpt = plain[:277].rstrip() + ('…' if len(plain) > 280 else '')
 
         super().save(*args, **kwargs)

@@ -3,14 +3,25 @@ from __future__ import annotations
 
 from django.contrib import admin
 from django.utils.html import format_html
+from unfold.contrib.forms.widgets import WysiwygWidget
 
-from apps.common.admin import BaseAdmin, HistoryAdmin, PublishAdminMixin
+from apps.common.admin import (
+    BaseAdmin,
+    HiddenFieldsAdminMixin,
+    HistoryAdmin,
+    PublishAdminMixin,
+    SeoFieldsetAdminMixin,
+)
+from apps.common.permissions import is_full_site_admin
 
 from .models import Article, Category
 
 
 @admin.register(Category)
-class CategoryAdmin(BaseAdmin):
+class CategoryAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, BaseAdmin):
+    # Slug (auto-généré), couleur et icône (nom technique lucide-react)
+    # réservés à l'Admin — mêmes raisons que emissions.Category.
+    admin_only_fields = ('slug', 'color', 'icon')
     list_display = ('name', 'slug', 'articles_count_display',
                     'color_swatch', 'icon', 'order')
     list_editable = ('order',)
@@ -20,9 +31,15 @@ class CategoryAdmin(BaseAdmin):
     fieldsets = (
         ('Contenu', {'fields': ('name', 'slug', 'description',
                                 'cover', 'color', 'icon', 'order')}),
-        ('SEO', {'classes': ('collapse',),
+        ('Référencement Google (optionnel)', {'classes': ('collapse',),
                  'fields': ('meta_title', 'meta_description')}),
     )
+
+    def get_list_display(self, request):
+        if is_full_site_admin(request.user):
+            return self.list_display
+        hidden = {'slug', 'color_swatch', 'icon'}
+        return tuple(f for f in self.list_display if f not in hidden)
 
     @admin.display(description='Articles publiés')
     def articles_count_display(self, obj: Category) -> int:
@@ -40,7 +57,8 @@ class CategoryAdmin(BaseAdmin):
 
 
 @admin.register(Article)
-class ArticleAdmin(PublishAdminMixin, HistoryAdmin):
+class ArticleAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishAdminMixin, HistoryAdmin):
+    admin_only_fields = ('slug',)
     list_display = (
         'title', 'status', 'is_featured', 'category', 'author',
         'reading_time_minutes', 'view_count', 'published_at', 'cover_preview',
@@ -54,16 +72,15 @@ class ArticleAdmin(PublishAdminMixin, HistoryAdmin):
     date_hierarchy = 'published_at'
     readonly_fields = (
         'reading_time_minutes', 'view_count',
-        'content_html_preview', 'cover_preview',
-        'created_at', 'updated_at',
+        'cover_preview', 'created_at', 'updated_at',
     )
     ordering = ('-published_at', '-created_at')
     fieldsets = (
         ('Titre & résumé', {
             'fields': ('title', 'slug', 'subtitle', 'excerpt'),
         }),
-        ('Contenu (Markdown)', {
-            'fields': ('content_md', 'content_html_preview'),
+        ('Contenu', {
+            'fields': ('content_md',),
         }),
         ('Auteur & classement', {
             'fields': ('author', 'category'),
@@ -74,7 +91,7 @@ class ArticleAdmin(PublishAdminMixin, HistoryAdmin):
         ('Publication', {
             'fields': ('status', 'published_at', 'is_featured'),
         }),
-        ('SEO', {
+        ('Référencement Google (optionnel)', {
             'classes': ('collapse',),
             'fields': ('meta_title', 'meta_description', 'og_image',
                        'canonical_url', 'focus_keyword', 'no_index'),
@@ -86,16 +103,10 @@ class ArticleAdmin(PublishAdminMixin, HistoryAdmin):
         }),
     )
 
-    @admin.display(description='Aperçu HTML')
-    def content_html_preview(self, obj: Article | None) -> str:
-        if not obj or not obj.content_html:
-            return '—'
-        # Contain the preview so it doesn't blow up the admin layout.
-        return format_html(
-            '<div style="max-height:400px;overflow:auto;padding:12px;'
-            'border:1px solid #ddd;border-radius:6px;background:#fafafa">{}</div>',
-            obj.content_html,
-        )
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == 'content_md':
+            kwargs['widget'] = WysiwygWidget()
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
     @admin.display(description='Aperçu cover')
     def cover_preview(self, obj: Article | None) -> str:

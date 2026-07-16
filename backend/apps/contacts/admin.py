@@ -4,7 +4,14 @@ from __future__ import annotations
 from django.contrib import admin
 from django.utils.html import format_html
 
-from apps.common.admin import BaseAdmin, BaseStackedInline, HistoryAdmin
+from apps.common.admin import (
+    AuditFieldsetAdminMixin,
+    BaseAdmin,
+    BaseStackedInline,
+    HiddenFieldsAdminMixin,
+    HistoryAdmin,
+)
+from apps.common.permissions import is_full_site_admin
 
 from .models import ContactMessage, ContactReply
 
@@ -17,7 +24,10 @@ class ContactReplyInline(BaseStackedInline):
 
 
 @admin.register(ContactMessage)
-class ContactMessageAdmin(HistoryAdmin):
+class ContactMessageAdmin(HiddenFieldsAdminMixin, AuditFieldsetAdminMixin, HistoryAdmin):
+    # "Assigné à" reste une décision d'Admin — le groupe Témoignages &
+    # contact traite les messages mais n'attribue pas qui s'en occupe.
+    admin_only_fields = ('assigned_to',)
     inlines = [ContactReplyInline]
     list_display = (
         'name', 'email', 'category', 'priority_badge', 'status_badge',
@@ -33,6 +43,17 @@ class ContactMessageAdmin(HistoryAdmin):
     )
     ordering = ('-created_at',)
     date_hierarchy = 'created_at'
+
+    def get_list_display(self, request):
+        if is_full_site_admin(request.user):
+            return self.list_display
+        return tuple(f for f in self.list_display if f != 'assigned_to')
+
+    def get_list_filter(self, request):
+        if is_full_site_admin(request.user):
+            return self.list_filter
+        return tuple(f for f in self.list_filter if f != 'assigned_to')
+
     fieldsets = (
         ('Expéditeur', {'fields': ('name', 'email', 'phone', 'country')}),
         ('Message', {'fields': ('subject', 'message')}),
@@ -114,7 +135,8 @@ class ContactMessageAdmin(HistoryAdmin):
 
 
 @admin.register(ContactReply)
-class ContactReplyAdmin(BaseAdmin):
+class ContactReplyAdmin(HiddenFieldsAdminMixin, BaseAdmin):
+    admin_only_autocomplete_fields = ('author',)
     list_display = ('message', 'author', 'is_sent', 'sent_at', 'created_at')
     list_filter = ('is_sent',)
     search_fields = ('body', 'message__name', 'message__email')

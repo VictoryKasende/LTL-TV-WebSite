@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Youtube, Instagram, Heart, Handshake } from 'lucide-react';
+import { Youtube, Instagram, Facebook, Heart, Handshake } from 'lucide-react';
 import { TikTokIcon, WhatsAppIcon } from './icons/SocialIcons';
 
 const col1 = [
@@ -74,9 +74,10 @@ export default function Footer() {
 
           <div className="flex gap-2">
             {[
-              { href: 'https://youtube.com/shorts/F4RCRIVNURA?si=ab-KeblDKyKrwn-T', Icon: Youtube, label: 'YouTube' },
-              { href: 'https://www.instagram.com/reel/DZdI4f4iXxE/?igsh=MXhxbTBldGc4bGs2Zg==', Icon: Instagram, label: 'Instagram' },
-              { href: 'https://vt.tiktok.com/ZSQfEk2xa/', Icon: TikTokIcon, label: 'TikTok' },
+              { href: 'https://www.facebook.com/share/14oAjSnR1Te/?mibextid=wwXIfr', Icon: Facebook, label: 'Facebook' },
+              { href: 'https://www.instagram.com/ltl__tv?igsh=dWxzMHJ6MWwzbGZj', Icon: Instagram, label: 'Instagram' },
+              { href: 'https://www.tiktok.com/@ltl__tv?_r=1&_t=ZS-9859eyJmuZ6', Icon: TikTokIcon, label: 'TikTok' },
+              { href: 'https://www.youtube.com/@ltlTVchannel', Icon: Youtube, label: 'YouTube' },
               { href: 'https://whatsapp.com/channel/0029VaLQDXoKLaHjRAj7m52H', Icon: WhatsAppIcon, label: 'WhatsApp' },
             ].map(({ href, Icon, label }) => (
               <a

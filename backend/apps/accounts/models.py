@@ -10,7 +10,7 @@ class User(AbstractUser):
 
     email = models.EmailField('Adresse email', unique=True)
     phone = models.CharField('Téléphone', max_length=32, blank=True)
-    avatar = models.ImageField('Avatar', upload_to='avatars/', blank=True, null=True)
+    avatar = models.ImageField('Profil', upload_to='avatars/', blank=True, null=True)
     bio = models.TextField('Biographie', blank=True,
         help_text='Biographie publique (utilisée pour l\'affichage des auteurs).')
     is_email_verified = models.BooleanField('Email vérifié', default=False, db_index=True)

@@ -37,6 +37,8 @@ def content_kpis() -> list[dict]:
     from apps.temoignages.models import Testimonial
     from apps.contacts.models import ContactMessage
     from apps.notifications.models import PushSubscription
+    from apps.about.models import TeamMember
+    from apps.accounts.models import User
 
     now = _now()
     week_ago = _delta(now, 7)
@@ -50,6 +52,7 @@ def content_kpis() -> list[dict]:
             'icon': 'article',
             'link': '/admin/articles/article/?status__exact=published',
             'tone': 'primary',
+            'perm': 'articles.view_article',
         },
         {
             'label': 'Épisodes publiés',
@@ -59,6 +62,7 @@ def content_kpis() -> list[dict]:
             'icon': 'video_library',
             'link': '/admin/emissions/episode/?status__exact=published',
             'tone': 'primary',
+            'perm': 'emissions.view_episode',
         },
         {
             'label': 'Émissions actives',
@@ -67,6 +71,7 @@ def content_kpis() -> list[dict]:
             'icon': 'live_tv',
             'link': '/admin/emissions/show/',
             'tone': 'primary',
+            'perm': 'emissions.view_show',
         },
         {
             'label': 'Programmes à venir',
@@ -76,6 +81,7 @@ def content_kpis() -> list[dict]:
             'icon': 'calendar_month',
             'link': '/admin/programmes/weeklyprogram/',
             'tone': 'primary',
+            'perm': 'programmes.view_weeklyprogram',
         },
         {
             'label': 'Témoignages approuvés',
@@ -85,6 +91,7 @@ def content_kpis() -> list[dict]:
             'icon': 'reviews',
             'link': '/admin/temoignages/testimonial/?status__exact=approved',
             'tone': 'success',
+            'perm': 'temoignages.view_testimonial',
         },
         {
             'label': 'Abonnés push',
@@ -94,6 +101,25 @@ def content_kpis() -> list[dict]:
             'icon': 'notifications_active',
             'link': '/admin/notifications/pushsubscription/',
             'tone': 'primary',
+            'perm': 'notifications.view_pushsubscription',
+        },
+        {
+            'label': 'Membres de l\'équipe affichés',
+            'value': TeamMember.objects.filter(is_active=True).count(),
+            'delta_7d': TeamMember.objects.filter(created_at__gte=week_ago).count(),
+            'icon': 'groups',
+            'link': '/admin/about/teammember/',
+            'tone': 'primary',
+            'perm': 'about.view_teammember',
+        },
+        {
+            'label': 'Comptes actifs',
+            'value': User.objects.filter(is_active=True).count(),
+            'delta_7d': User.objects.filter(date_joined__gte=week_ago).count(),
+            'icon': 'group',
+            'link': '/admin/accounts/user/?is_active__exact=1',
+            'tone': 'primary',
+            'perm': 'accounts.view_user',
         },
     ]
 
@@ -115,6 +141,7 @@ def moderation_alerts() -> list[dict]:
             'tone': 'warning' if pending_t < 10 else 'danger',
             'icon': 'reviews',
             'count': pending_t,
+            'perm': 'temoignages.view_testimonial',
         })
 
     new_contacts = ContactMessage.objects.filter(status='new').count()
@@ -125,6 +152,7 @@ def moderation_alerts() -> list[dict]:
             'tone': 'warning' if new_contacts < 10 else 'danger',
             'icon': 'mail',
             'count': new_contacts,
+            'perm': 'contacts.view_contactmessage',
         })
 
     urgent = ContactMessage.objects.filter(
@@ -137,6 +165,7 @@ def moderation_alerts() -> list[dict]:
             'tone': 'danger',
             'icon': 'priority_high',
             'count': urgent,
+            'perm': 'contacts.view_contactmessage',
         })
 
     return alerts
@@ -150,6 +179,9 @@ def recent_content(limit: int = 6) -> list[dict]:
     from apps.articles.models import Article
     from apps.emissions.models import Episode
     from apps.programmes.models import WeeklyProgram
+    from apps.about.models import TeamMember
+    from apps.temoignages.models import Testimonial
+    from apps.contacts.models import ContactMessage
 
     items = []
     for a in Article.objects.filter(status='published').order_by('-published_at')[:limit]:
@@ -159,6 +191,7 @@ def recent_content(limit: int = 6) -> list[dict]:
             'when': a.published_at.isoformat() if a.published_at else '',
             'link': f'/admin/articles/article/{a.pk}/change/',
             'icon': 'article',
+            'perm': 'articles.view_article',
         })
     for e in Episode.objects.filter(status='published').order_by('-published_at')[:limit]:
         items.append({
@@ -167,6 +200,7 @@ def recent_content(limit: int = 6) -> list[dict]:
             'when': e.published_at.isoformat() if e.published_at else '',
             'link': f'/admin/emissions/episode/{e.pk}/change/',
             'icon': 'video_library',
+            'perm': 'emissions.view_episode',
         })
     for p in WeeklyProgram.objects.published().order_by('-published_at')[:limit]:
         items.append({
@@ -175,6 +209,34 @@ def recent_content(limit: int = 6) -> list[dict]:
             'when': p.published_at.isoformat() if p.published_at else '',
             'link': f'/admin/programmes/weeklyprogram/{p.pk}/change/',
             'icon': 'calendar_month',
+            'perm': 'programmes.view_weeklyprogram',
+        })
+    for t in TeamMember.objects.filter(is_active=True).order_by('-created_at')[:limit]:
+        items.append({
+            'kind': 'équipe',
+            'title': t.full_name,
+            'when': t.created_at.isoformat(),
+            'link': f'/admin/about/teammember/{t.pk}/change/',
+            'icon': 'groups',
+            'perm': 'about.view_teammember',
+        })
+    for te in Testimonial.objects.filter(status='approved').order_by('-created_at')[:limit]:
+        items.append({
+            'kind': 'témoignage',
+            'title': te.title or te.author_name,
+            'when': te.created_at.isoformat(),
+            'link': f'/admin/temoignages/testimonial/{te.pk}/change/',
+            'icon': 'reviews',
+            'perm': 'temoignages.view_testimonial',
+        })
+    for c in ContactMessage.objects.order_by('-created_at')[:limit]:
+        items.append({
+            'kind': 'contact',
+            'title': c.subject or c.name,
+            'when': c.created_at.isoformat(),
+            'link': f'/admin/contacts/contactmessage/{c.pk}/change/',
+            'icon': 'mail',
+            'perm': 'contacts.view_contactmessage',
         })
 
     items.sort(key=lambda it: it['when'] or '', reverse=True)
@@ -279,18 +341,21 @@ def moderation_gauges() -> list[dict]:
             'sublabel': f'{contacts_handled} / {contacts_total}',
             'value': contacts_pct,
             'tone': 'success' if contacts_pct >= 80 else 'warning' if contacts_pct >= 50 else 'danger',
+            'perm': 'contacts.view_contactmessage',
         },
         {
             'label': 'Témoignages modérés',
             'sublabel': f'{testimonials_processed} / {testimonials_total}',
             'value': testimonials_pct,
             'tone': 'success' if testimonials_pct >= 80 else 'warning' if testimonials_pct >= 50 else 'danger',
+            'perm': 'temoignages.view_testimonial',
         },
         {
             'label': 'Fraîcheur du contenu',
             'sublabel': f'{fresh_articles} article(s) publié(s) sur 30 jours',
             'value': freshness_pct,
             'tone': 'success' if freshness_pct >= 70 else 'warning' if freshness_pct >= 30 else 'danger',
+            'perm': 'articles.view_article',
         },
     ]
 

@@ -5,13 +5,13 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html
 
-from apps.common.admin import HistoryAdmin
+from apps.common.admin import AuditFieldsetAdminMixin, HistoryAdmin
 
 from .models import Testimonial
 
 
 @admin.register(Testimonial)
-class TestimonialAdmin(HistoryAdmin):
+class TestimonialAdmin(AuditFieldsetAdminMixin, HistoryAdmin):
     list_display = (
         'author_name', 'status_badge', 'country', 'city',
         'is_featured', 'created_at', 'photo_thumb',

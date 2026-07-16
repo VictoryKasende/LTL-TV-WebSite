@@ -165,17 +165,19 @@ class ContactReply(TimestampedModel):
 
     message = models.ForeignKey(
         ContactMessage, on_delete=models.CASCADE, related_name='replies',
+        verbose_name='Message',
     )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='contact_replies_written',
+        verbose_name='Auteur',
     )
-    body = models.TextField()
+    body = models.TextField('Texte de la réponse')
 
     # Was the reply actually delivered by email? Toggled by the
     # future SMTP integration.
-    is_sent = models.BooleanField(default=False, db_index=True)
-    sent_at = models.DateTimeField(null=True, blank=True)
+    is_sent = models.BooleanField('Envoyé', default=False, db_index=True)
+    sent_at = models.DateTimeField('Envoyé le', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Réponse'

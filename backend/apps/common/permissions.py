@@ -32,6 +32,16 @@ def _has_group(user, names: tuple[str, ...]) -> bool:
     return bool(user._cached_group_names.intersection(names))
 
 
+def is_full_site_admin(user) -> bool:
+    """True for the CEO / full-site ``Admin`` group (or a superuser).
+
+    Used across the Django admin (dashboard, SEO fieldsets, user-group
+    assignment) to gate anything that only makes sense for the person who
+    manages the whole site, as opposed to a group scoped to one content
+    type."""
+    return _has_group(user, (GROUP_ADMIN,))
+
+
 class IsAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         return _has_group(request.user, (GROUP_ADMIN,))

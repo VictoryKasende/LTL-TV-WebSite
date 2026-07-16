@@ -4,12 +4,15 @@ from __future__ import annotations
 from django.contrib import admin
 from django.utils.html import format_html
 
-from apps.common.admin import BaseAdmin, BaseStackedInline, HistoryAdmin
+from apps.common.admin import BaseAdmin, BaseStackedInline, HiddenFieldsAdminMixin, HistoryAdmin
 
 from .models import Banner, BannerImage
 
 
-class BannerImageInline(BaseStackedInline):
+class BannerImageInline(HiddenFieldsAdminMixin, BaseStackedInline):
+    # Technique, auto-calculé selon la variante si laissé vide (voir
+    # BannerImage.save()) — réservé à l'Admin.
+    admin_only_fields = ('min_viewport_width',)
     model = BannerImage
     extra = 1
     max_num = 4  # one per Variant
@@ -59,10 +62,11 @@ class BannerAdmin(HistoryAdmin):
 
 
 @admin.register(BannerImage)
-class BannerImageAdmin(BaseAdmin):
+class BannerImageAdmin(HiddenFieldsAdminMixin, BaseAdmin):
     """Standalone image editor. In practice most editing is done inline
     on the Banner. Kept for searchability / bulk swap."""
 
+    admin_only_fields = ('min_viewport_width',)
     list_display = ('banner', 'variant', 'min_viewport_width', 'width', 'height')
     list_filter = ('variant',)
     autocomplete_fields = ('banner',)

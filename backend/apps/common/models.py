@@ -188,14 +188,17 @@ class SeoMixin(models.Model):
     natural title / description / cover when empty.
     """
 
-    meta_title = models.CharField('Titre SEO', max_length=70, blank=True,
-        help_text='Titre HTML (≤ 70 caractères). Si vide, `title` est utilisé.')
-    meta_description = models.CharField('Description SEO', max_length=180, blank=True,
-        help_text='Description meta (≤ 180 caractères).')
-    og_image = models.ImageField('Image Open Graph', upload_to='seo/og/', blank=True, null=True,
-        help_text='Image Open Graph (1200×630 recommandé).')
-    canonical_url = models.URLField('URL canonique', blank=True,
-        help_text='URL canonique (si le contenu est syndiqué depuis une autre source).')
+    meta_title = models.CharField('Titre affiché dans Google', max_length=70, blank=True,
+        help_text="Le titre qui apparaît dans les résultats de recherche Google (70 caractères max). "
+                  "Laissez vide pour utiliser le titre normal de la page.")
+    meta_description = models.CharField('Description affichée dans Google', max_length=180, blank=True,
+        help_text='Le résumé qui apparaît sous le titre dans les résultats Google (180 caractères max).')
+    og_image = models.ImageField('Image de partage', upload_to='seo/og/', blank=True, null=True,
+        help_text="L'image qui s'affiche quand cette page est partagée sur Facebook, WhatsApp, etc. "
+                  "(1200×630 pixels recommandé).")
+    canonical_url = models.URLField('Lien vers la version originale', blank=True,
+        help_text="À remplir seulement si ce contenu existe déjà ailleurs sur un autre site internet. "
+                  "Dans la plupart des cas, laissez ce champ vide.")
 
     class Meta:
         abstract = True

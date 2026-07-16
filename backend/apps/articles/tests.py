@@ -13,13 +13,12 @@ User = get_user_model()
 
 
 class ArticleModelTests(TestCase):
-    def test_markdown_rendered_on_save(self):
+    def test_content_html_mirrors_content_md(self):
         a = Article.objects.create(
             title='Test',
-            content_md='# Hello\n\nSome **bold** text.',
+            content_md='<h1>Hello</h1><p>Some <strong>bold</strong> text.</p>',
         )
-        self.assertIn('<h1', a.content_html)
-        self.assertIn('<strong>bold</strong>', a.content_html)
+        self.assertEqual(a.content_html, a.content_md)
 
     def test_reading_time_ceils_up(self):
         # ~201 words → 2 minutes
@@ -116,7 +115,7 @@ class ArticleApiTests(TestCase):
         pub = timezone.now() - timedelta(days=1)
         self.published = Article.objects.create(
             title='Published article',
-            content_md='# Title\n\nSome content here.',
+            content_md='<h1>Title</h1><p>Some content here.</p>',
             category=self.cat,
             status=Article.Status.PUBLISHED, published_at=pub,
         )
@@ -151,7 +150,7 @@ class ArticleApiTests(TestCase):
         self.client.force_authenticate(editor)
         r = self.client.post('/api/v1/articles/', {
             'title': 'Editor article',
-            'content_md': '# Hello',
+            'content_md': '<h1>Hello</h1>',
             'category': self.cat.pk,
         }, format='json')
         self.assertEqual(r.status_code, 201, r.content)

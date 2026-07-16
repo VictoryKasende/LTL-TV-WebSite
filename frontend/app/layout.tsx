@@ -66,9 +66,10 @@ export default function RootLayout({
               url: 'https://ltltv.com',
               logo: 'https://ltltv.com/notification-icon-512.png',
               sameAs: [
-                'https://youtube.com/shorts/F4RCRIVNURA?si=ab-KeblDKyKrwn-T',
-                'https://www.instagram.com/reel/DZdI4f4iXxE/?igsh=MXhxbTBldGc4bGs2Zg==',
-                'https://vt.tiktok.com/ZSQfEk2xa/',
+                'https://www.facebook.com/share/14oAjSnR1Te/?mibextid=wwXIfr',
+                'https://www.instagram.com/ltl__tv?igsh=dWxzMHJ6MWwzbGZj',
+                'https://www.tiktok.com/@ltl__tv?_r=1&_t=ZS-9859eyJmuZ6',
+                'https://www.youtube.com/@ltlTVchannel',
                 'https://whatsapp.com/channel/0029VaLQDXoKLaHjRAj7m52H',
               ],
             }),

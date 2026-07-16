@@ -9,6 +9,8 @@ Design principles:
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from django.db import models
 from django.utils import timezone
 from simple_history.models import HistoricalRecords
@@ -36,8 +38,9 @@ class Banner(TimestampedModel):
     """
 
     title = models.CharField(
-        'Titre', max_length=200,
-        help_text='Titre interne (jamais affiché aux visiteurs). Sert à organiser dans l\'admin.',
+        'Titre', max_length=200, blank=True,
+        help_text='Titre interne (jamais affiché aux visiteurs). Sert à organiser dans l\'admin. '
+                  'Laissé vide, reprend le nom du fichier de la première image ajoutée.',
     )
     link_url = models.URLField(
         'URL du lien', blank=True,
@@ -54,9 +57,10 @@ class Banner(TimestampedModel):
     )
 
     alt_text = models.CharField(
-        'Texte alternatif', max_length=200,
+        'Texte alternatif', max_length=200, blank=True,
         help_text='Description de l\'image pour les lecteurs d\'écran (accessibilité). '
-                  'Ex. « Campagne LIVE Zoom : Guérison et Restauration ».',
+                  'Ex. « Campagne LIVE Zoom : Guérison et Restauration ». '
+                  'Laissé vide, reprend le titre.',
     )
 
     is_active = models.BooleanField('Actif', default=True, db_index=True)
@@ -86,7 +90,24 @@ class Banner(TimestampedModel):
         ]
 
     def __str__(self) -> str:
-        return self.title
+        return self.title or f'Bannière #{self.pk}'
+
+    def fill_missing_labels_from_image(self, image) -> None:
+        """Falls back ``title`` to the image's filename and ``alt_text``
+        to ``title``, but only while they're still blank — never
+        overwrites something the admin actually typed in. Called after
+        the first ``BannerImage`` variant is saved."""
+        update_fields = []
+        if not self.title and image:
+            self.title = Path(image.name).stem
+            update_fields.append('title')
+        if not self.alt_text and self.title:
+            self.alt_text = self.title
+            update_fields.append('alt_text')
+        if update_fields:
+            type(self).objects.filter(pk=self.pk).update(
+                **{field: getattr(self, field) for field in update_fields}
+            )
 
     @property
     def is_active_now(self) -> bool:
@@ -147,9 +168,10 @@ class BannerImage(models.Model):
         ordering = ['banner', 'variant']
 
     def __str__(self) -> str:
-        return f'{self.banner.title} — {self.get_variant_display()}'
+        return f'{self.banner} — {self.get_variant_display()}'
 
     def save(self, *args, **kwargs):
         if self.min_viewport_width is None:
             self.min_viewport_width = self._DEFAULT_MIN_VIEWPORT.get(self.variant, 0)
         super().save(*args, **kwargs)
+        self.banner.fill_missing_labels_from_image(self.image)

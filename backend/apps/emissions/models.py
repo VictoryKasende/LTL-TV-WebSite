@@ -34,7 +34,7 @@ class Category(TimestampedModel, SluggedModel):
     description = models.CharField('Description', max_length=280, blank=True)
     color = models.CharField(
         'Couleur (hex)', max_length=9, blank=True, default='',
-        help_text='Couleur d\'accent (hex, ex : ``#3D53EA``).',
+        help_text='Couleur d\'accent (hex, ex : #3D53EA).',
     )
     order = models.PositiveIntegerField('Ordre d\'affichage', default=0, db_index=True)
 

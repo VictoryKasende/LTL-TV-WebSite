@@ -4,18 +4,34 @@ from __future__ import annotations
 from django.contrib import admin
 from django.utils.html import format_html
 
-from apps.common.admin import BaseAdmin, HistoryAdmin, PublishAdminMixin
+from apps.common.admin import (
+    BaseAdmin,
+    HiddenFieldsAdminMixin,
+    HistoryAdmin,
+    PublishAdminMixin,
+    SeoFieldsetAdminMixin,
+)
+from apps.common.permissions import is_full_site_admin
 
 from .models import ProgramType, WeeklyProgram
 
 
 @admin.register(ProgramType)
-class ProgramTypeAdmin(BaseAdmin):
+class ProgramTypeAdmin(HiddenFieldsAdminMixin, BaseAdmin):
+    # Slug (auto-generated), couleur et icône (nom technique lucide-react)
+    # réservés à l'Admin — mêmes raisons que emissions.Category.
+    admin_only_fields = ('slug', 'color', 'icon')
     list_display = ('name', 'slug', 'color_swatch', 'icon', 'order')
     list_editable = ('order',)
     prepopulated_fields = {'slug': ('name',)}
     search_fields = ('name',)
     ordering = ('order', 'name')
+
+    def get_list_display(self, request):
+        if is_full_site_admin(request.user):
+            return self.list_display
+        hidden = {'slug', 'color_swatch', 'icon'}
+        return tuple(f for f in self.list_display if f not in hidden)
 
     @admin.display(description='Couleur')
     def color_swatch(self, obj: ProgramType) -> str:
@@ -29,7 +45,10 @@ class ProgramTypeAdmin(BaseAdmin):
 
 
 @admin.register(WeeklyProgram)
-class WeeklyProgramAdmin(PublishAdminMixin, HistoryAdmin):
+class WeeklyProgramAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishAdminMixin, HistoryAdmin):
+    # Slug (auto-généré), ID YouTube (auto-extrait) et latitude/longitude
+    # (coordonnées GPS techniques, sans widget de carte) réservés à l'Admin.
+    admin_only_fields = ('slug', 'youtube_id', 'latitude', 'longitude')
     list_display = (
         'date', 'start_time', 'title', 'program_type', 'mode',
         'location', 'status', 'is_featured', 'image_preview',
@@ -57,7 +76,7 @@ class WeeklyProgramAdmin(PublishAdminMixin, HistoryAdmin):
         ('Publication', {
             'fields': ('status', 'published_at', 'is_featured'),
         }),
-        ('SEO', {
+        ('Référencement Google (optionnel)', {
             'classes': ('collapse',),
             'fields': ('meta_title', 'meta_description', 'og_image', 'canonical_url'),
         }),
