@@ -55,17 +55,17 @@ export default function Footer() {
 
         {/* CTA + socials */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pt-6 border-t border-white/10">
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-nowrap gap-2 sm:gap-3">
             <Link
               href="/contact#partenaire"
-              className="inline-flex items-center gap-2 rounded-full bg-brand-500 text-white font-medium px-5 py-2.5 text-sm hover:bg-brand-400 transition-colors"
+              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-brand-500 text-white font-medium px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm hover:bg-brand-400 transition-colors whitespace-nowrap"
             >
               <Handshake className="h-4 w-4" strokeWidth={2} />
               Devenir Partenaire
             </Link>
             <Link
               href="/contact#don"
-              className="inline-flex items-center gap-2 rounded-full border border-brand-500 text-brand-300 font-medium px-5 py-2.5 text-sm hover:bg-brand-500/10 transition-colors"
+              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-brand-500 text-brand-300 font-medium px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm hover:bg-brand-500/10 transition-colors whitespace-nowrap"
             >
               <Heart className="h-4 w-4" strokeWidth={2} />
               Faire un don
