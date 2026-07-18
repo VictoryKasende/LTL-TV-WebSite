@@ -7,7 +7,7 @@ import Spinner from '../ui/Spinner';
 import { useResilientData } from '../../lib/useResilientData';
 import type { Banner } from '../../lib/api';
 
-const AUTOPLAY_MS = 2000;
+const AUTOPLAY_MS = 4000;
 const SWIPE_THRESHOLD = 50;
 
 function pickImage(banner: Banner, variant: 'desktop' | 'mobile'): string | null {
