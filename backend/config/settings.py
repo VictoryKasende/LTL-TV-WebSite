@@ -451,6 +451,16 @@ UNFOLD = {
                     {'title': _('Utilisateurs'), 'icon': 'group',
                      'link': reverse_lazy('admin:accounts_user_changelist'),
                      'permission': lambda r: r.user.has_perm('accounts.view_user')},
+                    {'title': _('Guide de l\'administration'), 'icon': 'menu_book',
+                     'link': reverse_lazy('admin-guide'),
+                     'permission': lambda r: r.user.is_superuser or r.user.groups.filter(
+                         name__in=(
+                             'Admin', 'Comptes & À propos',
+                             'Émissions — Émissions, séries & épisodes',
+                             'Articles', 'Programmes & bannières',
+                             'Témoignages & contact',
+                         )
+                     ).exists()},
                 ],
             },
             {

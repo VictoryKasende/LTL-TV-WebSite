@@ -11,6 +11,8 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
+from apps.dashboard.views import admin_guide_view
+
 api_v1_patterns = [
     path('auth/token/',         TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/token/refresh/', TokenRefreshView.as_view(),    name='token_refresh'),
@@ -28,6 +30,7 @@ api_v1_patterns = [
 ]
 
 urlpatterns = [
+    path('admin/guide/', admin_guide_view, name='admin-guide'),
     path('admin/', admin.site.urls),
     path('api/v1/', include(api_v1_patterns)),
 

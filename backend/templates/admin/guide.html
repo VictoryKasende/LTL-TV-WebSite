@@ -1,0 +1,700 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<style>
+  /* Styles inline scoppés — même palette que le tableau de bord (admin/index.html). */
+  .ltlguide-intro { max-width: 76ch; color: #707070; font-size: 15px; margin: 0 0 28px; }
+  html.dark .ltlguide-intro { color: #9C9CA5; }
+
+  .ltlguide-jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 36px; }
+  .ltlguide-jump a {
+    font-size: 12.5px; font-weight: 600; padding: 7px 14px; border-radius: 999px;
+    background: #EEF0FF; color: #212870; text-decoration: none;
+  }
+  html.dark .ltlguide-jump a { background: rgba(61,83,234,.18); color: #B0BAFF; }
+  .ltlguide-jump a:hover { background: #3D53EA; color: #fff; }
+
+  .ltlguide-section { margin-top: 40px; scroll-margin-top: 16px; }
+  .ltlguide-section:first-of-type { margin-top: 0; }
+  .ltlguide-section-title {
+    font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: #212870; margin: 0 0 16px;
+  }
+  html.dark .ltlguide-section-title { color: #B0BAFF; }
+  .ltlguide-section-lede { color: #707070; font-size: 14.5px; max-width: 72ch; margin: -8px 0 18px; }
+  html.dark .ltlguide-section-lede { color: #9C9CA5; }
+
+  .ltlguide-card {
+    background: #fff; border: 1px solid #E4E4E8; border-radius: 10px; padding: 20px 24px;
+  }
+  html.dark .ltlguide-card { background: #242428; border-color: #3D3E49; }
+
+  .ltlguide-steps3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px 26px; }
+  @media (max-width: 720px) { .ltlguide-steps3 { grid-template-columns: 1fr; } }
+  .ltlguide-steps3 .step { display: flex; flex-direction: column; gap: 5px; }
+  .ltlguide-steps3 .step .num { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #F5A623; }
+  .ltlguide-steps3 .step strong { font-size: 14.5px; color: #2C2C2C; }
+  html.dark .ltlguide-steps3 .step strong { color: #F1F1F3; }
+  .ltlguide-steps3 .step span { font-size: 13.5px; color: #707070; }
+  html.dark .ltlguide-steps3 .step span { color: #9C9CA5; }
+
+  .ltlguide-table-wrap { overflow-x: auto; border: 1px solid #E4E4E8; border-radius: 10px; }
+  html.dark .ltlguide-table-wrap { border-color: #3D3E49; }
+  .ltlguide-table { border-collapse: collapse; width: 100%; min-width: 560px; background: #fff; font-size: 13.5px; }
+  html.dark .ltlguide-table { background: #242428; }
+  .ltlguide-table thead th {
+    text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+    color: #9C9CA5; padding: 11px 16px; border-bottom: 1px solid #E4E4E8; white-space: nowrap;
+  }
+  html.dark .ltlguide-table thead th { border-color: #3D3E49; }
+  .ltlguide-table tbody td { padding: 11px 16px; border-bottom: 1px solid #F1F1F3; vertical-align: top; color: #4C4C52; }
+  html.dark .ltlguide-table tbody td { border-color: #3D3E49; color: #C7C7CE; }
+  .ltlguide-table tbody tr:last-child td { border-bottom: none; }
+  .ltlguide-table td.champ { color: #2C2C2C; font-weight: 600; white-space: nowrap; }
+  html.dark .ltlguide-table td.champ { color: #F1F1F3; }
+  .ltlguide-table .who { white-space: nowrap; font-weight: 600; color: #2C2C2C; }
+  html.dark .ltlguide-table .who { color: #F1F1F3; }
+  .ltlguide-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+  .ltlguide-dot.full { background: #F5A623; }
+  .ltlguide-dot.scoped { background: #3D53EA; }
+
+  .ltlguide-groupbar {
+    display: flex; align-items: center; gap: 12px; margin: 0 0 14px;
+  }
+  .ltlguide-groupbar .icn {
+    width: 34px; height: 34px; border-radius: 9px; flex: none;
+    display: flex; align-items: center; justify-content: center; background: #EEF0FF; color: #212870;
+  }
+  html.dark .ltlguide-groupbar .icn { background: rgba(61,83,234,.18); color: #B0BAFF; }
+  .ltlguide-groupbar.full .icn { background: #FFF3DE; color: #C97F0E; }
+  html.dark .ltlguide-groupbar.full .icn { background: rgba(245,166,35,.18); color: #FFC978; }
+  .ltlguide-groupbar h3 { margin: 0; font-size: 17px; }
+  .ltlguide-groupbar .tag {
+    display: block; font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+    color: #3D53EA; margin-top: 2px;
+  }
+  .ltlguide-groupbar.full .tag { color: #C97F0E; }
+  html.dark .ltlguide-groupbar .tag { color: #B0BAFF; }
+  html.dark .ltlguide-groupbar.full .tag { color: #FFC978; }
+
+  .ltlguide-whofor {
+    background: #EEF0FF; border-radius: 10px; padding: 12px 16px; margin-bottom: 18px;
+    font-size: 13.5px; color: #2C2C2C;
+  }
+  html.dark .ltlguide-whofor { background: rgba(61,83,234,.14); color: #F1F1F3; }
+  .ltlguide-whofor strong { color: #212870; }
+  html.dark .ltlguide-whofor strong { color: #B0BAFF; }
+
+  .ltlguide-tools { display: flex; flex-direction: column; gap: 12px; }
+  .ltlguide-tool { background: #fff; border: 1px solid #E4E4E8; border-radius: 10px; overflow: hidden; }
+  html.dark .ltlguide-tool { background: #242428; border-color: #3D3E49; }
+  .ltlguide-tool > summary {
+    cursor: pointer; list-style: none; padding: 14px 18px; display: flex; align-items: center;
+    justify-content: space-between; gap: 12px;
+  }
+  .ltlguide-tool > summary::-webkit-details-marker { display: none; }
+  .ltlguide-tool-title { display: flex; flex-direction: column; gap: 1px; }
+  .ltlguide-tool-title strong { font-size: 14.5px; color: #2C2C2C; }
+  html.dark .ltlguide-tool-title strong { color: #F1F1F3; }
+  .ltlguide-tool-title span { font-size: 12.5px; color: #9C9CA5; font-weight: 400; }
+  .ltlguide-tool > summary .chev { flex: none; width: 18px; height: 18px; color: #9C9CA5; transition: transform .15s ease; }
+  .ltlguide-tool[open] > summary .chev { transform: rotate(45deg); color: #3D53EA; }
+  .ltlguide-tool-body { padding: 0 18px 18px; }
+  .ltlguide-tool-body > p.lede { color: #707070; margin: 0 0 14px; font-size: 13.5px; max-width: 68ch; }
+  html.dark .ltlguide-tool-body > p.lede { color: #9C9CA5; }
+
+  .ltlguide-fieldset-label {
+    font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: #9C9CA5; margin: 16px 0 8px;
+  }
+  .ltlguide-fieldset-label:first-child { margin-top: 2px; }
+
+  .ltlguide-note { margin-top: 12px; font-size: 13px; color: #707070; background: #FAFAFA; border-radius: 8px; padding: 9px 13px; }
+  html.dark .ltlguide-note { color: #9C9CA5; background: #2C2C2C; }
+  .ltlguide-note b { color: #2C2C2C; }
+  html.dark .ltlguide-note b { color: #F1F1F3; }
+
+  .ltlguide-callout {
+    border: 1px solid #F5C24E; background: #FFF7E6; border-radius: 10px; padding: 14px 18px;
+    font-size: 13.5px; color: #2C2C2C; display: flex; gap: 10px; margin: 16px 0;
+  }
+  html.dark .ltlguide-callout { background: rgba(245,194,78,.14); color: #F1F1F3; border-color: rgba(245,194,78,.5); }
+  .ltlguide-callout.info { border-color: #3D53EA; background: #EEF0FF; }
+  html.dark .ltlguide-callout.info { background: rgba(61,83,234,.14); border-color: rgba(61,83,234,.5); }
+  .ltlguide-callout svg { flex: none; width: 17px; height: 17px; color: #C97F0E; margin-top: 1px; }
+  .ltlguide-callout.info svg { color: #3D53EA; }
+  html.dark .ltlguide-callout svg { color: #FFC978; }
+  html.dark .ltlguide-callout.info svg { color: #B0BAFF; }
+  .ltlguide-callout strong { color: #C97F0E; }
+  .ltlguide-callout.info strong { color: #212870; }
+  html.dark .ltlguide-callout strong { color: #FFC978; }
+  html.dark .ltlguide-callout.info strong { color: #B0BAFF; }
+
+  .ltlguide-sbpreview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+  @media (max-width: 640px) { .ltlguide-sbpreview { grid-template-columns: 1fr 1fr; } }
+  .ltlguide-sbitem { border: 1px solid #E4E4E8; border-radius: 8px; padding: 9px 11px; font-size: 12.5px; background: #fff; }
+  html.dark .ltlguide-sbitem { background: #242428; border-color: #3D3E49; }
+  .ltlguide-sbitem .cat { color: #9C9CA5; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; display: block; margin-bottom: 2px; }
+
+  .ltlguide-faq { display: flex; flex-direction: column; gap: 8px; }
+  .ltlguide-faq details { background: #fff; border: 1px solid #E4E4E8; border-radius: 10px; padding: 2px 18px; }
+  html.dark .ltlguide-faq details { background: #242428; border-color: #3D3E49; }
+  .ltlguide-faq summary {
+    cursor: pointer; padding: 13px 0; font-weight: 600; font-size: 14px; list-style: none;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #2C2C2C;
+  }
+  html.dark .ltlguide-faq summary { color: #F1F1F3; }
+  .ltlguide-faq summary::-webkit-details-marker { display: none; }
+  .ltlguide-faq summary .chev { flex: none; width: 18px; height: 18px; color: #9C9CA5; transition: transform .15s ease; }
+  .ltlguide-faq details[open] summary .chev { transform: rotate(45deg); color: #3D53EA; }
+  .ltlguide-faq .a { padding: 0 0 16px; color: #707070; font-size: 13.5px; max-width: 72ch; }
+  html.dark .ltlguide-faq .a { color: #9C9CA5; }
+
+  code.ltlguide-code {
+    font-size: .92em; background: #EEF0FF; color: #212870; padding: 1px 6px; border-radius: 5px;
+    font-family: ui-monospace, "SF Mono", Consolas, "Courier New", monospace;
+  }
+  html.dark code.ltlguide-code { background: rgba(61,83,234,.18); color: #B0BAFF; }
+</style>
+
+<div style="max-width: 1100px; margin: 0 auto;">
+
+  <p class="ltlguide-intro">Ce guide explique, sans jargon inutile, qui a accès à l'administration et surtout : pour chaque groupe, quels outils il utilise et quoi remplir dans chaque champ. Quand un mot technique est incontournable (URL, SEO, slug…), il est expliqué juste à côté.</p>
+
+  <div class="ltlguide-jump">
+    <a href="#connexion">Se connecter</a>
+    <a href="#vue-ensemble">Vue d'ensemble</a>
+    <a href="#admin">Admin</a>
+    <a href="#comptes">Comptes &amp; À propos</a>
+    <a href="#emissions">Émissions</a>
+    <a href="#articles">Articles</a>
+    <a href="#programmes">Programmes &amp; bannières</a>
+    <a href="#temoignages">Témoignages &amp; contact</a>
+    <a href="#menu">Le menu</a>
+    <a href="#faq">Questions fréquentes</a>
+  </div>
+
+  <div class="ltlguide-section" id="connexion">
+    <p class="ltlguide-section-title">Se connecter</p>
+    <p class="ltlguide-section-lede">Trois conditions sont nécessaires <em>en même temps</em>. Il en manque une seule ? La connexion est bloquée.</p>
+    <div class="ltlguide-card">
+      <div class="ltlguide-steps3">
+        <div class="step"><span class="num">1 · Compte actif</span><strong>« Actif » coché</strong><span>Décoché, le compte est comme gelé — impossible de se connecter, même avec le bon mot de passe.</span></div>
+        <div class="step"><span class="num">2 · Accès admin</span><strong>« Accès à l'administration » coché</strong><span>Sans cette case, appartenir à un groupe ne sert à rien : la porte de <code class="ltlguide-code">/admin/</code> reste fermée.</span></div>
+        <div class="step"><span class="num">3 · Un groupe</span><strong>Au moins un groupe attribué</strong><span>C'est lui qui décide ce que la personne verra et pourra modifier une fois à l'intérieur.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ltlguide-section" id="vue-ensemble">
+    <p class="ltlguide-section-title">Vue d'ensemble des 6 groupes</p>
+    <p class="ltlguide-section-lede">Un « groupe », c'est une étiquette qu'on colle sur un compte pour décider ce qu'il a le droit de faire.</p>
+    <div class="ltlguide-table-wrap">
+      <table class="ltlguide-table">
+        <thead><tr><th>Groupe</th><th>S'occupe de</th><th>N'a pas le droit de toucher</th></tr></thead>
+        <tbody>
+          <tr><td class="who"><span class="ltlguide-dot full"></span>Admin</td><td>Absolument tout, y compris créer les groupes eux-mêmes</td><td>—</td></tr>
+          <tr><td class="who"><span class="ltlguide-dot scoped"></span>Comptes &amp; À propos</td><td>Comptes de l'équipe, page « À propos », valeurs, équipe</td><td>Donner le groupe Admin ; créer un groupe</td></tr>
+          <tr><td class="who"><span class="ltlguide-dot scoped"></span>Émissions</td><td>Séries d'enseignement, épisodes</td><td>Les émissions elles-mêmes (réservées à Admin)</td></tr>
+          <tr><td class="who"><span class="ltlguide-dot scoped"></span>Articles</td><td>Articles et leurs catégories</td><td>Référencement Google</td></tr>
+          <tr><td class="who"><span class="ltlguide-dot scoped"></span>Programmes &amp; bannières</td><td>Grille hebdomadaire, bannières du carousel d'accueil</td><td>Coordonnées GPS, ID YouTube bruts</td></tr>
+          <tr><td class="who"><span class="ltlguide-dot scoped"></span>Témoignages &amp; contact</td><td>Témoignages reçus, messages de contact</td><td>Voir l'IP d'un message ; réassigner un message</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===================== ADMIN ===================== -->
+  <div class="ltlguide-section" id="admin">
+    <p class="ltlguide-section-title">Admin</p>
+    <div class="ltlguide-groupbar full">
+      <div class="icn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M6 18V9l6-4 6 4v9M10 18v-5h4v5"/></svg></div>
+      <div><h3>Accès complet au site</h3><span class="tag">Réservé à la direction</span></div>
+    </div>
+    <div class="ltlguide-whofor">Pour <strong>la direction</strong>, une ou deux personnes maximum. Seul groupe qui voit et modifie tout, sans exception.</div>
+    <p class="ltlguide-section-lede">Un compte Admin utilise les mêmes outils que les autres groupes (ci-dessous), avec deux différences :</p>
+    <div class="ltlguide-tools">
+      <details class="ltlguide-tool">
+        <summary><div class="ltlguide-tool-title"><strong>Gérer les groupes</strong><span>Créer un groupe, changer ce qu'il autorise</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <p class="lede">Seul groupe qui peut créer ou modifier un groupe. Menu : <strong>Vue d'ensemble → Utilisateurs</strong>, onglet des groupes.</p>
+          <div class="ltlguide-callout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v5M12 17h.01M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg><div><strong>Prudence</strong> : retirer une permission à un groupe l'enlève immédiatement à tout le monde qui y appartient.</div></div>
+        </div>
+      </details>
+      <details class="ltlguide-tool">
+        <summary><div class="ltlguide-tool-title"><strong>Champs habituellement masqués</strong><span>Ce que les autres groupes ne voient jamais</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <p class="lede">Pour garder les formulaires simples, certains champs très techniques sont cachés aux autres groupes. En Admin, vous les voyez en plus, sur les mêmes fiches :</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ technique</th><th>Ce que c'est</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Slug</td><td>Le morceau d'adresse web qui identifie la page, ex. <code class="ltlguide-code">prends-courage</code> dans <code class="ltlguide-code">/emissions/prends-courage</code>. Généré tout seul depuis le titre.</td></tr>
+              <tr><td class="champ">« Référencement Google (optionnel) »</td><td>Aussi appelé SEO : des réglages qui influencent comment la page apparaît dans Google. Toujours facultatif.</td></tr>
+              <tr><td class="champ">Bloc « Audit »</td><td>IP et navigateur de la personne qui a soumis un témoignage/message — sert à repérer un abus, jamais public.</td></tr>
+              <tr><td class="champ">Latitude / Longitude</td><td>Coordonnées GPS exactes d'un lieu. Le champ « Lieu » habituel suffit dans la plupart des cas.</td></tr>
+              <tr><td class="champ">ID YouTube</td><td>Extrait tout seul depuis le lien YouTube collé ailleurs dans le formulaire.</td></tr>
+              <tr><td class="champ">Assigné à (messages)</td><td>Qui de l'équipe doit traiter un message — décision réservée à la direction.</td></tr>
+              <tr><td class="champ">Couleur (hex) / Icône</td><td>Un code couleur et un nom d'icône (bibliothèque « lucide », ex. <code class="ltlguide-code">heart</code>). À laisser tel quel si vous n'êtes pas sûr.</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </details>
+    </div>
+    <div class="ltlguide-callout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v5M12 17h.01M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg><div><strong>Notifications push</strong> n'appartient à aucun groupe métier : seul Admin peut y toucher.</div></div>
+  </div>
+
+  <!-- ===================== COMPTES & À PROPOS ===================== -->
+  <div class="ltlguide-section" id="comptes">
+    <p class="ltlguide-section-title">Comptes &amp; À propos</p>
+    <div class="ltlguide-groupbar">
+      <div class="icn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg></div>
+      <div><h3>4 outils</h3><span class="tag">Comptes &amp; contenu institutionnel</span></div>
+    </div>
+    <div class="ltlguide-whofor">Pour <strong>la personne qui gère l'équipe</strong> : ouvrir des accès aux collègues, tenir à jour la page qui présente LTL·TV.</div>
+
+    <div class="ltlguide-tools">
+      <details class="ltlguide-tool" open>
+        <summary><div class="ltlguide-tool-title"><strong>Comptes utilisateurs</strong><span>Créer, modifier ou désactiver l'accès d'un membre de l'équipe</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <p class="lede">Menu : <strong>Vue d'ensemble → Utilisateurs</strong>. Cliquez sur <strong>Ajouter</strong>, en haut à droite de la liste, pour créer un nouvel accès.</p>
+          <p class="ltlguide-fieldset-label">Identifiants de connexion</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Adresse email</td><td>L'email professionnel — c'est ce que la personne tape pour se connecter.</td></tr>
+              <tr><td class="champ">Identifiant</td><td>Un nom court sans espace, ex. <code class="ltlguide-code">marie.k</code>. Interne, pas utilisé pour se connecter au quotidien.</td></tr>
+              <tr><td class="champ">Mot de passe</td><td>Vous le définissez à la création. Ensuite un lien « Pour le modifier, clique ici » apparaît sur la fiche.</td></tr>
+            </tbody>
+          </table></div>
+          <p class="ltlguide-fieldset-label">Informations personnelles (facultatif)</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Prénom / Nom</td><td>Nom complet.</td></tr>
+              <tr><td class="champ">Téléphone</td><td>Numéro de contact interne.</td></tr>
+              <tr><td class="champ">Profil</td><td>Photo de profil.</td></tr>
+              <tr><td class="champ">Biographie</td><td>Court texte, utilisé si le site affiche un jour « écrit par… ».</td></tr>
+            </tbody>
+          </table></div>
+          <p class="ltlguide-fieldset-label">Accès</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>À quoi ça sert</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Actif</td><td>Décochez pour bloquer la connexion sans supprimer le compte.</td></tr>
+              <tr><td class="champ">Accès à l'administration</td><td>Doit être coché pour ouvrir <code class="ltlguide-code">/admin/</code>.</td></tr>
+              <tr><td class="champ">Groupes</td><td>Une ou plusieurs cases parmi les 6 groupes. Les droits se cumulent.</td></tr>
+            </tbody>
+          </table></div>
+          <div class="ltlguide-note">Vous ne pouvez pas cocher <b>Admin</b> ni les rôles techniques <b>Editor</b>/<b>Moderator</b> (réservés au site public, pas à l'administration) — seul un compte Admin peut les attribuer.</div>
+        </div>
+      </details>
+
+      <details class="ltlguide-tool">
+        <summary><div class="ltlguide-tool-title"><strong>Page « À propos »</strong><span>Mission, vision, histoire — une seule page pour tout le site</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <p class="lede">Une seule page « À propos » existe : impossible d'en créer une deuxième, vous ne faites que la modifier.</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Mission</td><td>Ce que LTL·TV cherche à accomplir au quotidien.</td></tr>
+              <tr><td class="champ">Vision</td><td>Où LTL·TV se projette à long terme.</td></tr>
+              <tr><td class="champ">Histoire</td><td>Le récit de la création et de l'évolution de la chaîne.</td></tr>
+              <tr><td class="champ">Année de création</td><td>Ex. <code class="ltlguide-code">2019</code>.</td></tr>
+              <tr><td class="champ">Image de couverture</td><td>La grande bannière en haut de la page.</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </details>
+
+      <details class="ltlguide-tool">
+        <summary><div class="ltlguide-tool-title"><strong>Valeurs fondamentales</strong><span>Les valeurs affichées sur « À propos »</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Titre</td><td>Le nom de la valeur, ex. <code class="ltlguide-code">Excellence</code>.</td></tr>
+              <tr><td class="champ">Description</td><td>Une ou deux phrases.</td></tr>
+              <tr><td class="champ">Icône</td><td>Facultatif — laissez vide si vous ne savez pas quoi mettre.</td></tr>
+              <tr><td class="champ">Ordre d'affichage</td><td>Plus petit = affiché plus tôt.</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </details>
+
+      <details class="ltlguide-tool">
+        <summary><div class="ltlguide-tool-title"><strong>Équipe</strong><span>Les fiches des membres affichés sur le site</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <p class="ltlguide-fieldset-label">Identité &amp; biographie</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Nom complet</td><td>Prénom et nom.</td></tr>
+              <tr><td class="champ">Fonction</td><td>Ex. « Directeur général », « Coordinatrice des programmes ».</td></tr>
+              <tr><td class="champ">Catégorie</td><td>Direction, Coordination, Équipe pastorale, Production &amp; réalisation, Technique, Communication &amp; réseaux sociaux, ou Bénévole.</td></tr>
+              <tr><td class="champ">Photo</td><td>Portrait de la personne.</td></tr>
+              <tr><td class="champ">Biographie</td><td>Court texte de présentation.</td></tr>
+            </tbody>
+          </table></div>
+          <p class="ltlguide-fieldset-label">Contact public &amp; réseaux sociaux (facultatif)</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Email / Téléphone public</td><td>Uniquement si la personne accepte d'être contactée directement.</td></tr>
+              <tr><td class="champ">Facebook, Instagram, X, LinkedIn, YouTube</td><td>Le lien complet, un par réseau. Laissez vide ceux qui ne s'appliquent pas.</td></tr>
+            </tbody>
+          </table></div>
+          <p class="ltlguide-fieldset-label">Affichage</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Actif</td><td>Décochez pour retirer la fiche sans la supprimer.</td></tr>
+              <tr><td class="champ">Ordre d'affichage</td><td>Plus petit = affiché plus tôt.</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- ===================== ÉMISSIONS ===================== -->
+  <div class="ltlguide-section" id="emissions">
+    <p class="ltlguide-section-title">Émissions</p>
+    <div class="ltlguide-groupbar">
+      <div class="icn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 6V3.6M17 6V3.6"/></svg></div>
+      <div><h3>2 outils</h3><span class="tag">Séries &amp; épisodes</span></div>
+    </div>
+    <div class="ltlguide-whofor">Pour <strong>l'équipe éditoriale</strong> qui alimente le contenu vidéo au fil des semaines.</div>
+    <div class="ltlguide-note">Ce groupe ne peut pas créer une nouvelle émission ni ses catégories (réservé à Admin) — vous choisissez toujours une émission <b>existante</b> dans une liste.</div>
+
+    <div class="ltlguide-tools" style="margin-top:14px">
+      <details class="ltlguide-tool" open>
+        <summary><div class="ltlguide-tool-title"><strong>Séries d'enseignement</strong><span>Un regroupement d'épisodes autour d'un même thème</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <p class="ltlguide-fieldset-label">Contenu &amp; période</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Émission</td><td>À quelle émission cette série appartient.</td></tr>
+              <tr><td class="champ">Titre</td><td>Le nom de la série.</td></tr>
+              <tr><td class="champ">Thème général</td><td>Le fil rouge, ex. « La foi qui déplace les montagnes ».</td></tr>
+              <tr><td class="champ">Description</td><td>Présentation longue en tête de la page de la série.</td></tr>
+              <tr><td class="champ">Début / Fin</td><td>Dates de la série. « Fin » facultative — laissez vide si en cours.</td></tr>
+            </tbody>
+          </table></div>
+          <p class="ltlguide-fieldset-label">Médias &amp; publication</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Image de couverture</td><td>Bannière large, idéalement 16:9.</td></tr>
+              <tr><td class="champ">Statut</td><td>Brouillon (invisible, en préparation) / Publié (visible) / Archivé (retiré).</td></tr>
+              <tr><td class="champ">Publié le</td><td>Se remplit tout seul ; peut être mis dans le futur pour programmer.</td></tr>
+              <tr><td class="champ">Mis en avant</td><td>À cocher pour la mettre en valeur.</td></tr>
+              <tr><td class="champ">Ordre d'affichage</td><td>Pour ordonner les séries d'une même émission.</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </details>
+
+      <details class="ltlguide-tool">
+        <summary><div class="ltlguide-tool-title"><strong>Épisodes</strong><span>Une vidéo publiée, rattachée à une émission</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <p class="ltlguide-fieldset-label">Contenu &amp; série</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Émission</td><td>À quelle émission appartient la vidéo.</td></tr>
+              <tr><td class="champ">Titre / Sous-titre</td><td>Le titre de l'épisode et un complément court facultatif.</td></tr>
+              <tr><td class="champ">Résumé</td><td>2 à 3 phrases qui donnent envie de regarder.</td></tr>
+              <tr><td class="champ">Description</td><td>Notes plus longues ou plan de l'émission.</td></tr>
+              <tr><td class="champ">Série / Numéro</td><td>Si l'épisode fait partie d'une série, choisissez-la et indiquez sa position (1, 2, 3…). Sinon laissez vide.</td></tr>
+              <tr><td class="champ">Intervenant</td><td>Le nom de la personne qui parle principalement.</td></tr>
+            </tbody>
+          </table></div>
+          <p class="ltlguide-fieldset-label">YouTube, classement &amp; publication</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">URL YouTube</td><td>Collez le lien de la vidéo — tous les formats de lien YouTube sont acceptés.</td></tr>
+              <tr><td class="champ">Durée (secondes)</td><td>Facultatif. Laissez à 0 si inconnue.</td></tr>
+              <tr><td class="champ">Catégories</td><td>Cochez une ou plusieurs catégories existantes.</td></tr>
+              <tr><td class="champ">Miniature</td><td>Facultatif : sinon la miniature YouTube est utilisée automatiquement.</td></tr>
+              <tr><td class="champ">Statut / Diffusé le / Mis en avant</td><td>Mêmes règles que pour les séries.</td></tr>
+            </tbody>
+          </table></div>
+          <div class="ltlguide-note">Le nombre de vues s'affiche mais se met à jour tout seul — rien à taper.</div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- ===================== ARTICLES ===================== -->
+  <div class="ltlguide-section" id="articles">
+    <p class="ltlguide-section-title">Articles</p>
+    <div class="ltlguide-groupbar">
+      <div class="icn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V4Z"/><path d="M8 8h7M8 11.5h7M8 15h4"/></svg></div>
+      <div><h3>2 outils</h3><span class="tag">Rédaction &amp; publication</span></div>
+    </div>
+    <div class="ltlguide-whofor">Pour <strong>l'équipe qui rédige et publie</strong> les articles du site.</div>
+
+    <div class="ltlguide-tools">
+      <details class="ltlguide-tool" open>
+        <summary><div class="ltlguide-tool-title"><strong>Articles</strong><span>Rédiger et publier un article</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <p class="ltlguide-fieldset-label">Titre, résumé &amp; contenu</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Titre / Sous-titre</td><td>Le titre et un complément court facultatif.</td></tr>
+              <tr><td class="champ">Résumé</td><td>Affiché sur les vignettes. Laissez vide : généré automatiquement depuis le contenu.</td></tr>
+              <tr><td class="champ">Contenu</td><td>Le corps de l'article, dans un éditeur de texte enrichi (comme Word) : gras, italique, titres, images…</td></tr>
+            </tbody>
+          </table></div>
+          <p class="ltlguide-fieldset-label">Auteur, classement &amp; média</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Auteur</td><td>Qui a écrit l'article, dans la liste des comptes.</td></tr>
+              <tr><td class="champ">Catégorie</td><td>La rubrique dans laquelle classer l'article.</td></tr>
+              <tr><td class="champ">Image de couverture</td><td>L'image principale.</td></tr>
+              <tr><td class="champ">Description de la couverture</td><td>Une phrase qui décrit l'image, lue par les lecteurs d'écran (accessibilité).</td></tr>
+              <tr><td class="champ">Crédit photo</td><td>Facultatif : nom du photographe/illustrateur.</td></tr>
+            </tbody>
+          </table></div>
+          <p class="ltlguide-fieldset-label">Publication</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Statut</td><td>Brouillon / Publié / Archivé.</td></tr>
+              <tr><td class="champ">Publié le</td><td>Automatique ; peut être programmé dans le futur.</td></tr>
+              <tr><td class="champ">Mis en avant</td><td>À cocher pour le mettre en valeur.</td></tr>
+            </tbody>
+          </table></div>
+          <div class="ltlguide-note">Temps de lecture et nombre de vues s'affichent en bas mais se calculent tout seuls.</div>
+        </div>
+      </details>
+
+      <details class="ltlguide-tool">
+        <summary><div class="ltlguide-tool-title"><strong>Catégories d'articles</strong><span>Les rubriques dans lesquelles ranger les articles</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Nom</td><td>Ex. « Enseignement », « Vie de famille ».</td></tr>
+              <tr><td class="champ">Description</td><td>Facultatif, une phrase de présentation.</td></tr>
+              <tr><td class="champ">Image</td><td>Facultatif, une image représentative.</td></tr>
+              <tr><td class="champ">Ordre d'affichage</td><td>Plus petit = affiché plus tôt.</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- ===================== PROGRAMMES & BANNIÈRES ===================== -->
+  <div class="ltlguide-section" id="programmes">
+    <p class="ltlguide-section-title">Programmes &amp; bannières</p>
+    <div class="ltlguide-groupbar">
+      <div class="icn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9.5h18M8 3v3.6M16 3v3.6M8 14h2M14 14h2"/></svg></div>
+      <div><h3>3 outils</h3><span class="tag">Grille &amp; carousel d'accueil</span></div>
+    </div>
+    <div class="ltlguide-whofor">Pour <strong>la personne qui planifie la grille hebdomadaire</strong> et met à jour les visuels du carousel de la page d'accueil.</div>
+
+    <div class="ltlguide-tools">
+      <details class="ltlguide-tool" open>
+        <summary><div class="ltlguide-tool-title"><strong>Programmes hebdomadaires</strong><span>Un événement daté dans la grille de la semaine</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <p class="ltlguide-fieldset-label">Planning &amp; contenu</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Date / Heure de début / Heure de fin</td><td>Le jour et les horaires. « Heure de fin » facultative.</td></tr>
+              <tr><td class="champ">Titre</td><td>Le nom du programme.</td></tr>
+              <tr><td class="champ">Type de programme</td><td>Une catégorie déjà existante (ex. « Culte », « Prière »).</td></tr>
+              <tr><td class="champ">Responsable</td><td>Nom du responsable ou animateur principal.</td></tr>
+              <tr><td class="champ">Ordre d'affichage</td><td>Utile seulement si plusieurs programmes tombent le même jour.</td></tr>
+            </tbody>
+          </table></div>
+          <p class="ltlguide-fieldset-label">Lieu / mode</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Mode</td><td>Présentiel (sur place), En ligne, ou Hybride (les deux).</td></tr>
+              <tr><td class="champ">Lieu / Adresse</td><td>Ville ou nom du lieu, puis l'adresse complète si présentiel.</td></tr>
+              <tr><td class="champ">Lien de la réunion</td><td>Le lien Zoom/YouTube/autre, si en ligne ou hybride.</td></tr>
+            </tbody>
+          </table></div>
+          <p class="ltlguide-fieldset-label">Média &amp; publication</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Image</td><td>Bannière du programme (16:9). Vide = miniature YouTube utilisée automatiquement.</td></tr>
+              <tr><td class="champ">URL YouTube</td><td>Facultatif : lien de la vidéo associée.</td></tr>
+              <tr><td class="champ">Statut / Mis en avant</td><td>Mêmes règles que pour un article.</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </details>
+
+      <details class="ltlguide-tool">
+        <summary><div class="ltlguide-tool-title"><strong>Bannières carousel</strong><span>Les grandes images qui défilent en haut de la page d'accueil</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <p class="lede">Une bannière, c'est une carte cliquable ou non, avec une image, un titre optionnel et un lien.</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Titre</td><td>Affiché en grand sur la bannière. <b>Laissez vide si vous ne voulez aucun texte affiché</b> — le nom du fichier image sert alors seulement en coulisses pour repérer la bannière dans la liste, jamais montré aux visiteurs.</td></tr>
+              <tr><td class="champ">URL du lien</td><td>Où on arrive en cliquant. Lien <b>interne</b> commençant par <code class="ltlguide-code">/</code> (des suggestions s'affichent pendant la saisie) ou lien <b>externe</b> complet (<code class="ltlguide-code">https://…</code>). Vide = image non cliquable.</td></tr>
+              <tr><td class="champ">Cible du lien</td><td>« Même onglet » ou « Nouvel onglet » (utile pour un lien externe).</td></tr>
+              <tr><td class="champ">Texte alternatif</td><td>Décrit l'image pour les lecteurs d'écran. Vide = reprend le titre.</td></tr>
+            </tbody>
+          </table></div>
+          <p class="ltlguide-fieldset-label">Planification</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Actif</td><td>Décochez pour désactiver tout de suite, sans supprimer.</td></tr>
+              <tr><td class="champ">Visible à partir de / jusqu'à</td><td>Dates facultatives : la bannière apparaît et disparaît toute seule à ces moments.</td></tr>
+              <tr><td class="champ">Ordre d'affichage</td><td>Plus petit = passe en premier dans le carousel.</td></tr>
+            </tbody>
+          </table></div>
+          <div class="ltlguide-callout info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg><div><strong>Comment ça se déclenche ?</strong> Rien à activer à l'heure dite : le site revérifie ces dates à chaque chargement de la page d'accueil (au plus toutes les 30 secondes). Une bannière programmée apparaît ou disparaît donc automatiquement.</div></div>
+        </div>
+      </details>
+
+      <details class="ltlguide-tool">
+        <summary><div class="ltlguide-tool-title"><strong>Images de bannière</strong><span>Les visuels ajoutés à l'intérieur d'une bannière</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <p class="lede">Ne se remplit pas séparément : ces images se rajoutent en bas du formulaire d'une bannière (« Ajouter un objet Image de bannière supplémentaire »). Jusqu'à 4 par bannière.</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Variante</td><td>Le format d'écran visé : Mobile, Tablette, Desktop bannière, ou Ultra-wide. Le site choisit automatiquement la bonne selon l'écran du visiteur.</td></tr>
+              <tr><td class="champ">Image</td><td>Le fichier à uploader pour ce format.</td></tr>
+            </tbody>
+          </table></div>
+          <div class="ltlguide-note">Ajoutez au minimum une variante <b>Mobile</b> et une <b>Desktop bannière</b> — les deux tailles principales utilisées par le site.</div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- ===================== TÉMOIGNAGES & CONTACT ===================== -->
+  <div class="ltlguide-section" id="temoignages">
+    <p class="ltlguide-section-title">Témoignages &amp; contact</p>
+    <div class="ltlguide-groupbar">
+      <div class="icn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-7.4-4.6-9.6-9.3C1 8 2.4 4.8 5.6 4a4.7 4.7 0 0 1 6.4 2 4.7 4.7 0 0 1 6.4-2c3.2.8 4.6 4 3.2 7.3-2.2 4.7-9.6 9.3-9.6 9.3Z"/></svg></div>
+      <div><h3>2 outils</h3><span class="tag">Modération</span></div>
+    </div>
+    <div class="ltlguide-whofor">Pour <strong>la personne qui modère</strong> ce que les visiteurs envoient : témoignages à publier, messages reçus via le formulaire de contact.</div>
+
+    <div class="ltlguide-tools">
+      <details class="ltlguide-tool" open>
+        <summary><div class="ltlguide-tool-title"><strong>Témoignages</strong><span>Relire et publier un témoignage envoyé par un visiteur</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <p class="ltlguide-fieldset-label">Auteur &amp; localisation</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Nom affiché</td><td>Prénom et initiale seulement, ex. « Sarah M. » — jamais le nom complet, pour la vie privée.</td></tr>
+              <tr><td class="champ">Email / Téléphone (privé)</td><td>Sert uniquement en interne pour recontacter la personne — jamais public.</td></tr>
+              <tr><td class="champ">Pays / Ville</td><td>Facultatif.</td></tr>
+            </tbody>
+          </table></div>
+          <p class="ltlguide-fieldset-label">Contenu &amp; média</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Titre du témoignage</td><td>Facultatif, ex. « Comment j'ai retrouvé la paix ».</td></tr>
+              <tr><td class="champ">Résumé court</td><td>Laissez vide : généré automatiquement.</td></tr>
+              <tr><td class="champ">Témoignage complet</td><td>Le récit tel qu'envoyé (ou relu par vous).</td></tr>
+              <tr><td class="champ">Photo</td><td>Facultatif.</td></tr>
+              <tr><td class="champ">Photo publique autorisée</td><td>Cochez uniquement si la personne a explicitement accepté l'affichage public de sa photo.</td></tr>
+            </tbody>
+          </table></div>
+          <p class="ltlguide-fieldset-label">Modération &amp; affichage</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Statut</td><td>En attente → Approuvé (visible) ou Rejeté (refusé) → Archivé.</td></tr>
+              <tr><td class="champ">Note interne</td><td>Facultatif : raison d'un rejet, jamais visible publiquement.</td></tr>
+              <tr><td class="champ">Mis en avant / Ordre d'affichage</td><td>Mêmes règles que les autres contenus.</td></tr>
+            </tbody>
+          </table></div>
+          <div class="ltlguide-note">« Modéré par » et « Modéré le » se remplissent tout seuls dès que vous changez le statut.</div>
+        </div>
+      </details>
+
+      <details class="ltlguide-tool">
+        <summary><div class="ltlguide-tool-title"><strong>Messages de contact</strong><span>Ce que les visiteurs envoient via le formulaire de contact</span></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="ltlguide-tool-body">
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody>
+              <tr><td class="champ">Nom / Email / Téléphone / Pays</td><td>Remplis automatiquement par le visiteur — à consulter, pas à remplir.</td></tr>
+              <tr><td class="champ">Sujet / Message</td><td>Le contenu envoyé.</td></tr>
+              <tr><td class="champ">Catégorie</td><td>Témoignage, Demande de prière, Proposition de contenu, Offre, Don, Question biblique, Feedback, ou Autre.</td></tr>
+              <tr><td class="champ">Priorité</td><td>Basse / Normale / Haute / Urgente.</td></tr>
+              <tr><td class="champ">Statut</td><td>Nouveau → Lu → En traitement → Traité (ou Archivé / Spam).</td></tr>
+              <tr><td class="champ">Notes internes</td><td>Vos remarques de suivi, jamais visibles par l'expéditeur.</td></tr>
+            </tbody>
+          </table></div>
+          <div class="ltlguide-note">« Assigné à » (qui de l'équipe s'en occupe) est réservé à Admin.</div>
+          <p class="ltlguide-fieldset-label">Répondre à un message</p>
+          <p style="font-size:13.5px; color:#707070; margin:0 0 8px">Un bloc « Réponses » apparaît en bas de la fiche du message, pour répondre sans quitter la page.</p>
+          <div class="ltlguide-table-wrap"><table class="ltlguide-table">
+            <thead><tr><th>Champ</th><th>Que mettre</th></tr></thead>
+            <tbody><tr><td class="champ">Texte de la réponse</td><td>Ce que vous voulez répondre à la personne.</td></tr></tbody>
+          </table></div>
+          <div class="ltlguide-note">« Envoyé » et « Envoyé le » se cochent/remplissent tout seuls une fois la réponse effectivement partie.</div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <div class="ltlguide-section" id="menu">
+    <p class="ltlguide-section-title">Le menu, selon le groupe</p>
+    <p class="ltlguide-section-lede">Le menu de gauche s'adapte tout seul : une section n'apparaît que si votre groupe y a droit — pas juste bloquée, carrément invisible.</p>
+    <div class="ltlguide-sbpreview">
+      <div class="ltlguide-sbitem"><span class="cat">Vue d'ensemble</span>Tableau de bord</div>
+      <div class="ltlguide-sbitem"><span class="cat">Contenu</span>Émissions, Articles…</div>
+      <div class="ltlguide-sbitem"><span class="cat">Diffusion</span>Programmes, Bannières</div>
+      <div class="ltlguide-sbitem"><span class="cat">Modération</span>Témoignages, Contact</div>
+      <div class="ltlguide-sbitem"><span class="cat">Notifications push</span>Campagnes, Abonnés</div>
+      <div class="ltlguide-sbitem"><span class="cat">À propos</span>Page, Valeurs, Équipe</div>
+    </div>
+    <p style="color:#707070; font-size:13.5px; margin-top:12px">Exemple : une personne du groupe <strong>Articles</strong> ne verra que « Articles » sous « Contenu » — le reste lui restera invisible.</p>
+  </div>
+
+  <div class="ltlguide-section" id="faq">
+    <p class="ltlguide-section-title">Questions fréquentes</p>
+    <div class="ltlguide-faq">
+      <details>
+        <summary>Une personne est dans un groupe mais ne peut pas se connecter — pourquoi ?<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="a">Vérifiez « Actif » et « Accès à l'administration » sur sa fiche compte. Le groupe seul ne suffit jamais : les trois conditions du début de ce guide doivent être réunies.</div>
+      </details>
+      <details>
+        <summary>Une personne peut-elle appartenir à plusieurs groupes ?<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="a">Oui, les droits se cumulent. Quelqu'un dans « Articles » et « Programmes &amp; bannières » verra les deux sections.</div>
+      </details>
+      <details>
+        <summary>Je vois parfois « Editor » ou « Moderator » dans une liste de groupes — c'est quoi ?<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="a">Des rôles techniques utilisés par le site public, sans rapport avec l'administration. Ils n'ouvrent aucun accès à <code class="ltlguide-code">/admin/</code> — vous n'en avez jamais besoin au quotidien.</div>
+      </details>
+      <details>
+        <summary>Pourquoi certains champs (slug, couleur, référencement Google…) sont invisibles pour moi ?<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="a">Ce sont des réglages très techniques qui n'ont normalement besoin d'aucune intervention manuelle. Ils sont masqués pour garder les formulaires simples. Le groupe Admin les voit tous (voir la section « Admin » plus haut).</div>
+      </details>
+      <details>
+        <summary>Une fiche affiche un bloc « Historique » — je peux le modifier ?<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="a">Non, c'est en lecture seule pour tout le monde sauf Admin : ça retrace qui a modifié quoi et quand — voulu ainsi pour garder une trace fiable.</div>
+      </details>
+      <details>
+        <summary>Qui peut créer un compte pour un nouveau membre de l'équipe ?<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="a">Le groupe « Comptes &amp; À propos » ou Admin. Seul Admin peut accorder l'accès complet.</div>
+      </details>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
