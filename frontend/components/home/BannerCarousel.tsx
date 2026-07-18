@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react';
+import Spinner from '../ui/Spinner';
+import { useResilientData } from '../../lib/useResilientData';
 import type { Banner } from '../../lib/api';
 
-const AUTOPLAY_MS = 6500;
+const AUTOPLAY_MS = 2000;
 const SWIPE_THRESHOLD = 50;
 
 function pickImage(banner: Banner, variant: 'desktop' | 'mobile'): string | null {
@@ -14,7 +16,9 @@ function pickImage(banner: Banner, variant: 'desktop' | 'mobile'): string | null
     ?? null;
 }
 
-export default function BannerCarousel({ banners }: { banners: Banner[] }) {
+export default function BannerCarousel({ initialData }: { initialData: Banner[] | null }) {
+  const { data, retrying } = useResilientData(initialData, '/api/v1/banners/active/');
+  const banners = data ?? [];
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
@@ -40,7 +44,36 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [count, next, prev]);
 
-  if (count === 0) return null;
+  if (count === 0) {
+    if (retrying) {
+      return (
+        <div className="flex items-center justify-center gap-3 py-20 text-white bg-brand-900">
+          <Spinner size="sm" className="text-white" />
+          Chargement…
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative bg-hero-rays text-white">
+        <div className="relative px-6 md:px-14 py-20 md:py-28 text-center">
+          <img
+            src="/logo-ltl-white.svg"
+            alt="LTL TV"
+            className="h-7 md:h-8 w-auto mx-auto mb-8 opacity-95"
+          />
+          <h1 className="font-display tracking-tight text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.9]">
+            ANNONCER <span className="text-amber-400">L&apos;ÉVANGILE</span>
+            <br className="hidden md:block" />
+            PAR LES MÉDIAS
+          </h1>
+          <p className="mt-6 max-w-xl mx-auto text-sm md:text-base text-white/85 leading-relaxed">
+            Émissions, LIVE Zoom et YouTube — chaque semaine, avec vous.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
