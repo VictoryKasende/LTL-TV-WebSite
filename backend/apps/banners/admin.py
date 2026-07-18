@@ -6,6 +6,7 @@ from django.utils.html import format_html
 
 from apps.common.admin import BaseAdmin, BaseStackedInline, HiddenFieldsAdminMixin, HistoryAdmin
 
+from .forms import BannerAdminForm
 from .models import Banner, BannerImage
 
 
@@ -18,6 +19,16 @@ class BannerImageInline(HiddenFieldsAdminMixin, BaseStackedInline):
     max_num = 4  # one per Variant
     fields = ('variant', 'image', 'preview', 'min_viewport_width', 'width', 'height')
     readonly_fields = ('preview', 'width', 'height')
+
+    def get_extra(self, request, obj=None, **kwargs):
+        # On the add page (obj is None) there are no images yet, so show
+        # one blank slot to get started. On the change page, once a banner
+        # already has at least one image, don't add a free extra blank
+        # slot on every visit — the admin clicks "Ajouter un objet Image
+        # de bannière supplémentaire" themselves when they actually want one.
+        if obj and obj.images.exists():
+            return 0
+        return super().get_extra(request, obj, **kwargs)
 
     @admin.display(description='Aperçu')
     def preview(self, obj: BannerImage | None) -> str:
@@ -32,6 +43,7 @@ class BannerImageInline(HiddenFieldsAdminMixin, BaseStackedInline):
 
 @admin.register(Banner)
 class BannerAdmin(HistoryAdmin):
+    form = BannerAdminForm
     inlines = [BannerImageInline]
     list_display = (
         'title', 'is_active', 'is_active_now_display',
@@ -43,8 +55,11 @@ class BannerAdmin(HistoryAdmin):
     ordering = ('order', '-created_at')
     date_hierarchy = 'starts_at'
     fieldsets = (
-        ('Métadonnées internes (jamais visibles publiquement)', {
+        ('Titre et texte alternatif', {
             'fields': ('title', 'alt_text'),
+            'description': 'Le titre est affiché aux visiteurs sur la bannière. Laissé vide, '
+                          'un nom de fichier est utilisé en interne pour organiser l\'admin '
+                          'mais rien ne s\'affiche sur le carousel public.',
         }),
         ('Cible du clic', {'fields': ('link_url', 'link_target')}),
         ('Planification', {

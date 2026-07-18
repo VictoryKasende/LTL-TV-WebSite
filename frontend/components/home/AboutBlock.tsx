@@ -27,9 +27,15 @@ export default async function AboutBlock() {
 
         {/* Row des sous-marques */}
         <div className="mt-14 flex flex-wrap items-center justify-center gap-x-12 gap-y-8">
-          <img src="/logo-dlp.svg" alt="Dans Les Profondeurs" className="h-8 md:h-9 w-auto" />
-          <img src="/logo-pc.svg"  alt="Prends Courage"        className="h-9 md:h-10 w-auto" />
-          <img src="/logo-raf.svg" alt="Rafraîchissement"      className="h-16 md:h-20 w-auto" />
+          <Link href="/emissions/dans-les-profondeurs" aria-label="Dans Les Profondeurs">
+            <img src="/logo-dlp.svg" alt="Dans Les Profondeurs" className="h-8 md:h-9 w-auto" />
+          </Link>
+          <Link href="/emissions/prends-courage" aria-label="Prends Courage">
+            <img src="/logo-pc.svg" alt="Prends Courage" className="h-9 md:h-10 w-auto" />
+          </Link>
+          <Link href="/emissions/rafraichissement" aria-label="Rafraîchissement">
+            <img src="/logo-raf.svg" alt="Rafraîchissement" className="h-16 md:h-20 w-auto" />
+          </Link>
         </div>
       </div>
     </section>

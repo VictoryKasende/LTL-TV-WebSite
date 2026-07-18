@@ -270,6 +270,7 @@ export type BannerImageVariant = {
 export type Banner = {
   id: number;
   title: string;
+  public_title: string;
   link_url: string;
   link_target: '_self' | '_blank';
   alt_text: string;

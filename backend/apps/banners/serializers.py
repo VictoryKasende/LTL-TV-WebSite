@@ -20,12 +20,14 @@ class BannerSerializer(serializers.ModelSerializer):
 
     images = BannerImageSerializer(many=True, read_only=True)
     is_active_now = serializers.BooleanField(read_only=True)
+    public_title = serializers.CharField(read_only=True)
 
     class Meta:
         model = Banner
         fields = (
             'id',
-            'title',            # internal — safe to expose (helps debug)
+            'title',            # internal — kept for admin/debug, not for display
+            'public_title',     # what the frontend should actually show visitors
             'link_url', 'link_target',
             'alt_text',
             'is_active', 'starts_at', 'ends_at',

@@ -62,7 +62,7 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
         {banners.map((banner, i) => {
           const desktop = pickImage(banner, 'desktop');
           const mobile = pickImage(banner, 'mobile');
-          const isLive = /live/i.test(banner.title);
+          const isLive = /live/i.test(banner.public_title);
           const active = i === index;
 
           return (
@@ -79,7 +79,7 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={mobile ?? desktop ?? ''}
-                    alt={banner.alt_text || banner.title}
+                    alt={banner.alt_text || banner.public_title || 'Bannière LTL·TV'}
                     className="absolute inset-0 h-full w-full object-cover"
                   />
                 </picture>
@@ -97,13 +97,17 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
                   </div>
                 )}
 
-                <h1 className="font-display tracking-tight text-[clamp(2rem,6vw,4.5rem)] leading-[0.95] max-w-3xl text-balance">
-                  {banner.title}
-                </h1>
+                {banner.public_title && (
+                  <h1 className="font-display tracking-tight text-[clamp(2rem,6vw,4.5rem)] leading-[0.95] max-w-3xl text-balance">
+                    {banner.public_title}
+                  </h1>
+                )}
 
                 {banner.link_url && (
                   <Link
                     href={banner.link_url}
+                    target={banner.link_target === '_blank' ? '_blank' : undefined}
+                    rel={banner.link_target === '_blank' ? 'noopener noreferrer' : undefined}
                     className="mt-6 inline-flex items-center gap-2 rounded-full bg-white text-brand-700 font-bold px-6 py-3 text-sm hover:bg-amber-400 transition-colors"
                   >
                     Découvrir
@@ -114,11 +118,6 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
             </div>
           );
         })}
-
-        {/* LTL·TV wordmark, always on top of every slide */}
-        <div className="absolute top-6 md:top-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-          <img src="/logo-ltl-white.svg" alt="LTL TV" className="h-6 md:h-7 w-auto opacity-95" />
-        </div>
       </div>
 
       {count > 1 && (

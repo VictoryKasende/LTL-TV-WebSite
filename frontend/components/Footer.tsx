@@ -31,18 +31,18 @@ export default function Footer() {
     <footer className="bg-ink-900 text-white">
       <div className="max-w-6xl mx-auto px-6 md:px-10 pt-16 pb-8">
         {/* Row de marques */}
-        <div className="flex flex-nowrap items-center justify-between gap-3 md:flex-wrap md:justify-start md:gap-x-10 md:gap-y-6 pb-12 border-b border-white/10">
+        <div className="flex flex-nowrap items-center justify-between gap-3 md:flex-wrap md:justify-center md:gap-x-12 md:gap-y-6 pb-12 border-b border-white/10">
           <Link href="/" aria-label="LTL TV" className="shrink-0">
             <img src="/logo-ltl-white.svg" alt="LTL TV" className="h-5 md:h-6 w-auto" />
           </Link>
           <Link href="/emissions/dans-les-profondeurs" aria-label="Dans Les Profondeurs" className="shrink-0">
-            <img src="/logo-dlp.svg" alt="Dans Les Profondeurs" className="h-5 md:h-6 w-auto opacity-90" />
+            <img src="/logo-dlp.svg" alt="Dans Les Profondeurs" className="h-5 md:h-6 w-auto opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
           </Link>
           <Link href="/emissions/prends-courage" aria-label="Prends Courage" className="shrink-0">
-            <img src="/logo-pc.svg" alt="Prends Courage" className="h-6 md:h-7 w-auto opacity-90" style={{ filter: 'invert(1) brightness(1.4)' }} />
+            <img src="/logo-pc.svg" alt="Prends Courage" className="h-6 md:h-7 w-auto opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
           </Link>
           <Link href="/emissions/rafraichissement" aria-label="Rafraîchissement" className="shrink-0">
-            <img src="/logo-raf.svg" alt="Rafraîchissement" className="h-9 md:h-14 w-auto opacity-90" style={{ filter: 'brightness(1.4)' }} />
+            <img src="/logo-raf.svg" alt="Rafraîchissement" className="h-9 md:h-14 w-auto opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
           </Link>
         </div>
 
@@ -54,7 +54,7 @@ export default function Footer() {
         </div>
 
         {/* CTA + socials */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pt-6 border-t border-white/10">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-6 border-t border-white/10">
           <div className="flex flex-nowrap gap-2 sm:gap-3">
             <Link
               href="/contact#partenaire"
