@@ -14,6 +14,7 @@ from apps.common.admin import (
 )
 from apps.common.permissions import is_full_site_admin
 
+from .forms import EpisodeAdminForm
 from .models import Category, Episode, Series, Show
 
 
@@ -101,8 +102,9 @@ class SeriesAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishAdminMix
 @admin.register(Episode)
 class EpisodeAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishAdminMixin, HistoryAdmin):
     # Non-Admin: 'slug' (auto-generated), 'youtube_id' (auto-derived from
-    # the URL) and 'guests' (raw JSON) are hidden — the main `speaker`
-    # field covers routine episode entry.
+    # the URL) and 'guests' (secondary to `speaker`) are hidden — the main
+    # `speaker` field covers routine episode entry.
+    form = EpisodeAdminForm
     admin_only_fields = ('slug', 'youtube_id', 'guests')
     admin_only_autocomplete_fields = ('show',)
     list_display = ('title', 'show', 'series', 'speaker', 'aired_at',
