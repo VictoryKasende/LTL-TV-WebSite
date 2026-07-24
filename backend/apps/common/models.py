@@ -132,6 +132,12 @@ class PublishableQuerySet(models.QuerySet):
             status=PublishableModel.Status.PUBLISHED,
         ).filter(models.Q(published_at__isnull=True) | models.Q(published_at__lte=now))
 
+    def published_or_scheduled(self):
+        """Published rows regardless of ``published_at``, including ones
+        scheduled for a future date (shown publicly as "locked, coming soon").
+        Drafts and archived rows stay excluded."""
+        return self.filter(status=PublishableModel.Status.PUBLISHED)
+
 
 class PublishableManager(models.Manager.from_queryset(PublishableQuerySet)):
     pass

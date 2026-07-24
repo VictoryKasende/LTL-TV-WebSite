@@ -75,8 +75,9 @@ class ShowViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='episodes')
     def list_episodes(self, request, slug=None):
         show = self.get_object()
+        base = show.episodes if _staff(request) else show.episodes.published_or_scheduled()
         qs = (
-            show.episodes.published()
+            base
             .select_related('show')
             .prefetch_related('categories', 'tags')
         )
@@ -96,7 +97,7 @@ class ShowViewSet(viewsets.ModelViewSet):
         show = self.get_object()
         staff = _staff(request)
         series_qs = show.series.all() if staff else show.series.published()
-        episodes_qs = Episode.objects.all() if staff else Episode.objects.published()
+        episodes_qs = Episode.objects.all() if staff else Episode.objects.published_or_scheduled()
         episodes_qs = (
             episodes_qs.select_related('show')
             .prefetch_related('categories', 'tags')
@@ -151,7 +152,7 @@ class EpisodeViewSet(viewsets.ModelViewSet):
             .prefetch_related('categories', 'tags')
         )
         if not _staff(self.request):
-            qs = qs.published()
+            qs = qs.published_or_scheduled()
         return qs
 
     def get_serializer_class(self):

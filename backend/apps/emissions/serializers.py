@@ -82,7 +82,7 @@ class SeriesWithEpisodesSerializer(SeriesSerializer):
                 request and request.user and request.user.is_authenticated
                 and request.user.is_staff,
             )
-            qs = obj.episodes.all() if staff else obj.episodes.published()
+            qs = obj.episodes.all() if staff else obj.episodes.published_or_scheduled()
             episodes = qs.order_by('episode_number', 'aired_at')
         return EpisodeListSerializer(episodes, many=True, context=self.context).data
 
@@ -102,6 +102,7 @@ class EpisodeListSerializer(TaggitSerializer, serializers.ModelSerializer):
     series_title = serializers.CharField(source='series.title', read_only=True, default=None)
     thumbnail_url = serializers.CharField(read_only=True)
     embed_url = serializers.CharField(read_only=True)
+    is_locked = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Episode
@@ -114,12 +115,22 @@ class EpisodeListSerializer(TaggitSerializer, serializers.ModelSerializer):
             'youtube_url', 'youtube_id', 'embed_url', 'thumbnail_url',
             'duration_seconds', 'cover', 'aired_at',
             'categories', 'category_ids', 'tags',
-            'status', 'published_at', 'is_featured', 'view_count',
+            'status', 'published_at', 'is_featured', 'is_locked', 'view_count',
         )
         read_only_fields = (
             'id', 'slug', 'youtube_id', 'embed_url', 'thumbnail_url',
-            'show_slug', 'show_title', 'series_slug', 'series_title', 'view_count',
+            'show_slug', 'show_title', 'series_slug', 'series_title',
+            'is_locked', 'view_count',
         )
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.is_locked:
+            # Scheduled for a future date: shown as a teaser, not playable yet.
+            data['youtube_url'] = ''
+            data['youtube_id'] = ''
+            data['embed_url'] = ''
+        return data
 
 
 class EpisodeDetailSerializer(EpisodeListSerializer):

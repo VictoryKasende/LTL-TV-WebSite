@@ -37,7 +37,7 @@ export default async function ShowDetailPage({ params }: Params) {
 
   const allEpisodes = episodesData?.results ?? [];
   const standalone = allEpisodes.filter((ep) => !ep.series);
-  const initialEpisode = allEpisodes[0] ?? null;
+  const initialEpisode = allEpisodes.find((ep) => !ep.is_locked) ?? null;
   const otherShows = (showsData?.results ?? []).filter((s) => s.slug !== show.slug);
 
   return (

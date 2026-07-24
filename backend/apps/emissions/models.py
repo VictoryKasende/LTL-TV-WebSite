@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 from simple_history.models import HistoricalRecords
 from taggit.managers import TaggableManager
 
@@ -276,6 +277,12 @@ class Episode(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
         if self.youtube_url and not self.youtube_id:
             self.youtube_id = extract_youtube_id(self.youtube_url) or ''
         super().save(*args, **kwargs)
+
+    @property
+    def is_locked(self) -> bool:
+        """Published in advance for a future date: visible in listings as a
+        teaser ("Disponible le …") but not yet playable."""
+        return bool(self.published_at and self.published_at > timezone.now())
 
     @property
     def embed_url(self) -> str:

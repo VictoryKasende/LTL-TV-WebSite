@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Play, ChevronDown, ChevronRight, ChevronLeft, Calendar, User } from 'lucide-react';
+import { Play, ChevronDown, ChevronRight, ChevronLeft, Calendar, User, Lock } from 'lucide-react';
 import type { Episode, Series, Show } from '../../lib/api';
 import VideoEmbed from '../VideoEmbed';
+import AudioEmbed from '../AudioEmbed';
+
+const AUDIO_ONLY_SHOWS = new Set(['rafraichissement']);
 
 type SortOrder = 'recent' | 'oldest' | 'popular' | 'published';
 
@@ -36,6 +39,13 @@ const fmtDate = (iso: string | null) => {
   if (!iso) return '';
   try { return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }); }
   catch { return ''; }
+};
+
+const fmtAvailableDate = (iso: string | null) => {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  } catch { return ''; }
 };
 
 function Pagination({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
@@ -112,6 +122,7 @@ export default function ShowDetailClient({
   );
 
   function selectEpisode(ep: Episode) {
+    if (ep.is_locked) return;
     setPlaying(ep);
     setIsPlaying(true);
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -122,6 +133,7 @@ export default function ShowDetailClient({
   }
 
   const heroImage = playing?.cover || playing?.thumbnail_url || show.host_photo || show.cover || '';
+  const isAudioShow = AUDIO_ONLY_SHOWS.has(show.slug);
 
   return (
     <div ref={topRef}>
@@ -150,18 +162,29 @@ export default function ShowDetailClient({
           )}
           <button
             type="button"
-            onClick={() => setIsPlaying(true)}
-            aria-label="Lire l'épisode"
-            className="shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-colors"
+            onClick={() => !playing.is_locked && setIsPlaying(true)}
+            disabled={playing.is_locked}
+            aria-label={playing.is_locked ? 'Épisode pas encore disponible' : "Lire l'épisode"}
+            className="shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-colors disabled:opacity-60 disabled:hover:bg-white/15"
           >
-            <Play className="h-4 w-4 fill-current ml-0.5" />
+            {playing.is_locked ? <Lock className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current ml-0.5" />}
           </button>
         </div>
       )}
 
       <div className="relative h-56 sm:h-80 md:h-96 overflow-hidden" style={{ backgroundColor: show.color }}>
         {isPlaying && playing?.embed_url ? (
-          <VideoEmbed key={playing.id} src={`${playing.embed_url}?autoplay=1`} title={playing.title} />
+          isAudioShow ? (
+            <AudioEmbed
+              key={playing.id}
+              videoId={playing.youtube_id}
+              title={playing.title}
+              artwork={heroImage}
+              speaker={playing.speaker}
+            />
+          ) : (
+            <VideoEmbed key={playing.id} src={`${playing.embed_url}?autoplay=1`} title={playing.title} />
+          )
         ) : (
           <>
             {heroImage && (
@@ -171,14 +194,24 @@ export default function ShowDetailClient({
             {playing && (
               <button
                 type="button"
-                onClick={() => setIsPlaying(true)}
-                aria-label="Lire l'épisode"
+                onClick={() => !playing.is_locked && setIsPlaying(true)}
+                disabled={playing.is_locked}
+                aria-label={playing.is_locked ? 'Épisode pas encore disponible' : "Lire l'épisode"}
                 className="absolute inset-0 flex items-center justify-center group"
               >
                 <span className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <Play className="h-5 w-5 sm:h-6 sm:w-6 text-ink-900 fill-current ml-1" />
+                  {playing.is_locked ? (
+                    <Lock className="h-5 w-5 sm:h-6 sm:w-6 text-ink-900" />
+                  ) : (
+                    <Play className="h-5 w-5 sm:h-6 sm:w-6 text-ink-900 fill-current ml-1" />
+                  )}
                 </span>
               </button>
+            )}
+            {playing?.is_locked && playing.published_at && (
+              <p className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 text-white text-xs sm:text-sm font-medium capitalize">
+                Disponible le {fmtAvailableDate(playing.published_at)}
+              </p>
             )}
             {show.logo && (
               <img src={show.logo} alt="" className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 h-14 w-14 sm:h-20 sm:w-20 object-contain opacity-90" />
@@ -239,19 +272,28 @@ export default function ShowDetailClient({
                             key={ep.id}
                             type="button"
                             onClick={() => selectEpisode(ep)}
-                            className="group flex flex-col overflow-hidden rounded-lg bg-white shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1 text-left"
+                            aria-disabled={ep.is_locked}
+                            className={`group flex flex-col overflow-hidden rounded-lg bg-white shadow-card transition-all duration-300 text-left ${
+                              ep.is_locked ? 'cursor-default' : 'hover:shadow-card-hover hover:-translate-y-1'
+                            }`}
                           >
                             <div className="relative aspect-video overflow-hidden bg-brand-900">
                               {(ep.cover || ep.thumbnail_url) && (
                                 <img
                                   src={ep.cover ?? ep.thumbnail_url}
                                   alt={ep.title}
-                                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                  className={`h-full w-full object-cover transition-transform duration-700 ${ep.is_locked ? '' : 'group-hover:scale-105'}`}
                                 />
                               )}
-                              <div className="absolute inset-0 flex items-center justify-center bg-brand-900/0 group-hover:bg-brand-900/30 transition-colors">
-                                <Play className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity fill-current" />
-                              </div>
+                              {ep.is_locked ? (
+                                <div className="absolute inset-0 flex items-center justify-center bg-ink-900/55">
+                                  <Lock className="h-7 w-7 text-white" />
+                                </div>
+                              ) : (
+                                <div className="absolute inset-0 flex items-center justify-center bg-brand-900/0 group-hover:bg-brand-900/30 transition-colors">
+                                  <Play className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity fill-current" />
+                                </div>
+                              )}
                               {ep.episode_number && (
                                 <span className="absolute top-2 left-2 rounded bg-ink-900/85 text-amber-400 text-xs font-bold px-2 py-1">
                                   Épisode {ep.episode_number}
@@ -267,10 +309,18 @@ export default function ShowDetailClient({
                                   <User className="h-3 w-3" /> {ep.speaker}
                                 </span>
                               )}
-                              {ep.aired_at && (
-                                <span className="inline-flex items-center gap-1.5 text-xs text-ink-400">
-                                  <Calendar className="h-3 w-3" /> {fmtDate(ep.aired_at)}
-                                </span>
+                              {ep.is_locked ? (
+                                ep.published_at && (
+                                  <span className="text-xs font-medium text-red-600 capitalize">
+                                    Disponible le {fmtAvailableDate(ep.published_at)}
+                                  </span>
+                                )
+                              ) : (
+                                ep.aired_at && (
+                                  <span className="inline-flex items-center gap-1.5 text-xs text-ink-400">
+                                    <Calendar className="h-3 w-3" /> {fmtDate(ep.aired_at)}
+                                  </span>
+                                )
                               )}
                             </div>
                           </button>
@@ -292,13 +342,20 @@ export default function ShowDetailClient({
                     <button
                       type="button"
                       onClick={() => selectEpisode(ep)}
-                      className="group w-full flex items-center gap-3 sm:gap-4 py-4 text-left hover:bg-paper-100 -mx-2 px-2 rounded transition-colors"
+                      aria-disabled={ep.is_locked}
+                      className={`group w-full flex items-center gap-3 sm:gap-4 py-4 text-left -mx-2 px-2 rounded transition-colors ${
+                        ep.is_locked ? 'cursor-default' : 'hover:bg-paper-100'
+                      }`}
                     >
                       <div className="relative shrink-0 h-14 w-20 sm:h-20 sm:w-32 rounded overflow-hidden bg-brand-900">
                         {(ep.cover || ep.thumbnail_url) && (
                           <img src={ep.cover ?? ep.thumbnail_url} alt={ep.title} className="absolute inset-0 h-full w-full object-cover" />
                         )}
-                        {ep.is_featured && (
+                        {ep.is_locked ? (
+                          <div className="absolute inset-0 flex items-center justify-center bg-ink-900/55">
+                            <Lock className="h-5 w-5 text-white" />
+                          </div>
+                        ) : ep.is_featured && (
                           <span className="absolute top-1 left-1 inline-flex items-center gap-1 rounded bg-amber-400 text-ink-900 text-[9px] font-bold px-1 py-0.5 uppercase">
                             Live
                           </span>
@@ -308,7 +365,15 @@ export default function ShowDetailClient({
                         <h3 className="font-semibold text-sm sm:text-base text-ink-800 leading-snug group-hover:text-brand-700 transition-colors line-clamp-2">
                           {ep.title}
                         </h3>
-                        <p className="text-xs md:text-sm text-ink-500 mt-1">{relativeTime(ep.aired_at)}</p>
+                        {ep.is_locked ? (
+                          ep.published_at && (
+                            <p className="text-xs md:text-sm font-medium text-red-600 mt-1 capitalize">
+                              Disponible le {fmtAvailableDate(ep.published_at)}
+                            </p>
+                          )
+                        ) : (
+                          <p className="text-xs md:text-sm text-ink-500 mt-1">{relativeTime(ep.aired_at)}</p>
+                        )}
                       </div>
                     </button>
                   </li>

@@ -128,6 +128,7 @@ export type Episode = {
   status: string;
   published_at: string | null;
   is_featured: boolean;
+  is_locked: boolean;
   view_count: number;
   description?: string;
 };
