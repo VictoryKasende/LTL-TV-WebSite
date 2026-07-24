@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Play, ChevronDown, ChevronRight, ChevronLeft, Calendar, User, Lock } from 'lucide-react';
 import type { Episode, Series, Show } from '../../lib/api';
 import VideoEmbed from '../VideoEmbed';
-import AudioEmbed from '../AudioEmbed';
+import AudioPlayer from '../AudioPlayer';
 
 const AUDIO_ONLY_SHOWS = new Set(['rafraichissement']);
 
@@ -121,11 +121,17 @@ export default function ShowDetailClient({
     seriesPage * SERIES_PAGE_SIZE,
   );
 
+  const isAudioShow = AUDIO_ONLY_SHOWS.has(show.slug);
+
   function selectEpisode(ep: Episode) {
     if (ep.is_locked) return;
     setPlaying(ep);
     setIsPlaying(true);
-    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Audio shows keep a persistent docked player, so browsing the list
+    // shouldn't yank the page back to the top like it does for video.
+    if (!isAudioShow) {
+      topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   function toggleSeries(id: number) {
@@ -133,7 +139,6 @@ export default function ShowDetailClient({
   }
 
   const heroImage = playing?.cover || playing?.thumbnail_url || show.host_photo || show.cover || '';
-  const isAudioShow = AUDIO_ONLY_SHOWS.has(show.slug);
 
   return (
     <div ref={topRef}>
@@ -175,12 +180,13 @@ export default function ShowDetailClient({
       <div className="relative h-56 sm:h-80 md:h-96 overflow-hidden" style={{ backgroundColor: show.color }}>
         {isPlaying && playing?.embed_url ? (
           isAudioShow ? (
-            <AudioEmbed
+            <AudioPlayer
               key={playing.id}
-              videoId={playing.youtube_id}
-              title={playing.title}
+              episode={playing}
               artwork={heroImage}
-              speaker={playing.speaker}
+              showTitle={show.title}
+              queue={sortedStandalone}
+              onSelect={selectEpisode}
             />
           ) : (
             <VideoEmbed key={playing.id} src={`${playing.embed_url}?autoplay=1`} title={playing.title} />
