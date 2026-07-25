@@ -5,6 +5,9 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import NotificationPrompt from '../components/NotificationPrompt';
 import PwaServiceWorker from '../components/PwaServiceWorker';
+import { AudioPlayerProvider } from '../lib/AudioPlayerContext';
+import { GlobalAudioDock } from '../components/AudioPlayer';
+import MainWithAudioPadding from '../components/MainWithAudioPadding';
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -75,9 +78,12 @@ export default function RootLayout({
             }),
           }}
         />
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <AudioPlayerProvider>
+          <Navbar />
+          <MainWithAudioPadding>{children}</MainWithAudioPadding>
+          <Footer />
+          <GlobalAudioDock />
+        </AudioPlayerProvider>
         <PwaServiceWorker />
         <NotificationPrompt />
       </body>

@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { Play, ChevronDown, ChevronRight, ChevronLeft, Calendar, User, Lock } from 'lucide-react';
 import type { Episode, Series, Show } from '../../lib/api';
 import VideoEmbed from '../VideoEmbed';
-import AudioPlayer from '../AudioPlayer';
+import { AudioPlayerExpanded } from '../AudioPlayer';
+import { useAudioPlayerContext } from '../../lib/AudioPlayerContext';
 import EqBars from '../EqBars';
 
 const AUDIO_ONLY_SHOWS = new Set(['rafraichissement']);
@@ -147,10 +148,18 @@ export default function ShowDetailClient({
   standalone: Episode[];
   initialEpisode: Episode | null;
 }) {
+  const audioCtx = useAudioPlayerContext();
   const topRef = useRef<HTMLDivElement>(null);
-  const [playing, setPlaying] = useState<Episode | null>(initialEpisode);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audioIsPlaying, setAudioIsPlaying] = useState(false);
+  const isAudioShow = AUDIO_ONLY_SHOWS.has(show.slug);
+  // If this show's episode is already playing globally (e.g. the visitor navigated
+  // back here while listening), pick up the page's local UI state from it instead
+  // of resetting to the server-rendered default.
+  const [playing, setPlaying] = useState<Episode | null>(() => (
+    isAudioShow && audioCtx.track?.ctx.showSlug === show.slug ? audioCtx.track.episode : initialEpisode
+  ));
+  const [isPlaying, setIsPlaying] = useState(() => (
+    isAudioShow && audioCtx.track?.ctx.showSlug === show.slug
+  ));
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [sortOrder, setSortOrder] = useState<SortOrder>('recent');
   const [standalonePage, setStandalonePage] = useState(1);
@@ -184,15 +193,21 @@ export default function ShowDetailClient({
     seriesPage * SERIES_PAGE_SIZE,
   );
 
-  const isAudioShow = AUDIO_ONLY_SHOWS.has(show.slug);
-
   function selectEpisode(ep: Episode) {
     if (ep.is_locked) return;
     setPlaying(ep);
     setIsPlaying(true);
-    // Audio shows keep a persistent docked player, so browsing the list
-    // shouldn't yank the page back to the top like it does for video.
-    if (!isAudioShow) {
+    if (isAudioShow) {
+      // Hands off to the site-wide player so playback survives navigating
+      // away from this page — see lib/AudioPlayerContext.tsx.
+      audioCtx.play(ep, {
+        showTitle: show.title,
+        showSlug: show.slug,
+        showHostPhoto: show.host_photo,
+        showCover: show.cover,
+        queue: sortedStandalone,
+      });
+    } else {
       topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
@@ -204,7 +219,7 @@ export default function ShowDetailClient({
   const heroImage = playing?.cover || playing?.thumbnail_url || show.host_photo || show.cover || '';
 
   return (
-    <div ref={topRef} className={isAudioShow && isPlaying ? 'pb-16 md:pb-20' : undefined}>
+    <div ref={topRef}>
       <div className="bg-ink-900">
         <div className="max-w-6xl mx-auto px-6 md:px-10 py-3">
           <Link href="/emissions" className="text-sm text-white/70 hover:text-white transition-colors">
@@ -246,15 +261,7 @@ export default function ShowDetailClient({
       >
         {isPlaying && playing?.embed_url ? (
           isAudioShow ? (
-            <AudioPlayer
-              key={playing.id}
-              episode={playing}
-              artwork={heroImage}
-              showTitle={show.title}
-              queue={sortedStandalone}
-              onSelect={selectEpisode}
-              onPlayingChange={setAudioIsPlaying}
-            />
+            <AudioPlayerExpanded />
           ) : (
             <VideoEmbed key={playing.id} src={`${playing.embed_url}?autoplay=1`} title={playing.title} />
           )
@@ -346,7 +353,7 @@ export default function ShowDetailClient({
                               key={ep.id}
                               ep={ep}
                               onSelect={selectEpisode}
-                              active={audioIsPlaying && playing?.id === ep.id}
+                              active={audioCtx.playing && audioCtx.track?.episode.id === ep.id}
                               showEpisodeNumber
                             />
                           ))}
@@ -429,7 +436,7 @@ export default function ShowDetailClient({
                     key={ep.id}
                     ep={ep}
                     onSelect={selectEpisode}
-                    active={isAudioShow && audioIsPlaying && playing?.id === ep.id}
+                    active={audioCtx.playing && audioCtx.track?.episode.id === ep.id}
                   />
                 ))}
               </ul>
