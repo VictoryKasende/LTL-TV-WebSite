@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Play, ChevronDown, ChevronRight, ChevronLeft, Calendar, User, Lock } from 'lucide-react';
+import { Play, ChevronDown, ChevronRight, ChevronLeft, Lock } from 'lucide-react';
 import type { Episode, Series, Show } from '../../lib/api';
 import VideoPlayer from '../VideoPlayer';
 import { AudioPlayerExpanded } from '../AudioPlayer';
@@ -15,13 +15,6 @@ type SortOrder = 'recent' | 'oldest' | 'popular' | 'published';
 
 const STANDALONE_PAGE_SIZE = 6;
 const SERIES_PAGE_SIZE = 5;
-
-function fmtDuration(seconds: number): string {
-  if (!seconds) return '';
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
 
 function relativeTime(iso: string | null): string {
   if (!iso) return '';
@@ -36,12 +29,6 @@ function relativeTime(iso: string | null): string {
   const months = Math.floor(days / 30);
   return months <= 1 ? 'Il y a 1 mois' : `Il y a ${months} mois`;
 }
-
-const fmtDate = (iso: string | null) => {
-  if (!iso) return '';
-  try { return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }); }
-  catch { return ''; }
-};
 
 const fmtAvailableDate = (iso: string | null) => {
   if (!iso) return '';
@@ -241,33 +228,6 @@ export default function ShowDetailClient({
         </div>
       </div>
 
-      {playing && !isAudioShow && (
-        <div className="flex items-center gap-2 sm:gap-3 px-4 sm:px-6 md:px-10 py-3" style={{ backgroundColor: show.color }}>
-          <div className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded overflow-hidden bg-black/20">
-            {(show.host_photo || playing.thumbnail_url) && (
-              <img src={show.host_photo || playing.thumbnail_url} alt="" className="h-full w-full object-cover" />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] sm:text-[11px] uppercase tracking-wide text-white/70 truncate">{show.title}</p>
-            <h2 className="font-bold text-white text-xs sm:text-base leading-snug line-clamp-1">{playing.title}</h2>
-            <div className="mt-1.5 h-px bg-white/25" />
-          </div>
-          {playing.duration_seconds > 0 && (
-            <span className="text-white/80 text-xs shrink-0 hidden sm:block">{fmtDuration(playing.duration_seconds)}</span>
-          )}
-          <button
-            type="button"
-            onClick={() => selectEpisode(playing)}
-            disabled={playing.is_locked}
-            aria-label={playing.is_locked ? 'Épisode pas encore disponible' : "Lire l'épisode"}
-            className="shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-colors disabled:opacity-60 disabled:hover:bg-white/15"
-          >
-            {playing.is_locked ? <Lock className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current ml-0.5" />}
-          </button>
-        </div>
-      )}
-
       <div
         className={`relative overflow-hidden ${isAudioShow && isPlaying && playing?.embed_url ? '' : 'h-56 sm:h-80 md:h-96'}`}
         style={{ backgroundColor: show.color }}
@@ -359,80 +319,19 @@ export default function ShowDetailClient({
                       />
                     </button>
                     {expanded[s.id] && (
-                      isAudioShow ? (
-                        <ul className="pb-2 flex flex-col divide-y divide-paper-200">
-                          {(s.episodes ?? []).map((ep) => (
-                            <EpisodeRow
-                              key={ep.id}
-                              ep={ep}
-                              onSelect={selectEpisode}
-                              active={audioCtx.playing && audioCtx.track?.episode.id === ep.id}
-                              showEpisodeNumber
-                            />
-                          ))}
-                        </ul>
-                      ) : (
-                        <div className="pb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                          {(s.episodes ?? []).map((ep) => (
-                            <button
-                              key={ep.id}
-                              type="button"
-                              onClick={() => selectEpisode(ep)}
-                              aria-disabled={ep.is_locked}
-                              className={`group flex flex-col overflow-hidden rounded-lg bg-white shadow-card transition-all duration-300 text-left ${
-                                ep.is_locked ? 'cursor-default' : 'hover:shadow-card-hover hover:-translate-y-1'
-                              }`}
-                            >
-                              <div className="relative aspect-video overflow-hidden bg-brand-900">
-                                {(ep.cover || ep.thumbnail_url) && (
-                                  <img
-                                    src={ep.cover ?? ep.thumbnail_url}
-                                    alt={ep.title}
-                                    className={`h-full w-full object-cover transition-transform duration-700 ${ep.is_locked ? '' : 'group-hover:scale-105'}`}
-                                  />
-                                )}
-                                {ep.is_locked ? (
-                                  <div className="absolute inset-0 flex items-center justify-center bg-ink-900/55">
-                                    <Lock className="h-7 w-7 text-white" />
-                                  </div>
-                                ) : (
-                                  <div className="absolute inset-0 flex items-center justify-center bg-brand-900/0 group-hover:bg-brand-900/30 transition-colors">
-                                    <Play className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity fill-current" />
-                                  </div>
-                                )}
-                                {ep.episode_number && (
-                                  <span className="absolute top-2 left-2 rounded bg-ink-900/85 text-amber-400 text-xs font-bold px-2 py-1">
-                                    Épisode {ep.episode_number}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex flex-1 flex-col gap-1.5 p-4">
-                                <h4 className="font-bold text-ink-800 leading-snug group-hover:text-brand-700 transition-colors line-clamp-2">
-                                  {ep.title}
-                                </h4>
-                                {ep.speaker && (
-                                  <span className="inline-flex items-center gap-1.5 text-xs text-ink-500">
-                                    <User className="h-3 w-3" /> {ep.speaker}
-                                  </span>
-                                )}
-                                {ep.is_locked ? (
-                                  ep.published_at && (
-                                    <span className="text-xs font-medium text-red-600 capitalize">
-                                      Disponible le {fmtAvailableDate(ep.published_at)}
-                                    </span>
-                                  )
-                                ) : (
-                                  ep.aired_at && (
-                                    <span className="inline-flex items-center gap-1.5 text-xs text-ink-400">
-                                      <Calendar className="h-3 w-3" /> {fmtDate(ep.aired_at)}
-                                    </span>
-                                  )
-                                )}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )
+                      <ul className="pb-2 flex flex-col divide-y divide-paper-200">
+                        {(s.episodes ?? []).map((ep) => (
+                          <EpisodeRow
+                            key={ep.id}
+                            ep={ep}
+                            onSelect={selectEpisode}
+                            active={isAudioShow
+                              ? audioCtx.playing && audioCtx.track?.episode.id === ep.id
+                              : isPlaying && playing?.id === ep.id}
+                            showEpisodeNumber
+                          />
+                        ))}
+                      </ul>
                     )}
                   </div>
                 ))}
@@ -449,7 +348,9 @@ export default function ShowDetailClient({
                     key={ep.id}
                     ep={ep}
                     onSelect={selectEpisode}
-                    active={audioCtx.playing && audioCtx.track?.episode.id === ep.id}
+                    active={isAudioShow
+                      ? audioCtx.playing && audioCtx.track?.episode.id === ep.id
+                      : isPlaying && playing?.id === ep.id}
                   />
                 ))}
               </ul>
