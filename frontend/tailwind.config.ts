@@ -79,11 +79,16 @@ const config: Config = {
           '0%':   { transform: 'translateX(0)' },
           '100%': { transform: 'translateX(-50%)' },
         },
+        eq: {
+          '0%, 100%': { height: '4px' },
+          '50%':      { height: '14px' },
+        },
       },
       animation: {
         'pulse-dot': 'pulse-dot 1.6s ease-in-out infinite',
         'marquee-slow': 'marquee 52s linear infinite',
         'marquee-fast': 'marquee 38s linear infinite reverse',
+        eq: 'eq 0.9s ease-in-out infinite',
       },
     },
   },

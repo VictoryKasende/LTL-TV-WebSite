@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Play, Pause, Rewind, FastForward, Share2, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, Pause, Rewind, FastForward, Share2, ChevronDown, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import type { Episode } from '../lib/api';
+import EqBars from './EqBars';
 
 declare global {
   interface Window {
@@ -42,9 +43,11 @@ const SPEEDS = [1, 1.25, 1.5, 2];
 
 // Plays a YouTube video's audio track only: the iframe stays off-screen and is
 // driven entirely through the IFrame Player API; only custom controls are shown.
-function useAudioPlayer(videoId: string, autoplay: boolean, fallbackDuration = 0) {
+function useAudioPlayer(videoId: string, autoplay: boolean, fallbackDuration: number, onEnded: () => void) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
+  const onEndedRef = useRef(onEnded);
+  onEndedRef.current = onEnded;
   const [ready, setReady] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -76,6 +79,7 @@ function useAudioPlayer(videoId: string, autoplay: boolean, fallbackDuration = 0
             setPlaying(e.data === window.YT.PlayerState.PLAYING);
             const d = e.target.getDuration();
             if (d) setDuration(d);
+            if (e.data === window.YT.PlayerState.ENDED) onEndedRef.current();
           },
         },
       });
@@ -172,18 +176,33 @@ function Waveform({
 }
 
 export default function AudioPlayer({
-  episode, artwork, showTitle, queue, onSelect,
+  episode, artwork, showTitle, queue, onSelect, onPlayingChange,
 }: {
   episode: Episode;
   artwork?: string;
   showTitle: string;
   queue: Episode[];
   onSelect: (ep: Episode) => void;
+  onPlayingChange?: (playing: boolean) => void;
 }) {
-  const player = useAudioPlayer(episode.youtube_id, true, episode.duration_seconds);
   const rootRef = useRef<HTMLDivElement>(null);
   const [docked, setDocked] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  const idx = queue.findIndex((e) => e.id === episode.id);
+  const prevEp = idx > 0 ? queue[idx - 1] : null;
+  const nextEp = idx >= 0 && idx < queue.length - 1 ? queue[idx + 1] : null;
+  const canPrev = !!prevEp && !prevEp.is_locked;
+  const canNext = !!nextEp && !nextEp.is_locked;
+
+  function handleEnded() {
+    // Continuous listening: advance to the next episode, looping back to the
+    // start of the queue once the last one finishes.
+    const upNext = canNext && nextEp ? nextEp : queue.find((e) => !e.is_locked) ?? null;
+    if (upNext && upNext.id !== episode.id) onSelect(upNext);
+  }
+
+  const player = useAudioPlayer(episode.youtube_id, true, episode.duration_seconds, handleEnded);
 
   useEffect(() => {
     const el = rootRef.current;
@@ -197,11 +216,12 @@ export default function AudioPlayer({
     if (!docked) setSheetOpen(false);
   }, [docked]);
 
-  const idx = queue.findIndex((e) => e.id === episode.id);
-  const prevEp = idx > 0 ? queue[idx - 1] : null;
-  const nextEp = idx >= 0 && idx < queue.length - 1 ? queue[idx + 1] : null;
-  const canPrev = !!prevEp && !prevEp.is_locked;
-  const canNext = !!nextEp && !nextEp.is_locked;
+  useEffect(() => {
+    onPlayingChange?.(player.playing);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player.playing]);
+
+  useEffect(() => () => onPlayingChange?.(false), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function share() {
     const url = `https://youtu.be/${episode.youtube_id}`;
@@ -216,10 +236,15 @@ export default function AudioPlayer({
     }
   }
 
+  function playGlyph(size: string) {
+    if (!player.ready) return <Loader2 className={`${size} animate-spin`} />;
+    return player.playing ? <Pause className={`${size} fill-current`} /> : <Play className={`${size} fill-current ml-0.5`} />;
+  }
+
   function renderExpanded({ compact = false }: { compact?: boolean } = {}) {
     const artSize = compact ? 'h-24 w-24' : 'h-28 w-28 sm:h-36 sm:w-36';
     return (
-      <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 px-6 py-6 h-full">
+      <div className={`flex flex-col items-center gap-4 sm:gap-5 px-6 ${compact ? 'py-6' : 'py-8 justify-center'}`}>
         {artwork && (
           <div className={`${artSize} shrink-0 overflow-hidden rounded-xl shadow-lg`}>
             <img src={artwork} alt="" className="h-full w-full object-cover" />
@@ -244,7 +269,7 @@ export default function AudioPlayer({
             onClick={() => canPrev && prevEp && onSelect(prevEp)}
             disabled={!canPrev}
             aria-label="Épisode précédent"
-            className="text-white disabled:opacity-30 disabled:cursor-not-allowed"
+            className="text-white disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
@@ -257,9 +282,9 @@ export default function AudioPlayer({
             onClick={player.toggle}
             disabled={!player.ready}
             aria-label={player.playing ? 'Pause' : 'Lecture'}
-            className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-white text-ink-900 disabled:opacity-50 transition-transform hover:scale-105"
+            className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-white text-ink-900 disabled:opacity-80 transition-transform hover:scale-105"
           >
-            {player.playing ? <Pause className="h-6 w-6 fill-current" /> : <Play className="h-6 w-6 fill-current ml-0.5" />}
+            {playGlyph('h-6 w-6')}
           </button>
           <button type="button" onClick={() => player.skip(30)} aria-label="Avancer de 30 secondes" className="text-white flex flex-col items-center gap-0.5">
             <FastForward className="h-6 w-6" />
@@ -270,7 +295,7 @@ export default function AudioPlayer({
             onClick={() => canNext && nextEp && onSelect(nextEp)}
             disabled={!canNext}
             aria-label="Épisode suivant"
-            className="text-white disabled:opacity-30 disabled:cursor-not-allowed"
+            className="text-white disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
           >
             <ChevronRight className="h-6 w-6" />
           </button>
@@ -280,11 +305,11 @@ export default function AudioPlayer({
           <button
             type="button"
             onClick={player.cycleSpeed}
-            className="rounded-full bg-white/10 border border-white/20 px-3.5 py-1.5 text-xs font-bold text-white tabular-nums"
+            className="rounded-full bg-white/10 border border-white/20 px-3.5 py-1.5 text-xs font-bold text-white tabular-nums transition-colors hover:bg-white/20"
           >
             {player.speed}×
           </button>
-          <button type="button" onClick={share} aria-label="Partager" className="text-white/90">
+          <button type="button" onClick={share} aria-label="Partager" className="text-white/90 transition-colors hover:text-white">
             <Share2 className="h-5 w-5" />
           </button>
         </div>
@@ -294,7 +319,7 @@ export default function AudioPlayer({
 
   return (
     <>
-      <div ref={rootRef} className="absolute inset-0">
+      <div ref={rootRef} className="relative">
         <div ref={player.containerRef} className="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true" />
         {renderExpanded()}
       </div>
@@ -307,7 +332,7 @@ export default function AudioPlayer({
       >
         <div className="h-[3px] bg-white/15">
           <div
-            className="h-full bg-amber-400"
+            className="h-full bg-amber-400 transition-[width] duration-300 motion-reduce:transition-none"
             style={{ width: `${player.duration > 0 ? (player.current / player.duration) * 100 : 0}%` }}
           />
         </div>
@@ -320,7 +345,10 @@ export default function AudioPlayer({
         >
           {artwork && <img src={artwork} alt="" className="h-10 w-10 rounded shrink-0 object-cover" />}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white truncate">{episode.title}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-bold text-white truncate">{episode.title}</p>
+              {player.playing && <EqBars className="shrink-0" />}
+            </div>
             <p className="text-xs text-white/60 truncate">{episode.speaker || showTitle}</p>
           </div>
           <span
@@ -330,7 +358,7 @@ export default function AudioPlayer({
             aria-label={player.playing ? 'Pause' : 'Lecture'}
             className="shrink-0 h-9 w-9 rounded-full bg-white flex items-center justify-center text-ink-900"
           >
-            {player.playing ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current ml-0.5" />}
+            {playGlyph('h-4 w-4')}
           </span>
         </button>
 
@@ -339,7 +367,10 @@ export default function AudioPlayer({
           <div className="flex items-center gap-3 min-w-0">
             {artwork && <img src={artwork} alt="" className="h-10 w-10 rounded shrink-0 object-cover" />}
             <div className="min-w-0">
-              <p className="text-sm font-bold text-white truncate">{episode.title}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-bold text-white truncate">{episode.title}</p>
+                {player.playing && <EqBars className="shrink-0" />}
+              </div>
               <p className="text-xs text-white/60 truncate">
                 {episode.speaker || showTitle} · {fmtTime(player.current)} / {fmtTime(player.duration)}
               </p>
@@ -347,10 +378,10 @@ export default function AudioPlayer({
           </div>
 
           <div className="flex items-center gap-4">
-            <button type="button" onClick={() => canPrev && prevEp && onSelect(prevEp)} disabled={!canPrev} aria-label="Épisode précédent" className="text-white/80 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed">
+            <button type="button" onClick={() => canPrev && prevEp && onSelect(prevEp)} disabled={!canPrev} aria-label="Épisode précédent" className="text-white/80 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <button type="button" onClick={() => player.skip(-15)} aria-label="Reculer de 15 secondes" className="text-white/80 hover:text-white">
+            <button type="button" onClick={() => player.skip(-15)} aria-label="Reculer de 15 secondes" className="text-white/80 hover:text-white transition-colors">
               <Rewind className="h-5 w-5" />
             </button>
             <button
@@ -358,23 +389,23 @@ export default function AudioPlayer({
               onClick={player.toggle}
               disabled={!player.ready}
               aria-label={player.playing ? 'Pause' : 'Lecture'}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink-900 disabled:opacity-50"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink-900 disabled:opacity-80"
             >
-              {player.playing ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current ml-0.5" />}
+              {playGlyph('h-4 w-4')}
             </button>
-            <button type="button" onClick={() => player.skip(30)} aria-label="Avancer de 30 secondes" className="text-white/80 hover:text-white">
+            <button type="button" onClick={() => player.skip(30)} aria-label="Avancer de 30 secondes" className="text-white/80 hover:text-white transition-colors">
               <FastForward className="h-5 w-5" />
             </button>
-            <button type="button" onClick={() => canNext && nextEp && onSelect(nextEp)} disabled={!canNext} aria-label="Épisode suivant" className="text-white/80 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed">
+            <button type="button" onClick={() => canNext && nextEp && onSelect(nextEp)} disabled={!canNext} aria-label="Épisode suivant" className="text-white/80 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
               <ChevronRight className="h-5 w-5" />
             </button>
           </div>
 
           <div className="flex items-center gap-3 justify-end">
-            <button type="button" onClick={player.cycleSpeed} className="rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-bold text-white tabular-nums">
+            <button type="button" onClick={player.cycleSpeed} className="rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-bold text-white tabular-nums transition-colors hover:bg-white/20">
               {player.speed}×
             </button>
-            <button type="button" onClick={share} aria-label="Partager" className="text-white/80 hover:text-white">
+            <button type="button" onClick={share} aria-label="Partager" className="text-white/80 hover:text-white transition-colors">
               <Share2 className="h-4 w-4" />
             </button>
           </div>
@@ -383,18 +414,20 @@ export default function AudioPlayer({
 
       {/* Mobile full-screen sheet, opened from the compact docked bar. */}
       <div
-        className={`md:hidden fixed inset-0 z-50 bg-gradient-to-b from-brand-500 to-brand-900 transition-transform duration-300 motion-reduce:transition-none ${
+        className={`md:hidden fixed inset-0 z-50 bg-gradient-to-b from-brand-500 to-brand-900 flex flex-col transition-transform duration-300 motion-reduce:transition-none ${
           sheetOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
-        <div className="flex items-center justify-between px-4 pt-4">
+        <div className="flex items-center justify-between px-4 pt-4 shrink-0">
           <button type="button" onClick={() => setSheetOpen(false)} aria-label="Réduire" className="text-white p-2">
             <ChevronDown className="h-5 w-5" />
           </button>
           <span className="text-[11px] uppercase tracking-wide text-white/60">En cours de lecture</span>
           <span className="w-9" />
         </div>
-        {renderExpanded({ compact: true })}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {renderExpanded({ compact: true })}
+        </div>
       </div>
     </>
   );

@@ -6,6 +6,7 @@ import { Play, ChevronDown, ChevronRight, ChevronLeft, Calendar, User, Lock } fr
 import type { Episode, Series, Show } from '../../lib/api';
 import VideoEmbed from '../VideoEmbed';
 import AudioPlayer from '../AudioPlayer';
+import EqBars from '../EqBars';
 
 const AUDIO_ONLY_SHOWS = new Set(['rafraichissement']);
 
@@ -77,6 +78,67 @@ function Pagination({ page, totalPages, onChange }: { page: number; totalPages: 
   );
 }
 
+function EpisodeRow({
+  ep, onSelect, active, showEpisodeNumber = false,
+}: {
+  ep: Episode;
+  onSelect: (ep: Episode) => void;
+  active: boolean;
+  showEpisodeNumber?: boolean;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => onSelect(ep)}
+        aria-disabled={ep.is_locked}
+        className={`group w-full flex items-center gap-3 sm:gap-4 py-4 text-left -mx-2 px-2 rounded transition-colors ${
+          ep.is_locked ? 'cursor-default' : 'hover:bg-paper-100'
+        } ${active ? 'bg-brand-50' : ''}`}
+      >
+        <div className="relative shrink-0 h-14 w-20 sm:h-20 sm:w-32 rounded overflow-hidden bg-brand-900">
+          {(ep.cover || ep.thumbnail_url) && (
+            <img src={ep.cover ?? ep.thumbnail_url} alt={ep.title} className="absolute inset-0 h-full w-full object-cover" />
+          )}
+          {ep.is_locked ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-ink-900/55">
+              <Lock className="h-5 w-5 text-white" />
+            </div>
+          ) : ep.is_featured && (
+            <span className="absolute top-1 left-1 inline-flex items-center gap-1 rounded bg-amber-400 text-ink-900 text-[9px] font-bold px-1 py-0.5 uppercase">
+              Live
+            </span>
+          )}
+          {showEpisodeNumber && ep.episode_number && !ep.is_locked && (
+            <span className="absolute top-1 left-1 rounded bg-ink-900/85 text-amber-400 text-[10px] font-bold px-1.5 py-0.5">
+              EP {ep.episode_number}
+            </span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-sm sm:text-base text-ink-800 leading-snug group-hover:text-brand-700 transition-colors line-clamp-2">
+              {ep.title}
+            </h3>
+            {active && <EqBars barClassName="bg-brand-600" className="shrink-0" />}
+          </div>
+          {ep.is_locked ? (
+            ep.published_at && (
+              <p className="text-xs md:text-sm font-medium text-red-600 mt-1 capitalize">
+                Disponible le {fmtAvailableDate(ep.published_at)}
+              </p>
+            )
+          ) : (
+            <p className="text-xs md:text-sm text-ink-500 mt-1">
+              {ep.speaker ? `${ep.speaker} · ` : ''}{relativeTime(ep.aired_at)}
+            </p>
+          )}
+        </div>
+      </button>
+    </li>
+  );
+}
+
 export default function ShowDetailClient({
   show, series, standalone, initialEpisode,
 }: {
@@ -88,6 +150,7 @@ export default function ShowDetailClient({
   const topRef = useRef<HTMLDivElement>(null);
   const [playing, setPlaying] = useState<Episode | null>(initialEpisode);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audioIsPlaying, setAudioIsPlaying] = useState(false);
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [sortOrder, setSortOrder] = useState<SortOrder>('recent');
   const [standalonePage, setStandalonePage] = useState(1);
@@ -141,7 +204,7 @@ export default function ShowDetailClient({
   const heroImage = playing?.cover || playing?.thumbnail_url || show.host_photo || show.cover || '';
 
   return (
-    <div ref={topRef}>
+    <div ref={topRef} className={isAudioShow && isPlaying ? 'pb-16 md:pb-20' : undefined}>
       <div className="bg-ink-900">
         <div className="max-w-6xl mx-auto px-6 md:px-10 py-3">
           <Link href="/emissions" className="text-sm text-white/70 hover:text-white transition-colors">
@@ -150,7 +213,7 @@ export default function ShowDetailClient({
         </div>
       </div>
 
-      {playing && (
+      {playing && !isAudioShow && (
         <div className="flex items-center gap-2 sm:gap-3 px-4 sm:px-6 md:px-10 py-3" style={{ backgroundColor: show.color }}>
           <div className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded overflow-hidden bg-black/20">
             {(show.host_photo || playing.thumbnail_url) && (
@@ -177,7 +240,10 @@ export default function ShowDetailClient({
         </div>
       )}
 
-      <div className="relative h-56 sm:h-80 md:h-96 overflow-hidden" style={{ backgroundColor: show.color }}>
+      <div
+        className={`relative overflow-hidden ${isAudioShow && isPlaying && playing?.embed_url ? '' : 'h-56 sm:h-80 md:h-96'}`}
+        style={{ backgroundColor: show.color }}
+      >
         {isPlaying && playing?.embed_url ? (
           isAudioShow ? (
             <AudioPlayer
@@ -187,6 +253,7 @@ export default function ShowDetailClient({
               showTitle={show.title}
               queue={sortedStandalone}
               onSelect={selectEpisode}
+              onPlayingChange={setAudioIsPlaying}
             />
           ) : (
             <VideoEmbed key={playing.id} src={`${playing.embed_url}?autoplay=1`} title={playing.title} />
@@ -272,66 +339,80 @@ export default function ShowDetailClient({
                       />
                     </button>
                     {expanded[s.id] && (
-                      <div className="pb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                        {(s.episodes ?? []).map((ep) => (
-                          <button
-                            key={ep.id}
-                            type="button"
-                            onClick={() => selectEpisode(ep)}
-                            aria-disabled={ep.is_locked}
-                            className={`group flex flex-col overflow-hidden rounded-lg bg-white shadow-card transition-all duration-300 text-left ${
-                              ep.is_locked ? 'cursor-default' : 'hover:shadow-card-hover hover:-translate-y-1'
-                            }`}
-                          >
-                            <div className="relative aspect-video overflow-hidden bg-brand-900">
-                              {(ep.cover || ep.thumbnail_url) && (
-                                <img
-                                  src={ep.cover ?? ep.thumbnail_url}
-                                  alt={ep.title}
-                                  className={`h-full w-full object-cover transition-transform duration-700 ${ep.is_locked ? '' : 'group-hover:scale-105'}`}
-                                />
-                              )}
-                              {ep.is_locked ? (
-                                <div className="absolute inset-0 flex items-center justify-center bg-ink-900/55">
-                                  <Lock className="h-7 w-7 text-white" />
-                                </div>
-                              ) : (
-                                <div className="absolute inset-0 flex items-center justify-center bg-brand-900/0 group-hover:bg-brand-900/30 transition-colors">
-                                  <Play className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity fill-current" />
-                                </div>
-                              )}
-                              {ep.episode_number && (
-                                <span className="absolute top-2 left-2 rounded bg-ink-900/85 text-amber-400 text-xs font-bold px-2 py-1">
-                                  Épisode {ep.episode_number}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex flex-1 flex-col gap-1.5 p-4">
-                              <h4 className="font-bold text-ink-800 leading-snug group-hover:text-brand-700 transition-colors line-clamp-2">
-                                {ep.title}
-                              </h4>
-                              {ep.speaker && (
-                                <span className="inline-flex items-center gap-1.5 text-xs text-ink-500">
-                                  <User className="h-3 w-3" /> {ep.speaker}
-                                </span>
-                              )}
-                              {ep.is_locked ? (
-                                ep.published_at && (
-                                  <span className="text-xs font-medium text-red-600 capitalize">
-                                    Disponible le {fmtAvailableDate(ep.published_at)}
+                      isAudioShow ? (
+                        <ul className="pb-2 flex flex-col divide-y divide-paper-200">
+                          {(s.episodes ?? []).map((ep) => (
+                            <EpisodeRow
+                              key={ep.id}
+                              ep={ep}
+                              onSelect={selectEpisode}
+                              active={audioIsPlaying && playing?.id === ep.id}
+                              showEpisodeNumber
+                            />
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="pb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                          {(s.episodes ?? []).map((ep) => (
+                            <button
+                              key={ep.id}
+                              type="button"
+                              onClick={() => selectEpisode(ep)}
+                              aria-disabled={ep.is_locked}
+                              className={`group flex flex-col overflow-hidden rounded-lg bg-white shadow-card transition-all duration-300 text-left ${
+                                ep.is_locked ? 'cursor-default' : 'hover:shadow-card-hover hover:-translate-y-1'
+                              }`}
+                            >
+                              <div className="relative aspect-video overflow-hidden bg-brand-900">
+                                {(ep.cover || ep.thumbnail_url) && (
+                                  <img
+                                    src={ep.cover ?? ep.thumbnail_url}
+                                    alt={ep.title}
+                                    className={`h-full w-full object-cover transition-transform duration-700 ${ep.is_locked ? '' : 'group-hover:scale-105'}`}
+                                  />
+                                )}
+                                {ep.is_locked ? (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-ink-900/55">
+                                    <Lock className="h-7 w-7 text-white" />
+                                  </div>
+                                ) : (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-brand-900/0 group-hover:bg-brand-900/30 transition-colors">
+                                    <Play className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity fill-current" />
+                                  </div>
+                                )}
+                                {ep.episode_number && (
+                                  <span className="absolute top-2 left-2 rounded bg-ink-900/85 text-amber-400 text-xs font-bold px-2 py-1">
+                                    Épisode {ep.episode_number}
                                   </span>
-                                )
-                              ) : (
-                                ep.aired_at && (
-                                  <span className="inline-flex items-center gap-1.5 text-xs text-ink-400">
-                                    <Calendar className="h-3 w-3" /> {fmtDate(ep.aired_at)}
+                                )}
+                              </div>
+                              <div className="flex flex-1 flex-col gap-1.5 p-4">
+                                <h4 className="font-bold text-ink-800 leading-snug group-hover:text-brand-700 transition-colors line-clamp-2">
+                                  {ep.title}
+                                </h4>
+                                {ep.speaker && (
+                                  <span className="inline-flex items-center gap-1.5 text-xs text-ink-500">
+                                    <User className="h-3 w-3" /> {ep.speaker}
                                   </span>
-                                )
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
+                                )}
+                                {ep.is_locked ? (
+                                  ep.published_at && (
+                                    <span className="text-xs font-medium text-red-600 capitalize">
+                                      Disponible le {fmtAvailableDate(ep.published_at)}
+                                    </span>
+                                  )
+                                ) : (
+                                  ep.aired_at && (
+                                    <span className="inline-flex items-center gap-1.5 text-xs text-ink-400">
+                                      <Calendar className="h-3 w-3" /> {fmtDate(ep.aired_at)}
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )
                     )}
                   </div>
                 ))}
@@ -344,45 +425,12 @@ export default function ShowDetailClient({
             <div>
               <ul className="flex flex-col divide-y divide-paper-200 border-y border-paper-200">
                 {visibleStandalone.map((ep) => (
-                  <li key={ep.id}>
-                    <button
-                      type="button"
-                      onClick={() => selectEpisode(ep)}
-                      aria-disabled={ep.is_locked}
-                      className={`group w-full flex items-center gap-3 sm:gap-4 py-4 text-left -mx-2 px-2 rounded transition-colors ${
-                        ep.is_locked ? 'cursor-default' : 'hover:bg-paper-100'
-                      }`}
-                    >
-                      <div className="relative shrink-0 h-14 w-20 sm:h-20 sm:w-32 rounded overflow-hidden bg-brand-900">
-                        {(ep.cover || ep.thumbnail_url) && (
-                          <img src={ep.cover ?? ep.thumbnail_url} alt={ep.title} className="absolute inset-0 h-full w-full object-cover" />
-                        )}
-                        {ep.is_locked ? (
-                          <div className="absolute inset-0 flex items-center justify-center bg-ink-900/55">
-                            <Lock className="h-5 w-5 text-white" />
-                          </div>
-                        ) : ep.is_featured && (
-                          <span className="absolute top-1 left-1 inline-flex items-center gap-1 rounded bg-amber-400 text-ink-900 text-[9px] font-bold px-1 py-0.5 uppercase">
-                            Live
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm sm:text-base text-ink-800 leading-snug group-hover:text-brand-700 transition-colors line-clamp-2">
-                          {ep.title}
-                        </h3>
-                        {ep.is_locked ? (
-                          ep.published_at && (
-                            <p className="text-xs md:text-sm font-medium text-red-600 mt-1 capitalize">
-                              Disponible le {fmtAvailableDate(ep.published_at)}
-                            </p>
-                          )
-                        ) : (
-                          <p className="text-xs md:text-sm text-ink-500 mt-1">{relativeTime(ep.aired_at)}</p>
-                        )}
-                      </div>
-                    </button>
-                  </li>
+                  <EpisodeRow
+                    key={ep.id}
+                    ep={ep}
+                    onSelect={selectEpisode}
+                    active={isAudioShow && audioIsPlaying && playing?.id === ep.id}
+                  />
                 ))}
               </ul>
               <Pagination page={standalonePage} totalPages={standaloneTotalPages} onChange={setStandalonePage} />
