@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Play, ChevronDown, ChevronRight, ChevronLeft, Calendar, User, Lock } from 'lucide-react';
 import type { Episode, Series, Show } from '../../lib/api';
-import VideoEmbed from '../VideoEmbed';
+import VideoPlayer from '../VideoPlayer';
 import { AudioPlayerExpanded } from '../AudioPlayer';
 import { useAudioPlayerContext } from '../../lib/AudioPlayerContext';
 import EqBars from '../EqBars';
@@ -199,9 +199,9 @@ export default function ShowDetailClient({
     seriesPage * SERIES_PAGE_SIZE,
   );
 
-  // Continuous-listening queue for prev/next and auto-advance: every episode
+  // Continuous-playback queue for prev/next and auto-advance: every episode
   // of the show, series-grouped ones first, then standalone ones.
-  const audioQueue = useMemo(() => {
+  const episodeQueue = useMemo(() => {
     const seriesEpisodes = seriesWithEpisodes.flatMap((s) => s.episodes ?? []);
     return [...seriesEpisodes, ...sortedStandalone];
   }, [seriesWithEpisodes, sortedStandalone]);
@@ -218,7 +218,7 @@ export default function ShowDetailClient({
         showSlug: show.slug,
         showHostPhoto: show.host_photo,
         showCover: show.cover,
-        queue: audioQueue,
+        queue: episodeQueue,
       });
     } else {
       topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -276,7 +276,7 @@ export default function ShowDetailClient({
           isAudioShow ? (
             <AudioPlayerExpanded />
           ) : (
-            <VideoEmbed key={playing.id} src={`${playing.embed_url}?autoplay=1`} title={playing.title} />
+            <VideoPlayer key={playing.id} episode={playing} queue={episodeQueue} onSelect={selectEpisode} showColor={show.color} />
           )
         ) : (
           <>
