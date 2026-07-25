@@ -88,14 +88,10 @@ function EpisodeRow({
           {(ep.cover || ep.thumbnail_url) && (
             <img src={ep.cover ?? ep.thumbnail_url} alt={ep.title} className="absolute inset-0 h-full w-full object-cover" />
           )}
-          {ep.is_locked ? (
+          {ep.is_locked && (
             <div className="absolute inset-0 flex items-center justify-center bg-ink-900/55">
               <Lock className="h-5 w-5 text-white" />
             </div>
-          ) : ep.is_featured && (
-            <span className="absolute top-1 left-1 inline-flex items-center gap-1 rounded bg-amber-400 text-ink-900 text-[9px] font-bold px-1 py-0.5 uppercase">
-              Live
-            </span>
           )}
           {showEpisodeNumber && ep.episode_number && !ep.is_locked && (
             <span className="absolute top-1 left-1 rounded bg-ink-900/85 text-amber-400 text-[10px] font-bold px-1.5 py-0.5">

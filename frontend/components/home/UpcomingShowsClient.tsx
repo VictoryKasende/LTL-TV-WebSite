@@ -7,6 +7,32 @@ import Spinner from '../ui/Spinner';
 import { useResilientData } from '../../lib/useResilientData';
 import type { Episode, Paginated } from '../../lib/api';
 
+const DISPLAY_LIMIT = 4;
+
+// A flat "most recent N" query lets a high-frequency show (e.g. a daily one)
+// crowd out every other show entirely. Pick the latest episode of each show
+// first, then fill any remaining slots by recency, so "À suivre" previews
+// the whole network instead of just whichever show airs most often.
+function diversifyByShow(episodes: Episode[], limit: number): Episode[] {
+  const seenShows = new Set<string>();
+  const picked: Episode[] = [];
+  for (const ep of episodes) {
+    if (picked.length >= limit) break;
+    if (!seenShows.has(ep.show_slug)) {
+      seenShows.add(ep.show_slug);
+      picked.push(ep);
+    }
+  }
+  if (picked.length < limit) {
+    const pickedIds = new Set(picked.map((ep) => ep.id));
+    for (const ep of episodes) {
+      if (picked.length >= limit) break;
+      if (!pickedIds.has(ep.id)) picked.push(ep);
+    }
+  }
+  return picked.sort((a, b) => (b.aired_at && a.aired_at ? Date.parse(b.aired_at) - Date.parse(a.aired_at) : 0));
+}
+
 function relativeTime(iso: string | null): string {
   if (!iso) return '';
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -26,9 +52,9 @@ const GRADIENT = 'linear-gradient(135deg, #212870 0%, #3D53EA 60%, #F5C24E 130%)
 export default function UpcomingShowsClient({ initialData }: { initialData: Paginated<Episode> | null }) {
   const { data, retrying } = useResilientData(
     initialData,
-    '/api/v1/emissions/episodes/?ordering=-aired_at&page_size=4',
+    '/api/v1/emissions/episodes/?ordering=-aired_at&page_size=24',
   );
-  const episodes = data?.results ?? [];
+  const episodes = diversifyByShow(data?.results ?? [], DISPLAY_LIMIT);
 
   if (episodes.length === 0) {
     if (!retrying) return null;
@@ -64,12 +90,6 @@ export default function UpcomingShowsClient({ initialData }: { initialData: Pagi
                       alt={ep.title}
                       className="absolute inset-0 h-full w-full object-cover"
                     />
-                  )}
-                  {ep.is_featured && (
-                    <span className="absolute top-1 left-1 inline-flex items-center gap-1 rounded bg-amber-400 text-ink-900 text-[9px] font-bold px-1 py-0.5 uppercase">
-                      <span className="h-1 w-1 rounded-full bg-live" />
-                      Live
-                    </span>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
