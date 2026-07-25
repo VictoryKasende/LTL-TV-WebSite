@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Manrope, Anton } from 'next/font/google';
+import { Anton } from 'next/font/google';
 import '../styles/globals.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -8,13 +8,6 @@ import PwaServiceWorker from '../components/PwaServiceWorker';
 import { AudioPlayerProvider } from '../lib/AudioPlayerContext';
 import { GlobalAudioDock } from '../components/AudioPlayer';
 import MainWithAudioPadding from '../components/MainWithAudioPadding';
-
-const manrope = Manrope({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
-  variable: '--font-manrope',
-  display: 'swap',
-});
 
 const anton = Anton({
   subsets: ['latin'],
@@ -57,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={`${manrope.variable} ${anton.variable}`}>
+    <html lang="fr" className={anton.variable}>
       <body className="min-h-screen flex flex-col font-sans bg-white text-ink-800 antialiased">
         <script
           type="application/ld+json"

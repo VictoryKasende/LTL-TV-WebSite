@@ -47,7 +47,7 @@ const config: Config = {
         terracotta: '#E2711D', // avatar gradient accent (témoignages)
       },
       fontFamily: {
-        sans: ['var(--font-manrope)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['Arial', 'Helvetica', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         display: ['var(--font-anton)', 'Impact', 'sans-serif'],
       },
       fontSize: {
