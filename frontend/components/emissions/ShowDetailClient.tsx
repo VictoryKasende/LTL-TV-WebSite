@@ -187,11 +187,24 @@ export default function ShowDetailClient({
     standalonePage * STANDALONE_PAGE_SIZE,
   );
 
-  const seriesTotalPages = Math.ceil(series.length / SERIES_PAGE_SIZE) || 1;
-  const visibleSeries = series.slice(
+  // Only series that actually have a visible episode get a section at all.
+  const seriesWithEpisodes = useMemo(
+    () => series.filter((s) => (s.episodes?.length ?? 0) > 0),
+    [series],
+  );
+
+  const seriesTotalPages = Math.ceil(seriesWithEpisodes.length / SERIES_PAGE_SIZE) || 1;
+  const visibleSeries = seriesWithEpisodes.slice(
     (seriesPage - 1) * SERIES_PAGE_SIZE,
     seriesPage * SERIES_PAGE_SIZE,
   );
+
+  // Continuous-listening queue for prev/next and auto-advance: every episode
+  // of the show, series-grouped ones first, then standalone ones.
+  const audioQueue = useMemo(() => {
+    const seriesEpisodes = seriesWithEpisodes.flatMap((s) => s.episodes ?? []);
+    return [...seriesEpisodes, ...sortedStandalone];
+  }, [seriesWithEpisodes, sortedStandalone]);
 
   function selectEpisode(ep: Episode) {
     if (ep.is_locked) return;
@@ -205,7 +218,7 @@ export default function ShowDetailClient({
         showSlug: show.slug,
         showHostPhoto: show.host_photo,
         showCover: show.cover,
-        queue: sortedStandalone,
+        queue: audioQueue,
       });
     } else {
       topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -245,7 +258,7 @@ export default function ShowDetailClient({
           )}
           <button
             type="button"
-            onClick={() => !playing.is_locked && setIsPlaying(true)}
+            onClick={() => selectEpisode(playing)}
             disabled={playing.is_locked}
             aria-label={playing.is_locked ? 'Épisode pas encore disponible' : "Lire l'épisode"}
             className="shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-colors disabled:opacity-60 disabled:hover:bg-white/15"
@@ -274,7 +287,7 @@ export default function ShowDetailClient({
             {playing && (
               <button
                 type="button"
-                onClick={() => !playing.is_locked && setIsPlaying(true)}
+                onClick={() => selectEpisode(playing)}
                 disabled={playing.is_locked}
                 aria-label={playing.is_locked ? 'Épisode pas encore disponible' : "Lire l'épisode"}
                 className="absolute inset-0 flex items-center justify-center group"
@@ -330,7 +343,7 @@ export default function ShowDetailClient({
             )}
           </div>
 
-          {series.length > 0 && (
+          {seriesWithEpisodes.length > 0 && (
             <div className="mb-8">
               <div className="divide-y divide-paper-200 border-y border-paper-200">
                 {visibleSeries.map((s) => (
