@@ -90,7 +90,16 @@ export default function EventRegistrationForm({ event }: { event: Event }) {
         </div>
       </div>
 
-      <Field label="Genre" name="gender" required placeholder="Votre genre" />
+      <Select
+        label="Genre"
+        name="gender"
+        required
+        placeholder="Votre genre"
+        options={[
+          { value: 'Homme', label: 'Homme' },
+          { value: 'Femme', label: 'Femme' },
+        ]}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="Email" name="email" type="email" required placeholder="Email" />
