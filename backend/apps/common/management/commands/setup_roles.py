@@ -73,6 +73,12 @@ SCOPED_ADMIN_GROUPS = {
         ('contacts', ['ContactMessage', 'ContactReply'], 'full'),
         ('contacts', ['HistoricalContactMessage'], 'view'),
     ],
+    'Événements & annonces': [
+        ('events', ['Event', 'EventRegistration'], 'full'),
+        ('events', ['HistoricalEvent', 'HistoricalEventRegistration'], 'view'),
+        ('announcements', ['Announcement'], 'full'),
+        ('announcements', ['HistoricalAnnouncement'], 'view'),
+    ],
 }
 
 # The single full-site group, reserved for the CEO. Built dynamically from

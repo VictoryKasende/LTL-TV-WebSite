@@ -69,6 +69,8 @@ LOCAL_APPS = [
     'apps.notifications',
     'apps.about',
     'apps.dashboard',
+    'apps.announcements',
+    'apps.events',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -217,6 +219,7 @@ REST_FRAMEWORK = {
         'auth': '10/min',
         'contact': '5/hour',
         'testimonial': '3/hour',
+        'event_registration': '5/hour',
     },
     'EXCEPTION_HANDLER': 'apps.common.exceptions.custom_exception_handler',
 }
@@ -500,6 +503,21 @@ UNFOLD = {
                     {'title': _('Bannières carousel'), 'icon': 'view_carousel',
                      'link': reverse_lazy('admin:banners_banner_changelist'),
                      'permission': lambda r: r.user.has_perm('banners.view_banner')},
+                ],
+            },
+            {
+                'title': _('Événements & annonces'),
+                'separator': True,
+                'items': [
+                    {'title': _('Événements'), 'icon': 'event',
+                     'link': reverse_lazy('admin:events_event_changelist'),
+                     'permission': lambda r: r.user.has_perm('events.view_event')},
+                    {'title': _('Inscriptions'), 'icon': 'how_to_reg',
+                     'link': reverse_lazy('admin:events_eventregistration_changelist'),
+                     'permission': lambda r: r.user.has_perm('events.view_eventregistration')},
+                    {'title': _('Bande d\'annonce'), 'icon': 'campaign',
+                     'link': reverse_lazy('admin:announcements_announcement_changelist'),
+                     'permission': lambda r: r.user.has_perm('announcements.view_announcement')},
                 ],
             },
             {

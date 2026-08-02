@@ -27,6 +27,8 @@ api_v1_patterns = [
     path('notifications/', include('apps.notifications.urls')),
     path('about/',          include('apps.about.urls')),
     path('dashboard/',     include('apps.dashboard.urls')),
+    path('announcements/', include('apps.announcements.urls')),
+    path('events/',        include('apps.events.urls')),
 ]
 
 urlpatterns = [

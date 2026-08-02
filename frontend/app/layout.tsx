@@ -3,11 +3,13 @@ import { Anton } from 'next/font/google';
 import '../styles/globals.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import AnnouncementBar from '../components/AnnouncementBar';
 import NotificationPrompt from '../components/NotificationPrompt';
 import PwaServiceWorker from '../components/PwaServiceWorker';
 import { AudioPlayerProvider } from '../lib/AudioPlayerContext';
 import { GlobalAudioDock } from '../components/AudioPlayer';
 import MainWithAudioPadding from '../components/MainWithAudioPadding';
+import { getActiveAnnouncement } from '../lib/api';
 
 const anton = Anton({
   subsets: ['latin'],
@@ -44,11 +46,13 @@ export const viewport: Viewport = {
   themeColor: '#212870',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const announcement = await getActiveAnnouncement({ revalidate: 30 });
+
   return (
     <html lang="fr" className={anton.variable}>
       <body className="min-h-screen flex flex-col font-sans bg-white text-ink-800 antialiased">
@@ -72,6 +76,7 @@ export default function RootLayout({
           }}
         />
         <AudioPlayerProvider>
+          <AnnouncementBar initialData={announcement} />
           <Navbar />
           <MainWithAudioPadding>{children}</MainWithAudioPadding>
           <Footer />

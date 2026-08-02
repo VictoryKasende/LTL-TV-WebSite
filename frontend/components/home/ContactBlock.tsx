@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -85,9 +85,8 @@ export default function ContactBlock() {
             <button
               type="submit"
               disabled={status === 'submitting'}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-brand-500 text-white font-bold uppercase tracking-wide text-sm px-6 py-4 hover:bg-brand-600 transition-colors disabled:opacity-60 disabled:cursor-wait"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#009696] text-white font-bold uppercase tracking-wide text-sm px-6 py-4 hover:bg-[#007a7a] transition-colors disabled:opacity-60 disabled:cursor-wait"
             >
-              <Send className="h-4 w-4" strokeWidth={2.5} />
               {status === 'submitting' ? 'Envoi…' : 'Envoyer'}
             </button>
           </form>

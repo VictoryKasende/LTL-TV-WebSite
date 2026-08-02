@@ -286,6 +286,40 @@ export type Banner = {
 };
 
 // ---------------------------------------------------------------------------
+// Annonce (bande rouge)
+// ---------------------------------------------------------------------------
+export type Announcement = {
+  id: number;
+  message: string;
+  cta_label: string;
+  cta_url: string;
+  is_active: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+  is_active_now: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+// ---------------------------------------------------------------------------
+// Événements
+// ---------------------------------------------------------------------------
+export type Event = {
+  id: number;
+  slug: string;
+  title: string;
+  subtitle: string;
+  start_date: string;
+  end_date: string | null;
+  daily_time: string | null;
+  conditions: string;
+  is_active: boolean;
+  is_registration_open: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+// ---------------------------------------------------------------------------
 // À propos
 // ---------------------------------------------------------------------------
 export type AboutPage = {
@@ -347,6 +381,12 @@ export const getEpisodes = (query = '', opts?: FetchOpts) =>
 
 export const getActiveBanners = (opts?: FetchOpts) =>
   apiGet<Banner[]>('/banners/active/', opts);
+
+export const getActiveAnnouncement = (opts?: FetchOpts) =>
+  apiGet<Announcement | null>('/announcements/active/', opts);
+
+export const getEvent = (slug: string, opts?: FetchOpts) =>
+  apiGet<Event>(`/events/${slug}/`, opts);
 
 export const getAboutPage = (opts?: FetchOpts) =>
   apiGet<AboutPage>('/about/page/', opts);
