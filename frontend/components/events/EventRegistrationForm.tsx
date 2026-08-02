@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react';
-import { COUNTRIES } from '../../lib/countries';
 import Spinner from '../ui/Spinner';
+import CountrySelect from '../ui/CountrySelect';
+import PhoneField from '../ui/PhoneField';
 import type { Event } from '../../lib/api';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
@@ -15,6 +16,8 @@ export default function EventRegistrationForm({ event }: { event: Event }) {
   const [message, setMessage] = useState<string>('');
   const [conditionsOpen, setConditionsOpen] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [country, setCountry] = useState('');
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -39,6 +42,8 @@ export default function EventRegistrationForm({ event }: { event: Event }) {
       setStatus('success');
       form.reset();
       setAccepted(false);
+      setPhone('');
+      setCountry('');
     } catch (err) {
       setStatus('error');
       setMessage(err instanceof Error ? err.message : 'Erreur inconnue.');
@@ -101,16 +106,16 @@ export default function EventRegistrationForm({ event }: { event: Event }) {
         ]}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <Field label="Email" name="email" type="email" required placeholder="Email" />
-        <Field label="Téléphone" name="phone" required placeholder="Votre numéro WhatsApp" />
-      </div>
+      <Field label="Email" name="email" type="email" required placeholder="Email" />
 
-      <Select
+      <PhoneField label="Téléphone" name="phone" required value={phone} onChange={setPhone} />
+
+      <CountrySelect
         label="Votre pays"
         name="country"
         placeholder="Pays"
-        options={COUNTRIES.map((c) => ({ value: c, label: c }))}
+        value={country}
+        onChange={setCountry}
       />
 
       <Field

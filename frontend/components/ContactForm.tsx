@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react';
-import { COUNTRIES } from '../lib/countries';
 import Spinner from './ui/Spinner';
+import CountrySelect from './ui/CountrySelect';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -20,6 +20,7 @@ const CATEGORIES = [
 export default function ContactForm() {
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState<string>('');
+  const [country, setCountry] = useState('');
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,6 +41,7 @@ export default function ContactForm() {
       }
       setStatus('success');
       form.reset();
+      setCountry('');
     } catch (err) {
       setStatus('error');
       setMessage(err instanceof Error ? err.message : 'Erreur inconnue.');
@@ -82,11 +84,12 @@ export default function ContactForm() {
 
       <Field label="Votre message" name="message" required as="textarea" rows={6} placeholder="Votre message" />
 
-      <Select
+      <CountrySelect
         label="Votre pays"
         name="country"
         placeholder="Pays"
-        options={COUNTRIES.map((c) => ({ value: c, label: c }))}
+        value={country}
+        onChange={setCountry}
       />
 
       {status === 'error' && (
