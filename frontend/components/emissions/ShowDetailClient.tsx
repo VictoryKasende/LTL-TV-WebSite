@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { Play, ChevronDown, ChevronRight, ChevronLeft, Lock } from 'lucide-react';
 import type { Episode, Series, Show } from '../../lib/api';
 import VideoPlayer from '../VideoPlayer';
@@ -132,6 +133,8 @@ export default function ShowDetailClient({
   initialEpisode: Episode | null;
 }) {
   const audioCtx = useAudioPlayerContext();
+  const router = useRouter();
+  const pathname = usePathname();
   const topRef = useRef<HTMLDivElement>(null);
   const isAudioShow = AUDIO_ONLY_SHOWS.has(show.slug);
   // If this show's episode is already playing globally (e.g. the visitor navigated
@@ -189,10 +192,32 @@ export default function ShowDetailClient({
     return [...seriesEpisodes, ...sortedStandalone];
   }, [seriesWithEpisodes, sortedStandalone]);
 
+  // Keeps `?episode=slug` in sync with what's playing so the URL stays
+  // shareable/bookmarkable without a full page navigation. `push` (not
+  // `replace`) so the browser back button steps back through watched
+  // episodes, matching how a "watch page" is expected to behave.
+  function syncEpisodeUrl(ep: Episode, mode: 'push' | 'replace') {
+    const current = new URLSearchParams(window.location.search);
+    if (current.get('episode') === ep.slug) return;
+    current.set('episode', ep.slug);
+    const url = `${pathname}?${current.toString()}`;
+    if (mode === 'push') router.push(url, { scroll: false });
+    else router.replace(url, { scroll: false });
+  }
+
+  // On first mount, make sure the URL reflects whichever episode ended up
+  // selected server-side (deep link or default pick) — without adding a
+  // history entry for a navigation the user didn't actually make.
+  useEffect(() => {
+    if (playing) syncEpisodeUrl(playing, 'replace');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function selectEpisode(ep: Episode) {
     if (ep.is_locked) return;
     setPlaying(ep);
     setIsPlaying(true);
+    syncEpisodeUrl(ep, 'push');
     if (isAudioShow) {
       // Hands off to the site-wide player so playback survives navigating
       // away from this page — see lib/AudioPlayerContext.tsx.
