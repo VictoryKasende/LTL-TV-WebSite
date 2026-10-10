@@ -42,6 +42,16 @@ def _client_ip(request) -> str | None:
     return request.META.get('REMOTE_ADDR')
 
 
+def _with_comment_count(qs):
+    return qs.annotate(
+        comment_count=Count(
+            'comments',
+            filter=Q(comments__status=EpisodeComment.Status.APPROVED),
+            distinct=True,
+        ),
+    )
+
+
 @extend_schema(tags=['Émissions'])
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     """List / retrieve emission categories."""
@@ -87,10 +97,10 @@ class ShowViewSet(viewsets.ModelViewSet):
     def list_episodes(self, request, slug=None):
         show = self.get_object()
         base = show.episodes if _staff(request) else show.episodes.published_or_scheduled()
-        qs = (
+        qs = _with_comment_count(
             base
             .select_related('show')
-            .prefetch_related('categories', 'tags')
+            .prefetch_related('categories', 'tags'),
         )
         page = self.paginate_queryset(qs)
         ser = EpisodeListSerializer(page or qs, many=True, context={'request': request})
@@ -109,10 +119,10 @@ class ShowViewSet(viewsets.ModelViewSet):
         staff = _staff(request)
         series_qs = show.series.all() if staff else show.series.published()
         episodes_qs = Episode.objects.all() if staff else Episode.objects.published_or_scheduled()
-        episodes_qs = (
+        episodes_qs = _with_comment_count(
             episodes_qs.select_related('show')
             .prefetch_related('categories', 'tags')
-            .order_by('episode_number', 'aired_at')
+            .order_by('episode_number', 'aired_at'),
         )
         series_qs = series_qs.prefetch_related(
             Prefetch('episodes', queryset=episodes_qs, to_attr='prefetched_episodes'),
@@ -164,7 +174,7 @@ class EpisodeViewSet(viewsets.ModelViewSet):
         )
         if not _staff(self.request):
             qs = qs.published_or_scheduled()
-        return qs
+        return _with_comment_count(qs)
 
     def get_serializer_class(self):
         return EpisodeDetailSerializer if self.action == 'retrieve' else EpisodeListSerializer

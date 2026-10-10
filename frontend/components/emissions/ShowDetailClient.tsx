@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Play, ChevronDown, ChevronRight, ChevronLeft, Lock } from 'lucide-react';
+import { Play, ChevronDown, ChevronRight, ChevronLeft, Lock, Heart, MessageCircle } from 'lucide-react';
 import type { Episode, Series, Show } from '../../lib/api';
 import VideoPlayer from '../VideoPlayer';
 import EpisodeEngagement from './EpisodeEngagement';
+import EpisodeEndPrompt from './EpisodeEndPrompt';
 import { AudioPlayerExpanded } from '../AudioPlayer';
 import { useAudioPlayerContext } from '../../lib/AudioPlayerContext';
 import EqBars from '../EqBars';
@@ -115,9 +116,25 @@ function EpisodeRow({
               </p>
             )
           ) : (
-            <p className="text-xs md:text-sm text-ink-500 mt-1">
-              {ep.speaker ? `${ep.speaker} · ` : ''}{relativeTime(ep.aired_at)}
-            </p>
+            <>
+              <p className="text-xs md:text-sm text-ink-500 mt-1">
+                {ep.speaker ? `${ep.speaker} · ` : ''}{relativeTime(ep.aired_at)}
+              </p>
+              {(ep.like_count > 0 || ep.comment_count > 0) && (
+                <div className="flex items-center gap-3 mt-1 text-xs text-ink-400">
+                  {ep.like_count > 0 && (
+                    <span className="inline-flex items-center gap-1">
+                      <Heart className="h-3 w-3" /> {ep.like_count}
+                    </span>
+                  )}
+                  {ep.comment_count > 0 && (
+                    <span className="inline-flex items-center gap-1">
+                      <MessageCircle className="h-3 w-3" /> {ep.comment_count}
+                    </span>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </button>
@@ -154,6 +171,7 @@ export default function ShowDetailClient({
   const [episodeSelected, setEpisodeSelected] = useState(() => (
     episodeExplicit || audioAlreadyPlayingHere
   ));
+  const [showEndPrompt, setShowEndPrompt] = useState(false);
   const [expanded, setExpanded] = useState<Record<number, boolean>>(() => {
     const firstWithEpisodes = series.find((s) => (s.episodes?.length ?? 0) > 0);
     return firstWithEpisodes ? { [firstWithEpisodes.id]: true } : {};
@@ -227,11 +245,23 @@ export default function ShowDetailClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Audio shows auto-advance (or stop) inside AudioPlayerContext itself —
+  // `justEndedId` flips to this episode's id only when there was nothing
+  // left to advance to, same "genuinely finished" condition as VideoPlayer's
+  // `onEpisodeEnd`.
+  useEffect(() => {
+    if (isAudioShow && playing && audioCtx.justEndedId === playing.id) {
+      setShowEndPrompt(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioCtx.justEndedId]);
+
   function selectEpisode(ep: Episode) {
     if (ep.is_locked) return;
     setPlaying(ep);
     setIsPlaying(true);
     setEpisodeSelected(true);
+    setShowEndPrompt(false);
     syncEpisodeUrl(ep, 'push');
     if (isAudioShow) {
       // Hands off to the site-wide player so playback survives navigating
@@ -280,7 +310,14 @@ export default function ShowDetailClient({
           isAudioShow ? (
             <AudioPlayerExpanded />
           ) : (
-            <VideoPlayer key={playing.id} episode={playing} queue={episodeQueue} onSelect={selectEpisode} showColor={show.color} />
+            <VideoPlayer
+              key={playing.id}
+              episode={playing}
+              queue={episodeQueue}
+              onSelect={selectEpisode}
+              showColor={show.color}
+              onEpisodeEnd={() => setShowEndPrompt(true)}
+            />
           )
         ) : (
           <>
@@ -314,6 +351,10 @@ export default function ShowDetailClient({
               <img src={show.logo} alt="" className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 h-14 w-14 sm:h-20 sm:w-20 object-contain opacity-90" />
             )}
           </>
+        )}
+
+        {showEndPrompt && playing && (
+          <EpisodeEndPrompt episode={playing} onClose={() => setShowEndPrompt(false)} />
         )}
       </div>
 

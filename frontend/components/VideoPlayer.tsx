@@ -22,12 +22,13 @@ function adjacent(queue: Episode[], episode: Episode) {
 // shows, enhanced with a scroll-linked floating mini-player and an
 // autoplay-next prompt between episodes of the same show.
 export default function VideoPlayer({
-  episode, queue, onSelect, showColor,
+  episode, queue, onSelect, showColor, onEpisodeEnd,
 }: {
   episode: Episode;
   queue: Episode[];
   onSelect: (ep: Episode) => void;
   showColor: string;
+  onEpisodeEnd?: () => void;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -52,6 +53,13 @@ export default function VideoPlayer({
 
   const { nextEp } = adjacent(queue, episode);
   const canAutoAdvance = !!nextEp && !nextEp.is_locked;
+
+  // Nothing to auto-advance to — this is a genuine "finished watching"
+  // moment, the right time to prompt for a like/comment.
+  useEffect(() => {
+    if (ended && !canAutoAdvance) onEpisodeEnd?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ended, canAutoAdvance]);
 
   // Mount / remount the (chromeless) YT player whenever the episode changes.
   useEffect(() => {

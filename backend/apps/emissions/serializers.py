@@ -103,6 +103,7 @@ class EpisodeListSerializer(TaggitSerializer, serializers.ModelSerializer):
     thumbnail_url = serializers.CharField(read_only=True)
     embed_url = serializers.CharField(read_only=True)
     is_locked = serializers.BooleanField(read_only=True)
+    comment_count = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Episode
@@ -115,12 +116,13 @@ class EpisodeListSerializer(TaggitSerializer, serializers.ModelSerializer):
             'youtube_url', 'youtube_id', 'embed_url', 'thumbnail_url',
             'duration_seconds', 'cover', 'aired_at',
             'categories', 'category_ids', 'tags',
-            'status', 'published_at', 'is_featured', 'is_locked', 'view_count', 'like_count',
+            'status', 'published_at', 'is_featured', 'is_locked',
+            'view_count', 'like_count', 'comment_count',
         )
         read_only_fields = (
             'id', 'slug', 'youtube_id', 'embed_url', 'thumbnail_url',
             'show_slug', 'show_title', 'series_slug', 'series_title',
-            'is_locked', 'view_count', 'like_count',
+            'is_locked', 'view_count', 'like_count', 'comment_count',
         )
 
     def to_representation(self, instance):

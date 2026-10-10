@@ -38,6 +38,7 @@ type AudioPlayerContextValue = {
   speed: number;
   heroVisible: boolean;
   setHeroVisible: (v: boolean) => void;
+  justEndedId: number | null;
   canPrev: boolean;
   canNext: boolean;
   play: (episode: Episode, ctx: AudioQueueContext) => void;
@@ -73,11 +74,16 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   const [duration, setDuration] = useState(0);
   const [speed, setSpeed] = useState(1);
   const [heroVisible, setHeroVisible] = useState(false);
+  // Set when an episode finishes with nothing left to auto-advance to —
+  // the show page watches this to prompt for a like/comment. Cleared as
+  // soon as a new track starts.
+  const [justEndedId, setJustEndedId] = useState<number | null>(null);
 
   trackRef.current = track;
 
   const play = useCallback((episode: Episode, ctx: AudioQueueContext) => {
     if (episode.is_locked) return;
+    setJustEndedId(null);
     setTrack({ episode, ctx });
   }, []);
 
@@ -98,6 +104,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     const { nextEp: n } = adjacentEpisodes(t);
     const upNext = n && !n.is_locked ? n : t.ctx.queue.find((e) => !e.is_locked) ?? null;
     if (upNext && upNext.id !== t.episode.id) play(upNext, t.ctx);
+    else setJustEndedId(t.episode.id);
   }
 
   // (Re)mount the YT player whenever the selected episode changes.
@@ -112,6 +119,8 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     loadYouTubeApi().then(() => {
       if (cancelled || !containerRef.current) return;
       playerRef.current = new window.YT.Player(containerRef.current, {
+        width: '2',
+        height: '2',
         videoId: track.episode.youtube_id,
         playerVars: { autoplay: 1, controls: 0, disablekb: 1, playsinline: 1 },
         events: {
@@ -237,13 +246,21 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
 
   const value: AudioPlayerContextValue = {
     track, artwork, ready, playing, current, duration, speed, heroVisible, setHeroVisible,
-    canPrev, canNext, play, toggle, skip, seekTo, cycleSpeed, selectPrev, selectNext, share,
+    justEndedId, canPrev, canNext, play, toggle, skip, seekTo, cycleSpeed, selectPrev, selectNext, share,
   };
 
   return (
     <AudioPlayerCtx.Provider value={value}>
       {children}
-      <div ref={containerRef} className="fixed -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true" />
+      {/* Kept inside the viewport (not off-canvas) at 1x1px/opacity-0 — some
+          mobile browsers force an off-screen autoplaying <video> into native
+          fullscreen, mistaking it for a layout bug. An on-screen-but-invisible
+          element doesn't trip that heuristic. */}
+      <div
+        ref={containerRef}
+        className="fixed bottom-0 right-0 h-px w-px overflow-hidden opacity-0 pointer-events-none"
+        aria-hidden="true"
+      />
     </AudioPlayerCtx.Provider>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Heart, MessageCircle, Send } from 'lucide-react';
 import type { Episode, EpisodeComment } from '../../lib/api';
+import { useEpisodeEngagement } from '../../lib/useEpisodeEngagement';
 import Spinner from '../ui/Spinner';
 
 function relativeTime(iso: string): string {
@@ -15,22 +16,13 @@ function relativeTime(iso: string): string {
   return months <= 1 ? 'Il y a 1 mois' : `Il y a ${months} mois`;
 }
 
-type CommentStatus = 'idle' | 'submitting' | 'success' | 'error';
-
 export default function EpisodeEngagement({ episode }: { episode: Episode }) {
-  const likeKey = `liked:episode:${episode.slug}`;
-
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(episode.like_count);
-  const [likeBusy, setLikeBusy] = useState(false);
+  const {
+    liked, likeCount, likeBusy, toggleLike,
+    commentStatus, commentError, submitComment,
+  } = useEpisodeEngagement(episode);
 
   const [comments, setComments] = useState<EpisodeComment[] | null>(null);
-  const [commentStatus, setCommentStatus] = useState<CommentStatus>('idle');
-  const [commentError, setCommentError] = useState('');
-
-  useEffect(() => {
-    setLiked(typeof window !== 'undefined' && window.localStorage.getItem(likeKey) === '1');
-  }, [likeKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,55 +33,12 @@ export default function EpisodeEngagement({ episode }: { episode: Episode }) {
     return () => { cancelled = true; };
   }, [episode.slug]);
 
-  async function toggleLike() {
-    if (likeBusy) return;
-    setLikeBusy(true);
-    const next = !liked;
-    setLiked(next);
-    setLikeCount((c) => c + (next ? 1 : -1));
-    try {
-      const res = await fetch(`/api/v1/emissions/episodes/${episode.slug}/${next ? 'like' : 'unlike'}/`, {
-        method: 'POST',
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setLikeCount(data.like_count);
-        window.localStorage.setItem(likeKey, next ? '1' : '0');
-      } else {
-        // Roll back on failure (throttled, network error…).
-        setLiked(!next);
-        setLikeCount((c) => c - (next ? 1 : -1));
-      }
-    } catch {
-      setLiked(!next);
-      setLikeCount((c) => c - (next ? 1 : -1));
-    } finally {
-      setLikeBusy(false);
-    }
-  }
-
   async function onSubmitComment(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setCommentStatus('submitting');
-    setCommentError('');
     const form = e.currentTarget;
-    const data = Object.fromEntries(new FormData(form).entries());
-    try {
-      const res = await fetch(`/api/v1/emissions/episodes/${episode.slug}/comments/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.detail || 'Une erreur est survenue.');
-      }
-      setCommentStatus('success');
-      form.reset();
-    } catch (err) {
-      setCommentStatus('error');
-      setCommentError(err instanceof Error ? err.message : 'Erreur inconnue.');
-    }
+    const data = Object.fromEntries(new FormData(form).entries()) as { author_name: string; body: string };
+    await submitComment(data);
+    form.reset();
   }
 
   return (

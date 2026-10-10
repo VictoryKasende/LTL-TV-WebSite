@@ -131,6 +131,7 @@ export type Episode = {
   is_locked: boolean;
   view_count: number;
   like_count: number;
+  comment_count: number;
   description?: string;
 };
 
