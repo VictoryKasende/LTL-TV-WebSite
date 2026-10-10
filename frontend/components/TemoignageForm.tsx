@@ -77,9 +77,9 @@ export default function TemoignageForm() {
         <button
           type="submit"
           disabled={status === 'submitting'}
-          className="inline-flex items-center gap-2 rounded-full bg-[#009696] text-white font-semibold px-7 py-3 text-sm hover:bg-[#007a7a] transition-colors disabled:opacity-60 disabled:cursor-wait"
+          className="inline-flex items-center gap-2 rounded-full bg-signal-400 text-brand-900 font-semibold px-7 py-3 text-sm hover:bg-signal-500 transition-colors disabled:opacity-60 disabled:cursor-wait"
         >
-          {status === 'submitting' && <Spinner size="sm" className="text-white" />}
+          {status === 'submitting' && <Spinner size="sm" className="text-brand-900" />}
           {status === 'submitting' ? 'Envoi en cours…' : 'Envoyer mon témoignage'}
         </button>
         <p className="text-xs text-ink-400">Relu avant diffusion.</p>
