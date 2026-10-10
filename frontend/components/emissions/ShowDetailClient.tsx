@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Play, ChevronDown, ChevronRight, ChevronLeft, Lock } from 'lucide-react';
 import type { Episode, Series, Show } from '../../lib/api';
 import VideoPlayer from '../VideoPlayer';
+import EpisodeEngagement from './EpisodeEngagement';
 import { AudioPlayerExpanded } from '../AudioPlayer';
 import { useAudioPlayerContext } from '../../lib/AudioPlayerContext';
 import EqBars from '../EqBars';
@@ -330,6 +331,10 @@ export default function ShowDetailClient({
             <p className="text-white/85 leading-relaxed max-w-3xl">{descriptionText}</p>
           </div>
         </div>
+      )}
+
+      {episodeSelected && playing && (
+        <EpisodeEngagement key={playing.id} episode={playing} />
       )}
 
       <section className="bg-white py-8 sm:py-10 md:py-14">

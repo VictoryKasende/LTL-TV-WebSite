@@ -15,7 +15,7 @@ from apps.common.admin import (
 from apps.common.permissions import is_full_site_admin
 
 from .forms import EpisodeAdminForm
-from .models import Category, Episode, Series, Show
+from .models import Category, Episode, EpisodeComment, Series, Show
 
 
 @admin.register(Category)
@@ -108,14 +108,14 @@ class EpisodeAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishAdminMi
     admin_only_fields = ('slug', 'youtube_id', 'guests')
     admin_only_autocomplete_fields = ('show',)
     list_display = ('title', 'show', 'series', 'speaker', 'aired_at',
-                    'status', 'is_featured', 'view_count', 'thumb_preview')
+                    'status', 'is_featured', 'view_count', 'like_count', 'thumb_preview')
     list_filter = ('show', 'series', 'status', 'is_featured', 'categories', 'aired_at')
     list_editable = ('is_featured',)
     search_fields = ('title', 'subtitle', 'excerpt', 'description', 'speaker')
     prepopulated_fields = {'slug': ('title',)}
     autocomplete_fields = ('show', 'series')
     date_hierarchy = 'aired_at'
-    readonly_fields = ('youtube_id', 'view_count', 'thumb_preview')
+    readonly_fields = ('youtube_id', 'view_count', 'like_count', 'thumb_preview')
     ordering = ('-aired_at', '-created_at')
     fieldsets = (
         ('Contenu', {
@@ -129,7 +129,7 @@ class EpisodeAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishAdminMi
         ('Classement', {'fields': ('categories',)}),
         ('Médias', {'fields': ('cover',)}),
         ('Publication', {
-            'fields': ('status', 'published_at', 'aired_at', 'is_featured', 'view_count'),
+            'fields': ('status', 'published_at', 'aired_at', 'is_featured', 'view_count', 'like_count'),
         }),
         ('Référencement Google (optionnel)', {
             'classes': ('collapse',),
@@ -153,3 +153,50 @@ class EpisodeAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishAdminMi
             '<img src="{}" style="max-width:180px;border-radius:6px" />',
             obj.thumbnail_url,
         )
+
+
+@admin.register(EpisodeComment)
+class EpisodeCommentAdmin(HistoryAdmin):
+    list_display = ('author_name', 'episode', 'status_badge', 'created_at')
+    list_filter = ('status', 'episode__show')
+    search_fields = ('author_name', 'body', 'episode__title')
+    autocomplete_fields = ('episode',)
+    readonly_fields = ('submitted_ip', 'submitted_user_agent', 'created_at', 'updated_at')
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    fieldsets = (
+        ('Commentaire', {'fields': ('episode', 'author_name', 'body')}),
+        ('Modération', {'fields': ('status', 'moderation_note')}),
+        ('Audit', {
+            'classes': ('collapse',),
+            'fields': ('submitted_ip', 'submitted_user_agent', 'created_at', 'updated_at'),
+        }),
+    )
+    actions = ['action_approve', 'action_reject']
+
+    @admin.display(description='Statut', ordering='status')
+    def status_badge(self, obj: EpisodeComment) -> str:
+        palette = {
+            'pending':  ('#2BB3A3', 'En attente'),
+            'approved': ('#3D803D', 'Approuvé'),
+            'rejected': ('#E23737', 'Rejeté'),
+        }
+        color, label = palette.get(obj.status, ('#707070', obj.status))
+        return format_html(
+            '<span style="display:inline-block;padding:3px 8px;border-radius:10px;'
+            'background:{}22;color:{};font-weight:600;font-size:11px">{}</span>',
+            color, color, label,
+        )
+
+    @admin.action(description='Approuver les commentaires sélectionnés')
+    def action_approve(self, request, queryset):
+        count = 0
+        for obj in queryset:
+            obj.approve()
+            count += 1
+        self.message_user(request, f'{count} commentaire(s) approuvé(s).')
+
+    @admin.action(description='Rejeter les commentaires sélectionnés')
+    def action_reject(self, request, queryset):
+        count = queryset.update(status=EpisodeComment.Status.REJECTED)
+        self.message_user(request, f'{count} commentaire(s) rejeté(s).')

@@ -130,7 +130,15 @@ export type Episode = {
   is_featured: boolean;
   is_locked: boolean;
   view_count: number;
+  like_count: number;
   description?: string;
+};
+
+export type EpisodeComment = {
+  id: number;
+  author_name: string;
+  body: string;
+  created_at: string;
 };
 
 export type Series = {

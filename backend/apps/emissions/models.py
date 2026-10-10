@@ -247,6 +247,7 @@ class Episode(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
     tags = TaggableManager('Mots-clés', blank=True)
 
     view_count = models.PositiveIntegerField('Nombre de vues', default=0, editable=False)
+    like_count = models.PositiveIntegerField('Nombre de likes', default=0, editable=False)
 
     history = HistoricalRecords()
 
@@ -299,3 +300,62 @@ class Episode(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
         type(self).objects.filter(pk=self.pk).update(
             view_count=models.F('view_count') + by,
         )
+
+    def increment_likes(self) -> None:
+        type(self).objects.filter(pk=self.pk).update(
+            like_count=models.F('like_count') + 1,
+        )
+
+    def decrement_likes(self) -> None:
+        """Floored at 0 — a double "unlike" (double-click, replay) must
+        never wrap the unsigned counter negative."""
+        type(self).objects.filter(pk=self.pk, like_count__gt=0).update(
+            like_count=models.F('like_count') - 1,
+        )
+
+
+class EpisodeComment(TimestampedModel):
+    """One anonymous comment on an episode. Moderated before it's public,
+    same workflow as ``apps.temoignages.Testimonial``."""
+
+    class Status(models.TextChoices):
+        PENDING  = 'pending',  'En attente'
+        APPROVED = 'approved', 'Approuvé'
+        REJECTED = 'rejected', 'Rejeté'
+
+    episode = models.ForeignKey(
+        Episode, on_delete=models.CASCADE, related_name='comments',
+        verbose_name='Épisode',
+    )
+    author_name = models.CharField('Nom affiché', max_length=120)
+    body = models.TextField('Commentaire')
+
+    status = models.CharField(
+        'Statut', max_length=16, choices=Status.choices,
+        default=Status.PENDING, db_index=True,
+    )
+    moderation_note = models.TextField('Note interne', blank=True)
+
+    submitted_ip = models.GenericIPAddressField('Adresse IP', null=True, blank=True)
+    submitted_user_agent = models.CharField('Navigateur', max_length=280, blank=True)
+
+    class Meta:
+        verbose_name = 'Commentaire'
+        verbose_name_plural = 'Commentaires'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['episode', 'status', '-created_at']),
+        ]
+
+    def __str__(self) -> str:
+        return f'{self.author_name} — {self.episode.title}'
+
+    def approve(self) -> None:
+        self.status = self.Status.APPROVED
+        self.save(update_fields=['status'])
+
+    def reject(self, *, note: str = '') -> None:
+        self.status = self.Status.REJECTED
+        if note:
+            self.moderation_note = note
+        self.save(update_fields=['status', 'moderation_note'])

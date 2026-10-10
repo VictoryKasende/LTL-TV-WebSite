@@ -220,6 +220,8 @@ REST_FRAMEWORK = {
         'contact': '5/hour',
         'testimonial': '3/hour',
         'event_registration': '5/hour',
+        'episode_like': '30/min',
+        'episode_comment': '5/hour',
     },
     'EXCEPTION_HANDLER': 'apps.common.exceptions.custom_exception_handler',
 }

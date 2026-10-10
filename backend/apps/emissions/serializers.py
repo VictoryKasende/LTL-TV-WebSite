@@ -4,7 +4,7 @@ from __future__ import annotations
 from rest_framework import serializers
 from taggit.serializers import TaggitSerializer, TagListSerializerField
 
-from .models import Category, Episode, Series, Show
+from .models import Category, Episode, EpisodeComment, Series, Show
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -115,12 +115,12 @@ class EpisodeListSerializer(TaggitSerializer, serializers.ModelSerializer):
             'youtube_url', 'youtube_id', 'embed_url', 'thumbnail_url',
             'duration_seconds', 'cover', 'aired_at',
             'categories', 'category_ids', 'tags',
-            'status', 'published_at', 'is_featured', 'is_locked', 'view_count',
+            'status', 'published_at', 'is_featured', 'is_locked', 'view_count', 'like_count',
         )
         read_only_fields = (
             'id', 'slug', 'youtube_id', 'embed_url', 'thumbnail_url',
             'show_slug', 'show_title', 'series_slug', 'series_title',
-            'is_locked', 'view_count',
+            'is_locked', 'view_count', 'like_count',
         )
 
     def to_representation(self, instance):
@@ -140,5 +140,47 @@ class EpisodeDetailSerializer(EpisodeListSerializer):
         fields = EpisodeListSerializer.Meta.fields + (
             'description',
             'meta_title', 'meta_description', 'og_image', 'canonical_url',
+            'created_at', 'updated_at',
+        )
+
+
+class EpisodeCommentPublicSerializer(serializers.ModelSerializer):
+    """What anonymous visitors see : approved comments only, no PII."""
+
+    class Meta:
+        model = EpisodeComment
+        fields = ('id', 'author_name', 'body', 'created_at')
+        read_only_fields = fields
+
+
+class EpisodeCommentSubmissionSerializer(serializers.ModelSerializer):
+    """Public POST-only serializer. Includes a honeypot."""
+
+    hp_field = serializers.CharField(
+        required=False, allow_blank=True, write_only=True,
+        help_text='Champ anti-bot. Laissez vide.',
+    )
+
+    class Meta:
+        model = EpisodeComment
+        fields = ('author_name', 'body', 'hp_field')
+
+    def validate(self, attrs):
+        attrs.pop('hp_field', None)
+        return attrs
+
+
+class EpisodeCommentAdminSerializer(serializers.ModelSerializer):
+    episode_title = serializers.CharField(source='episode.title', read_only=True)
+
+    class Meta:
+        model = EpisodeComment
+        fields = (
+            'id', 'episode', 'episode_title', 'author_name', 'body',
+            'status', 'moderation_note', 'submitted_ip', 'submitted_user_agent',
+            'created_at', 'updated_at',
+        )
+        read_only_fields = (
+            'id', 'episode_title', 'submitted_ip', 'submitted_user_agent',
             'created_at', 'updated_at',
         )

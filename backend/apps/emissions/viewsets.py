@@ -8,16 +8,20 @@ from __future__ import annotations
 
 from django.db.models import Count, Prefetch, Q
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 
-from apps.common.permissions import ReadOnlyOrEditor
+from apps.common.permissions import IsModerator, ReadOnlyOrEditor
 
 from .filters import EpisodeFilter, SeriesFilter, ShowFilter
-from .models import Category, Episode, Series, Show
+from .models import Category, Episode, EpisodeComment, Series, Show
 from .serializers import (
     CategorySerializer,
+    EpisodeCommentAdminSerializer,
+    EpisodeCommentPublicSerializer,
+    EpisodeCommentSubmissionSerializer,
     EpisodeDetailSerializer,
     EpisodeListSerializer,
     SeriesSerializer,
@@ -29,6 +33,13 @@ from .serializers import (
 
 def _staff(request) -> bool:
     return bool(request.user and request.user.is_authenticated and request.user.is_staff)
+
+
+def _client_ip(request) -> str | None:
+    xff = request.META.get('HTTP_X_FORWARDED_FOR')
+    if xff:
+        return xff.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
 
 
 @extend_schema(tags=['Émissions'])
@@ -174,3 +185,104 @@ class EpisodeViewSet(viewsets.ModelViewSet):
         ep.increment_views()
         ep.refresh_from_db(fields=['view_count'])
         return Response({'view_count': ep.view_count})
+
+    @extend_schema(
+        summary='Liker cet épisode', request=None,
+        responses={200: {'type': 'object', 'properties': {'like_count': {'type': 'integer'}}}},
+    )
+    @action(
+        detail=True, methods=['post'], url_path='like',
+        permission_classes=[permissions.AllowAny],
+    )
+    def like(self, request, slug=None):
+        ep = self.get_object()
+        ep.increment_likes()
+        ep.refresh_from_db(fields=['like_count'])
+        return Response({'like_count': ep.like_count})
+
+    @extend_schema(
+        summary='Retirer son like', request=None,
+        responses={200: {'type': 'object', 'properties': {'like_count': {'type': 'integer'}}}},
+    )
+    @action(
+        detail=True, methods=['post'], url_path='unlike',
+        permission_classes=[permissions.AllowAny],
+    )
+    def unlike(self, request, slug=None):
+        ep = self.get_object()
+        ep.decrement_likes()
+        ep.refresh_from_db(fields=['like_count'])
+        return Response({'like_count': ep.like_count})
+
+    @extend_schema(
+        summary='Commentaires de cet épisode',
+        description='GET liste les commentaires approuvés. POST soumet un nouveau '
+                    'commentaire anonyme, publié après modération.',
+        request=EpisodeCommentSubmissionSerializer,
+        responses={200: EpisodeCommentPublicSerializer(many=True), 201: EpisodeCommentPublicSerializer},
+    )
+    @action(detail=True, methods=['get', 'post'], url_path='comments',
+            permission_classes=[permissions.AllowAny])
+    def comments(self, request, slug=None):
+        ep = self.get_object()
+
+        if request.method == 'POST':
+            # Silent honeypot: pretend it worked, never save.
+            if request.data.get('hp_field'):
+                return Response(
+                    {'detail': 'Merci pour votre commentaire.'},
+                    status=status.HTTP_201_CREATED,
+                )
+            serializer = EpisodeCommentSubmissionSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(
+                episode=ep,
+                submitted_ip=_client_ip(request),
+                submitted_user_agent=(request.META.get('HTTP_USER_AGENT', '') or '')[:280],
+            )
+            return Response(
+                {'detail': 'Merci, votre commentaire sera visible après modération.'},
+                status=status.HTTP_201_CREATED,
+            )
+
+        qs = ep.comments.filter(status=EpisodeComment.Status.APPROVED)
+        page = self.paginate_queryset(qs)
+        ser = EpisodeCommentPublicSerializer(page or qs, many=True)
+        return self.get_paginated_response(ser.data) if page is not None else Response(ser.data)
+
+    def get_throttles(self):
+        if self.action in ('like', 'unlike'):
+            self.throttle_scope = 'episode_like'
+            return [ScopedRateThrottle()]
+        if self.action == 'comments' and self.request.method == 'POST':
+            self.throttle_scope = 'episode_comment'
+            return [ScopedRateThrottle()]
+        return super().get_throttles()
+
+
+@extend_schema(tags=['Émissions · Modération'])
+class EpisodeCommentAdminViewSet(viewsets.ModelViewSet):
+    """Full CRUD + moderation for staff. Sees *all* comments."""
+
+    queryset = EpisodeComment.objects.select_related('episode')
+    serializer_class = EpisodeCommentAdminSerializer
+    permission_classes = [IsModerator]
+    filterset_fields = ('episode', 'status')
+    search_fields = ('author_name', 'body')
+    ordering_fields = ('created_at',)
+
+    @extend_schema(summary='Approuver ce commentaire', request=None,
+                   responses={200: EpisodeCommentAdminSerializer})
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        obj = self.get_object()
+        obj.approve()
+        return Response(self.get_serializer(obj).data)
+
+    @extend_schema(summary='Rejeter ce commentaire', request=None,
+                   responses={200: EpisodeCommentAdminSerializer})
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        obj = self.get_object()
+        obj.reject(note=request.data.get('note', ''))
+        return Response(self.get_serializer(obj).data)
