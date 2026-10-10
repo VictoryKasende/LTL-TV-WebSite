@@ -25,7 +25,9 @@ export async function generateMetadata({ params, searchParams }: Params) {
   const description = episode
     ? (episode.excerpt || episode.subtitle || show.meta_description || show.tagline || `${show.title} sur LTL·TV.`)
     : (show.meta_description || show.tagline || `${show.title} sur LTL·TV.`);
-  const image = episode ? (episode.cover || episode.thumbnail_url) : (show.og_image || show.cover);
+  const image = episode
+    ? (episode.cover || episode.thumbnail_url || show.og_image || show.cover)
+    : (show.og_image || show.cover);
   const canonical = episode
     ? `/emissions/${show.slug}?episode=${episode.slug}`
     : (show.canonical_url || `/emissions/${show.slug}`);
@@ -67,6 +69,7 @@ export default async function ShowDetailPage({ params, searchParams }: Params) {
         series={series ?? []}
         standalone={standalone}
         initialEpisode={initialEpisode}
+        episodeExplicit={!!requestedEpisode}
       />
       <FollowAlso shows={otherShows} />
     </>

@@ -346,6 +346,33 @@ if SENTRY_DSN:
     )
 
 # ---------------------------------------------------------------------------
+# Email (SMTP — mailbox hosted at Hostinger)
+# ---------------------------------------------------------------------------
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.hostinger.com')
+EMAIL_PORT = config('EMAIL_PORT', default=465, cast=int)
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=True, cast=bool)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='info@ltltv.com')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=f'LTL·TV <{EMAIL_HOST_USER}>')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+# Print emails to the console instead of sending them for local dev when no
+# SMTP password is configured, so `runserver`/tests never hang on a real
+# SMTP handshake or silently fail against Hostinger.
+if DEBUG and not EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Tests never touch a real SMTP server — collect sent messages in memory instead.
+if 'test' in _sys.argv:
+    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+
+# Absolute base URL of the public site, used to build links inside emails
+# (Django has no request context in a Celery task).
+FRONTEND_URL = config('FRONTEND_URL', default='https://ltltv.com')
+
+# ---------------------------------------------------------------------------
 # Web Push (VAPID)
 # ---------------------------------------------------------------------------
 # Generate a key pair with `manage.py generate_vapid_keys` then paste

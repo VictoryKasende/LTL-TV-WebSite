@@ -20,6 +20,7 @@ from .serializers import (
     EventRegistrationSubmissionSerializer,
     EventSerializer,
 )
+from .tasks import send_event_registration_email
 
 
 def _staff(request) -> bool:
@@ -92,12 +93,13 @@ class EventViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer.save(
+        registration = serializer.save(
             event=event,
             submitted_ip=_client_ip(request),
             submitted_user_agent=(request.META.get('HTTP_USER_AGENT', '') or '')[:280],
             referrer=(request.META.get('HTTP_REFERER', '') or '')[:280],
         )
+        send_event_registration_email.delay(registration.pk)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 

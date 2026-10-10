@@ -1,0 +1,21 @@
+LTL·TV — Inscription confirmée
+
+Bienvenue, {{ first_name }} !
+
+Merci de vous être inscrit(e) à {{ event_title }}. C'est une joie de vous compter
+parmi nous — que ce temps soit pour vous une source d'encouragement, de
+rafraîchissement et de bénédiction.
+
+{{ event_title }}{% if event_subtitle %} — {{ event_subtitle }}{% endif %}
+{{ event_dates }}
+
+Voir les détails de l'événement : {{ event_url }}
+
+Restez connecté(e) : {{ site_url }}
+
+Avec bénédiction,
+L'équipe LTL·TV
+
+--
+Vous recevez cet email car vous vous êtes inscrit(e) à « {{ event_title }} » sur ltltv.com.
+LTL·TV — info@ltltv.com

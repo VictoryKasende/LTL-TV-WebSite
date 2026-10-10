@@ -125,28 +125,38 @@ function EpisodeRow({
 }
 
 export default function ShowDetailClient({
-  show, series, standalone, initialEpisode,
+  show, series, standalone, initialEpisode, episodeExplicit = false,
 }: {
   show: Show;
   series: Series[];
   standalone: Episode[];
   initialEpisode: Episode | null;
+  episodeExplicit?: boolean;
 }) {
   const audioCtx = useAudioPlayerContext();
   const router = useRouter();
   const pathname = usePathname();
   const topRef = useRef<HTMLDivElement>(null);
   const isAudioShow = AUDIO_ONLY_SHOWS.has(show.slug);
+  const audioAlreadyPlayingHere = isAudioShow && audioCtx.track?.ctx.showSlug === show.slug;
   // If this show's episode is already playing globally (e.g. the visitor navigated
   // back here while listening), pick up the page's local UI state from it instead
   // of resetting to the server-rendered default.
   const [playing, setPlaying] = useState<Episode | null>(() => (
-    isAudioShow && audioCtx.track?.ctx.showSlug === show.slug ? audioCtx.track.episode : initialEpisode
+    audioAlreadyPlayingHere ? audioCtx.track!.episode : initialEpisode
   ));
-  const [isPlaying, setIsPlaying] = useState(() => (
-    isAudioShow && audioCtx.track?.ctx.showSlug === show.slug
+  const [isPlaying, setIsPlaying] = useState(() => audioAlreadyPlayingHere);
+  // Whether the visitor actually picked an episode (click, or a `?episode=`
+  // deep link) as opposed to the page just defaulting to the first one.
+  // Gates the hero image/description: the show's own host photo + blurb
+  // until then, the episode's own once it's genuinely "selected".
+  const [episodeSelected, setEpisodeSelected] = useState(() => (
+    episodeExplicit || audioAlreadyPlayingHere
   ));
-  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<number, boolean>>(() => {
+    const firstWithEpisodes = series.find((s) => (s.episodes?.length ?? 0) > 0);
+    return firstWithEpisodes ? { [firstWithEpisodes.id]: true } : {};
+  });
   const [sortOrder, setSortOrder] = useState<SortOrder>('recent');
   const [standalonePage, setStandalonePage] = useState(1);
   const [seriesPage, setSeriesPage] = useState(1);
@@ -205,11 +215,14 @@ export default function ShowDetailClient({
     else router.replace(url, { scroll: false });
   }
 
-  // On first mount, make sure the URL reflects whichever episode ended up
-  // selected server-side (deep link or default pick) — without adding a
-  // history entry for a navigation the user didn't actually make.
+  // On first mount, make sure the URL reflects an already-selected episode
+  // (deep link, or audio resumed from the global player) — without adding a
+  // history entry for a navigation the user didn't actually make. The
+  // default auto-picked episode deliberately does *not* get pushed into the
+  // URL: until the visitor actually chooses something, the page is about
+  // the show, not any one episode.
   useEffect(() => {
-    if (playing) syncEpisodeUrl(playing, 'replace');
+    if (episodeSelected && playing) syncEpisodeUrl(playing, 'replace');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -217,6 +230,7 @@ export default function ShowDetailClient({
     if (ep.is_locked) return;
     setPlaying(ep);
     setIsPlaying(true);
+    setEpisodeSelected(true);
     syncEpisodeUrl(ep, 'push');
     if (isAudioShow) {
       // Hands off to the site-wide player so playback survives navigating
@@ -237,7 +251,15 @@ export default function ShowDetailClient({
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
-  const heroImage = playing?.cover || playing?.thumbnail_url || show.host_photo || show.cover || '';
+  // Before the visitor has actually picked an episode, the hero shows the
+  // show's own identity (host photo) rather than whichever episode happens
+  // to be the default pick.
+  const heroImage = episodeSelected
+    ? (playing?.cover || playing?.thumbnail_url || show.host_photo || show.cover || '')
+    : (show.host_photo || show.cover || '');
+
+  const episodeDescription = episodeSelected ? (playing?.excerpt || playing?.subtitle || '') : '';
+  const descriptionText = episodeDescription || show.description;
 
   return (
     <div ref={topRef}>
@@ -294,11 +316,18 @@ export default function ShowDetailClient({
         )}
       </div>
 
-      {show.description && (
+      {descriptionText && (
         <div className="bg-ink-900 text-white px-4 sm:px-6 md:px-10 py-6 sm:py-8 md:py-10">
           <div className="max-w-6xl mx-auto">
-            <h3 className="font-bold text-lg mb-3">Description</h3>
-            <p className="text-white/85 leading-relaxed max-w-3xl">{show.description}</p>
+            <h3 className="font-bold text-lg mb-1">
+              {episodeDescription ? playing?.title : 'Description'}
+            </h3>
+            {episodeDescription && (
+              <p className="text-xs text-white/50 mb-3">
+                {show.title}{playing?.speaker ? ` · ${playing.speaker}` : ''}
+              </p>
+            )}
+            <p className="text-white/85 leading-relaxed max-w-3xl">{descriptionText}</p>
           </div>
         </div>
       )}
