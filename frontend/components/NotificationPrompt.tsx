@@ -87,7 +87,7 @@ export default function NotificationPrompt() {
         <X className="h-4 w-4" />
       </button>
       <div className="flex items-start gap-3 pr-4">
-        <div className="h-10 w-10 shrink-0 rounded-full bg-amber-400 flex items-center justify-center">
+        <div className="h-10 w-10 shrink-0 rounded-full bg-signal-400 flex items-center justify-center">
           <Bell className="h-5 w-5 text-brand-800" strokeWidth={2} />
         </div>
         <div>

@@ -39,7 +39,7 @@ export default function AnnouncementBar({ initialData }: { initialData: Announce
         {ctaUrl && ctaLabel && (
           <Link
             href={ctaUrl}
-            className="shrink-0 rounded-full bg-amber-400 text-brand-800 font-semibold px-3.5 py-1.5 text-xs sm:text-sm hover:bg-amber-500 transition-colors"
+            className="shrink-0 rounded-full bg-signal-400 text-brand-800 font-semibold px-3.5 py-1.5 text-xs sm:text-sm hover:bg-signal-500 transition-colors"
           >
             {ctaLabel}
           </Link>

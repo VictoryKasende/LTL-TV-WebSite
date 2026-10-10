@@ -95,7 +95,7 @@ function Field({
   as?: 'textarea'; rows?: number;
 }) {
   const cls = as === 'textarea'
-    ? 'w-full rounded-lg border border-dashed border-paper-300 bg-paper-50 px-4 py-3 text-ink-800 placeholder:text-ink-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-colors leading-relaxed'
+    ? 'w-full rounded-lg border border-dashed border-paper-300 bg-paper-50 px-4 py-3 text-ink-800 placeholder:text-ink-400 focus:outline-none focus:border-signal-500 focus:ring-2 focus:ring-signal-500/20 transition-colors leading-relaxed'
     : 'w-full rounded-lg border border-paper-300 bg-white px-4 py-3 text-ink-800 placeholder:text-ink-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors';
   return (
     <label className="block">

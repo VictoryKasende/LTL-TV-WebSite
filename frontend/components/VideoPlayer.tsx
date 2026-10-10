@@ -274,7 +274,7 @@ export default function VideoPlayer({
                 </span>
               </button>
               <div className="absolute bottom-0 inset-x-0 h-[3px] bg-white/20 z-10">
-                <div className="h-full bg-amber-400" style={{ width: `${ratio * 100}%` }} />
+                <div className="h-full bg-signal-400" style={{ width: `${ratio * 100}%` }} />
               </div>
             </>
           ) : (
@@ -303,9 +303,9 @@ export default function VideoPlayer({
                   onPointerDown={onScrubPointerDown}
                 >
                   <div className="relative flex-1 h-1 rounded-full bg-white/25 group-hover/scrub:h-1.5 transition-all">
-                    <div className="absolute inset-y-0 left-0 rounded-full bg-amber-400" style={{ width: `${ratio * 100}%` }} />
+                    <div className="absolute inset-y-0 left-0 rounded-full bg-signal-400" style={{ width: `${ratio * 100}%` }} />
                     <div
-                      className="absolute top-1/2 h-3 w-3 rounded-full bg-amber-400 shadow -translate-y-1/2 -translate-x-1/2"
+                      className="absolute top-1/2 h-3 w-3 rounded-full bg-signal-400 shadow -translate-y-1/2 -translate-x-1/2"
                       style={{ left: `${ratio * 100}%` }}
                     />
                   </div>
@@ -353,7 +353,7 @@ export default function VideoPlayer({
                     <svg viewBox="0 0 40 40" className="h-9 w-9 sm:h-10 sm:w-10 -rotate-90">
                       <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
                       <circle
-                        cx="20" cy="20" r="17" fill="none" stroke="#F5C24E" strokeWidth="3" strokeLinecap="round"
+                        cx="20" cy="20" r="17" fill="none" stroke="#2BB3A3" strokeWidth="3" strokeLinecap="round"
                         strokeDasharray={RING_CIRCUMFERENCE}
                         strokeDashoffset={RING_CIRCUMFERENCE * (1 - countdown / COUNTDOWN_SECONDS)}
                         style={{ transition: 'stroke-dashoffset 1s linear' }}
@@ -369,7 +369,7 @@ export default function VideoPlayer({
                     <button
                       type="button"
                       onClick={() => onSelect(nextEp)}
-                      className="rounded-full bg-amber-400 text-ink-900 text-xs font-bold px-3.5 py-1.5 hover:bg-amber-300 transition-colors"
+                      className="rounded-full bg-signal-400 text-ink-900 text-xs font-bold px-3.5 py-1.5 hover:bg-signal-300 transition-colors"
                     >
                       Regarder maintenant
                     </button>

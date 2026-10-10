@@ -95,7 +95,7 @@ function EpisodeRow({
             </div>
           )}
           {showEpisodeNumber && ep.episode_number && !ep.is_locked && (
-            <span className="absolute top-1 left-1 rounded bg-ink-900/85 text-amber-400 text-[10px] font-bold px-1.5 py-0.5">
+            <span className="absolute top-1 left-1 rounded bg-ink-900/85 text-signal-400 text-[10px] font-bold px-1.5 py-0.5">
               EP {ep.episode_number}
             </span>
           )}

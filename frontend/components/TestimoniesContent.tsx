@@ -30,7 +30,7 @@ export default function TestimoniesContent({ initialData }: { initialData: Pagin
           style={{ background: 'radial-gradient(50% 60% at 82% 15%, rgba(245,166,35,0.25), transparent 70%)' }}
         />
         <Container size="narrow" className="relative text-center">
-          <p className="inline-flex items-center gap-3 text-xs uppercase tracking-[0.22em] text-amber-400 font-bold mb-8">
+          <p className="inline-flex items-center gap-3 text-xs uppercase tracking-[0.22em] text-signal-400 font-bold mb-8">
             <span aria-hidden className="h-px w-10 bg-white/25" />
             Ils témoignent
             <span aria-hidden className="h-px w-10 bg-white/25" />
@@ -39,9 +39,9 @@ export default function TestimoniesContent({ initialData }: { initialData: Pagin
           {hero ? (
             <>
               <p className="font-serif italic text-2xl md:text-4xl leading-snug text-balance">
-                <span className="text-amber-400 not-italic">&ldquo;</span>
+                <span className="text-signal-400 not-italic">&ldquo;</span>
                 {hero.story_short || hero.story}
-                <span className="text-amber-400 not-italic">&rdquo;</span>
+                <span className="text-signal-400 not-italic">&rdquo;</span>
               </p>
               <div className="mt-8 flex items-center justify-center gap-3">
                 {hero.photo ? (
@@ -51,7 +51,7 @@ export default function TestimoniesContent({ initialData }: { initialData: Pagin
                     className="h-11 w-11 rounded-full object-cover border-2 border-white/30"
                   />
                 ) : (
-                  <div className="h-11 w-11 rounded-full bg-gradient-to-br from-amber-400 to-terracotta flex items-center justify-center font-bold text-brand-900 border-2 border-white/30">
+                  <div className="h-11 w-11 rounded-full bg-gradient-to-br from-signal-400 to-terracotta flex items-center justify-center font-bold text-brand-900 border-2 border-white/30">
                     {initials(hero.author_name)}
                   </div>
                 )}
@@ -63,7 +63,7 @@ export default function TestimoniesContent({ initialData }: { initialData: Pagin
             </>
           ) : retrying ? (
             <div className="flex items-center justify-center gap-3 text-white/75">
-              <Spinner size="sm" className="text-amber-400" />
+              <Spinner size="sm" className="text-signal-400" />
               Chargement…
             </div>
           ) : (
@@ -76,7 +76,7 @@ export default function TestimoniesContent({ initialData }: { initialData: Pagin
           </p>
           <a
             href="#partager"
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-amber-400 text-brand-900 font-bold px-6 py-3 text-sm hover:bg-amber-500 transition-colors"
+            className="mt-8 inline-flex items-center gap-2 rounded-full bg-signal-400 text-brand-900 font-bold px-6 py-3 text-sm hover:bg-signal-500 transition-colors"
           >
             Partager mon témoignage
           </a>
@@ -87,7 +87,7 @@ export default function TestimoniesContent({ initialData }: { initialData: Pagin
         <Container>
           <div className="flex items-end justify-between gap-6 flex-wrap mb-10">
             <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-amber-500 font-bold mb-2">
+              <p className="text-xs uppercase tracking-[0.22em] text-signal-500 font-bold mb-2">
                 Mur de témoignages
               </p>
               <h2 className="font-bold text-display-md text-brand-700">

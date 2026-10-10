@@ -22,7 +22,7 @@ const GRADIENTS = [
   'linear-gradient(135deg, #212870 0%, #3D53EA 100%)',
   'linear-gradient(135deg, #141640 0%, #3D53EA 100%)',
   'linear-gradient(135deg, #212870 0%, #E85521 130%)',
-  'linear-gradient(135deg, #3D53EA 0%, #F5C24E 130%)',
+  'linear-gradient(135deg, #3D53EA 0%, #2BB3A3 130%)',
 ];
 
 function Byline({ article }: { article: Article }) {
@@ -31,7 +31,7 @@ function Byline({ article }: { article: Article }) {
       {article.author?.avatar ? (
         <img src={article.author.avatar} alt="" className="h-7 w-7 rounded-full object-cover" />
       ) : (
-        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-amber-400 to-terracotta flex items-center justify-center text-[11px] font-bold text-brand-900">
+        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-signal-400 to-terracotta flex items-center justify-center text-[11px] font-bold text-brand-900">
           {initials(article.author?.display_name || 'LTL')}
         </div>
       )}
@@ -74,7 +74,7 @@ export default function ArticlesListClient({ initialData }: { initialData: Pagin
     <>
       <header className="bg-white border-b border-paper-300">
         <Container className="py-14 md:py-16">
-          <p className="text-xs uppercase tracking-[0.18em] text-amber-500 font-bold mb-2 inline-flex items-center gap-2">
+          <p className="text-xs uppercase tracking-[0.18em] text-signal-500 font-bold mb-2 inline-flex items-center gap-2">
             <Newspaper className="h-3.5 w-3.5" strokeWidth={2.5} />
             Le magazine LTL·TV
           </p>

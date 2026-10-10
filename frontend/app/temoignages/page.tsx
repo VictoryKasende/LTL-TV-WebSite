@@ -21,7 +21,7 @@ export default async function TemoignagesPage() {
       <section id="partager" className="bg-white py-16 md:py-20">
         <Container size="narrow">
           <div className="mb-10 text-center md:text-left">
-            <p className="text-xs uppercase tracking-[0.22em] text-amber-500 font-bold mb-3">— À votre tour</p>
+            <p className="text-xs uppercase tracking-[0.22em] text-signal-500 font-bold mb-3">— À votre tour</p>
             <h2 className="font-bold text-display-md text-brand-700">Partagez votre témoignage.</h2>
             <p className="mt-3 text-lg text-ink-500 leading-relaxed">
               Votre histoire peut encourager quelqu'un aujourd'hui. Chaque témoignage

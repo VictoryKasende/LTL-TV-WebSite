@@ -96,7 +96,7 @@ export default async function ArticleDetailPage({ params }: Params) {
             {article.author?.avatar ? (
               <img src={article.author.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
             ) : (
-              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-terracotta flex items-center justify-center text-sm font-bold text-brand-900">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-signal-400 to-terracotta flex items-center justify-center text-sm font-bold text-brand-900">
                 {initials(article.author?.display_name || 'LTL')}
               </div>
             )}
@@ -155,7 +155,7 @@ export default async function ArticleDetailPage({ params }: Params) {
       {related.length > 0 && (
         <section className="bg-paper-100 py-14 md:py-20">
           <Container>
-            <p className="text-xs uppercase tracking-[0.18em] text-amber-500 font-bold mb-8">Continuer la lecture</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-signal-500 font-bold mb-8">Continuer la lecture</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
               {related.map((a) => (
                 <Link

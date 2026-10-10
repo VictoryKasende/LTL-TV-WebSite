@@ -63,7 +63,7 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
             className="h-7 md:h-8 w-auto mx-auto mb-8 opacity-95"
           />
           <h1 className="font-display tracking-tight text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.9]">
-            ANNONCER <span className="text-amber-400">L&apos;ÉVANGILE</span>
+            ANNONCER <span className="text-signal-400">L&apos;ÉVANGILE</span>
             <br className="hidden md:block" />
             PAR LES MÉDIAS
           </h1>
@@ -121,7 +121,7 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
 
               <div className="relative h-full flex flex-col items-center justify-end md:justify-center px-6 md:px-14 pb-16 md:pb-0 text-center">
                 {isLive && (
-                  <div className="inline-flex items-center gap-2 text-amber-400 uppercase tracking-[0.15em] text-sm md:text-base font-bold mb-3">
+                  <div className="inline-flex items-center gap-2 text-signal-400 uppercase tracking-[0.15em] text-sm md:text-base font-bold mb-3">
                     <span className="relative flex h-2.5 w-2.5">
                       <span className="absolute inset-0 rounded-full bg-live animate-pulse-dot" />
                       <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-live" />
@@ -141,7 +141,7 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
                     href={banner.link_url}
                     target={banner.link_target === '_blank' ? '_blank' : undefined}
                     rel={banner.link_target === '_blank' ? 'noopener noreferrer' : undefined}
-                    className="mt-6 inline-flex items-center gap-2 rounded-full bg-white text-brand-700 font-bold px-6 py-3 text-sm hover:bg-amber-400 transition-colors"
+                    className="mt-6 inline-flex items-center gap-2 rounded-full bg-white text-brand-700 font-bold px-6 py-3 text-sm hover:bg-signal-400 transition-colors"
                   >
                     Découvrir
                     <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />

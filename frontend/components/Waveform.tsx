@@ -40,7 +40,7 @@ export default function Waveform({
       {heights.map((h, i) => (
         <span
           key={i}
-          className={`flex-1 min-w-[2px] rounded-sm transition-colors ${i < playedCount ? 'bg-amber-400' : 'bg-white/25'}`}
+          className={`flex-1 min-w-[2px] rounded-sm transition-colors ${i < playedCount ? 'bg-signal-400' : 'bg-white/25'}`}
           style={{ height: `${h}px` }}
         />
       ))}

@@ -47,7 +47,7 @@ function relativeTime(iso: string | null): string {
   return months <= 1 ? 'Il y a 1 mois' : `Il y a ${months} mois`;
 }
 
-const GRADIENT = 'linear-gradient(135deg, #212870 0%, #3D53EA 60%, #F5C24E 130%)';
+const GRADIENT = 'linear-gradient(135deg, #212870 0%, #3D53EA 60%, #2BB3A3 130%)';
 
 export default function UpcomingShowsClient({ initialData }: { initialData: Paginated<Episode> | null }) {
   const { data, retrying } = useResilientData(

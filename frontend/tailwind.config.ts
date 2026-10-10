@@ -39,9 +39,12 @@ const config: Config = {
         dlp:  '#E85521', // Dans Les Profondeurs
         raf:  '#3D53EA', // Rafraîchissement
         live: '#E23737', // LIVE badge
-        amber: {
-          400: '#F5C24E',
-          500: '#F5A623',
+        // CTA/highlight accent — a cool teal, deliberately the one cold note
+        // against the all-warm navy/orange/red palette elsewhere.
+        signal: {
+          300: '#5FD0C2',
+          400: '#2BB3A3',
+          500: '#1E8F82',
         },
         cream: '#FBF6EE', // warm wall background (témoignages)
         terracotta: '#E2711D', // avatar gradient accent (témoignages)

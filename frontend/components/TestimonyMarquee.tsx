@@ -21,7 +21,7 @@ function Card({ t, featured }: { t: Temoignage; featured: boolean }) {
       )}
     >
       {featured && (
-        <span aria-hidden className="block font-serif text-3xl leading-none text-amber-400 mb-1.5">
+        <span aria-hidden className="block font-serif text-3xl leading-none text-signal-400 mb-1.5">
           &ldquo;
         </span>
       )}
@@ -41,8 +41,8 @@ function Card({ t, featured }: { t: Temoignage; featured: boolean }) {
             className={clsx(
               'h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0',
               featured
-                ? 'bg-white/10 text-amber-400 border border-amber-400/50'
-                : 'bg-gradient-to-br from-amber-400 to-terracotta text-brand-900',
+                ? 'bg-white/10 text-signal-400 border border-signal-400/50'
+                : 'bg-gradient-to-br from-signal-400 to-terracotta text-brand-900',
             )}
           >
             {initials(t.author_name)}

@@ -60,7 +60,7 @@ export default function Navbar() {
                 {l.label}
                 <span
                   className={clsx(
-                    'absolute -bottom-[1px] left-0 right-0 h-0.5 rounded-full bg-amber-400 origin-left transition-transform duration-300',
+                    'absolute -bottom-[1px] left-0 right-0 h-0.5 rounded-full bg-signal-400 origin-left transition-transform duration-300',
                     isActive(l.href) ? 'scale-x-100' : 'scale-x-0',
                   )}
                 />
@@ -71,7 +71,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-4 shrink-0">
             <Link
               href="/contact#don"
-              className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 text-brand-800 font-semibold px-4 py-2 text-sm hover:bg-amber-500 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full bg-signal-400 text-brand-800 font-semibold px-4 py-2 text-sm hover:bg-signal-500 transition-colors"
             >
               <Heart className="h-3.5 w-3.5" strokeWidth={2.5} />
               Faire un don
@@ -103,7 +103,7 @@ export default function Navbar() {
                 href={l.href}
                 className={clsx(
                   'flex items-center py-3 text-base font-semibold border-b border-white/10 transition-colors',
-                  isActive(l.href) ? 'text-amber-400' : 'text-white/90 hover:text-white',
+                  isActive(l.href) ? 'text-signal-400' : 'text-white/90 hover:text-white',
                 )}
               >
                 {l.label}
@@ -114,7 +114,7 @@ export default function Navbar() {
           <div className="px-6 pb-6 pt-2">
             <Link
               href="/contact#don"
-              className="flex items-center justify-center gap-2 rounded-full bg-amber-400 text-brand-800 font-semibold px-5 py-3 text-sm hover:bg-amber-500 transition-colors"
+              className="flex items-center justify-center gap-2 rounded-full bg-signal-400 text-brand-800 font-semibold px-5 py-3 text-sm hover:bg-signal-500 transition-colors"
             >
               <Heart className="h-4 w-4" strokeWidth={2.5} />
               Faire un don

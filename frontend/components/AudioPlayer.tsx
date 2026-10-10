@@ -137,7 +137,7 @@ export function GlobalAudioDock() {
       >
         <div className="h-[3px] bg-white/15">
           <div
-            className="h-full bg-amber-400 transition-[width] duration-300 motion-reduce:transition-none"
+            className="h-full bg-signal-400 transition-[width] duration-300 motion-reduce:transition-none"
             style={{ width: `${ctx.duration > 0 ? (ctx.current / ctx.duration) * 100 : 0}%` }}
           />
         </div>
