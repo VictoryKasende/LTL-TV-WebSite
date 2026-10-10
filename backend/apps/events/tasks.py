@@ -17,6 +17,17 @@ from django.utils.formats import date_format, time_format
 logger = logging.getLogger(__name__)
 
 
+def _absolute_media_url(url: str) -> str:
+    """Media URLs are only guaranteed absolute when storage is Cloudinary —
+    with local filesystem storage ``.url`` is host-relative, which breaks in
+    an email (no browser origin to resolve it against)."""
+    if not url:
+        return ''
+    if url.startswith('http://') or url.startswith('https://'):
+        return url
+    return f'{settings.FRONTEND_URL.rstrip("/")}{url}'
+
+
 def _format_event_dates(event) -> str:
     """Human-readable French date/time range, e.g. « le 12 août 2026 à 20h45 »
     or « du 12 au 16 août 2026 »."""
@@ -59,6 +70,7 @@ def send_event_registration_email(self, registration_id: int) -> str:
         'event_title': event.title,
         'event_subtitle': event.subtitle,
         'event_dates': _format_event_dates(event),
+        'event_image': _absolute_media_url(event.cover.url) if event.cover else '',
         'event_url': f'{settings.FRONTEND_URL.rstrip("/")}/evenements/{event.slug}',
         'site_url': settings.FRONTEND_URL,
     }

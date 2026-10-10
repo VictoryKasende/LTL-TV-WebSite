@@ -34,6 +34,16 @@
             <td style="background-color:#3D53EA; height:4px; line-height:4px; font-size:0;">&nbsp;</td>
           </tr>
 
+          {% if event_image %}
+          <!-- Event cover -->
+          <tr>
+            <td style="padding:0; line-height:0; font-size:0;">
+              <img src="{{ event_image }}" alt="{{ event_title }}" width="600"
+                   style="display:block; width:100%; max-width:600px; height:auto;" />
+            </td>
+          </tr>
+          {% endif %}
+
           <!-- Body -->
           <tr>
             <td style="padding:36px 32px 8px 32px;">
@@ -44,9 +54,8 @@
                 Bienvenue, {{ first_name }} !
               </h1>
               <p style="margin:0 0 16px 0; font-size:15px; line-height:1.6; color:#333333;">
-                Merci de vous être inscrit(e) à <strong>{{ event_title }}</strong>. C'est une joie de vous compter
-                parmi nous — que ce temps soit pour vous une source d'encouragement, de rafraîchissement et de
-                bénédiction.
+                Merci de vous être inscrit(e) à <strong>{{ event_title }}</strong>. Nous sommes heureux de vous
+                compter parmi nous et avons hâte de vivre ce moment avec vous.
               </p>
             </td>
           </tr>

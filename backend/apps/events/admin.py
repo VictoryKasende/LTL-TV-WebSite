@@ -21,7 +21,7 @@ class EventAdmin(HiddenFieldsAdminMixin, HistoryAdmin):
     ordering = ('-start_date',)
     date_hierarchy = 'start_date'
     fieldsets = (
-        ('Titre', {'fields': ('title', 'slug', 'subtitle')}),
+        ('Titre', {'fields': ('title', 'slug', 'subtitle', 'cover')}),
         ('Planification', {'fields': ('start_date', 'end_date', 'daily_time')}),
         ('Détails', {'fields': ('meeting_url', 'conditions')}),
         ('Inscriptions', {'fields': ('is_active', 'is_registration_open')}),

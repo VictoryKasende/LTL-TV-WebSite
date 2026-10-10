@@ -22,6 +22,10 @@ class Event(TimestampedModel, SluggedModel):
         'Sous-titre', max_length=200, blank=True,
         help_text='Ex. « Live Zoom Meeting Conference (Inscription obligatoire) ».',
     )
+    cover = models.ImageField(
+        'Image de couverture', upload_to='events/cover/', blank=True, null=True,
+        help_text='Affichée dans l\'email de confirmation d\'inscription.',
+    )
 
     start_date = models.DateField('Date de début')
     end_date = models.DateField(

@@ -2,9 +2,8 @@ LTL·TV — Inscription confirmée
 
 Bienvenue, {{ first_name }} !
 
-Merci de vous être inscrit(e) à {{ event_title }}. C'est une joie de vous compter
-parmi nous — que ce temps soit pour vous une source d'encouragement, de
-rafraîchissement et de bénédiction.
+Merci de vous être inscrit(e) à {{ event_title }}. Nous sommes heureux de vous
+compter parmi nous et avons hâte de vivre ce moment avec vous.
 
 {{ event_title }}{% if event_subtitle %} — {{ event_subtitle }}{% endif %}
 {{ event_dates }}
