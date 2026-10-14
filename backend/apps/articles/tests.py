@@ -20,6 +20,21 @@ class ArticleModelTests(TestCase):
         )
         self.assertEqual(a.content_html, a.content_md)
 
+    def test_content_html_strips_scripts_and_handlers(self):
+        a = Article.objects.create(
+            title='XSS',
+            content_md=(
+                '<p onclick="steal()">Hi<script>alert(1)</script></p>'
+                '<a href="javascript:alert(1)">x</a><img src="/a.png" onerror="alert(1)">'
+            ),
+        )
+        self.assertNotIn('script', a.content_html)
+        self.assertNotIn('onclick', a.content_html)
+        self.assertNotIn('onerror', a.content_html)
+        self.assertNotIn('javascript:', a.content_html)
+        self.assertIn('<p>Hi</p>', a.content_html)
+        self.assertIn('src="/a.png"', a.content_html)
+
     def test_reading_time_ceils_up(self):
         # ~201 words → 2 minutes
         text = 'lorem ' * 201

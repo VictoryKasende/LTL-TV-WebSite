@@ -2,14 +2,15 @@
 
 Editor writes rich text (WYSIWYG, see ``ArticleAdmin``) in ``content_md``,
 which despite the name holds HTML directly — not Markdown. The ``save()``
-hook mirrors it into ``content_html`` (kept as a distinct field so the
-public read API's shape doesn't change) and computes reading time /
-auto-excerpt from the plain-text version at the same time.
+hook mirrors a sanitized copy into ``content_html`` (kept as a distinct
+field so the public read API's shape doesn't change) and computes reading
+time / auto-excerpt from the plain-text version at the same time.
 """
 from __future__ import annotations
 
 from math import ceil
 
+import nh3
 from django.conf import settings
 from django.db import models
 from django.db.models import Count, F, Q
@@ -140,8 +141,11 @@ class Article(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
 
     def save(self, *args, **kwargs):
         # Mirror the WYSIWYG HTML + compute reading time from its plain text.
+        # The public site renders content_html raw, so strip anything that
+        # could run in a reader's browser (<script>, on* handlers, javascript:
+        # links…) — the editor's formatting tags are all kept.
         if self.content_md:
-            self.content_html = self.content_md
+            self.content_html = nh3.clean(self.content_md)
             word_count = len(strip_tags(self.content_md).split())
             self.reading_time_minutes = max(1, ceil(word_count / 200))
         else:

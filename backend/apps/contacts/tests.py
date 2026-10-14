@@ -79,13 +79,14 @@ class ContactPublicApiTests(TestCase):
             '/api/v1/contacts/',
             {'name': 'IP', 'email': 'ip@x.com', 'message': 'hi'},
             format='json',
-            HTTP_X_FORWARDED_FOR='9.9.9.9, 10.0.0.1',
+            # First entry is client-forged; nginx appends the real peer last.
+            HTTP_X_FORWARDED_FOR='9.9.9.9, 203.0.113.7',
             HTTP_USER_AGENT='TestUA/1.0',
             HTTP_REFERER='https://ltltv.com/contact',
         )
         self.assertEqual(r.status_code, 201)
         m = ContactMessage.objects.get(name='IP')
-        self.assertEqual(m.submitted_ip, '9.9.9.9')
+        self.assertEqual(m.submitted_ip, '203.0.113.7')
         self.assertEqual(m.submitted_user_agent, 'TestUA/1.0')
         self.assertEqual(m.referrer, 'https://ltltv.com/contact')
 

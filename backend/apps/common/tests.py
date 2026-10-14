@@ -2,7 +2,9 @@
 app will add its own coverage."""
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core.cache import cache
 from django.test import TestCase
+from rest_framework.test import APIClient
 
 from apps.common.permissions import _has_group, GROUP_ADMIN, GROUP_EDITOR
 
@@ -28,3 +30,24 @@ class RoleHelperTests(TestCase):
         u.groups.add(self.editor_group)
         self.assertFalse(_has_group(u, (GROUP_ADMIN,)))
         self.assertTrue(_has_group(u, (GROUP_ADMIN, GROUP_EDITOR)))
+
+
+class SpoofedForwardedForTests(TestCase):
+    """Rate limits must key on the IP nginx saw, not on what the client
+    claims in X-Forwarded-For."""
+
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+
+    def test_rotating_forged_xff_does_not_bypass_throttle(self):
+        statuses = []
+        for i in range(6):  # `contact` scope allows 5/hour
+            r = self.client.post(
+                '/api/v1/contacts/',
+                {'name': 'N', 'email': 'n@x.com', 'message': 'hi'},
+                format='json',
+                HTTP_X_FORWARDED_FOR=f'10.0.0.{i}, 203.0.113.7',
+            )
+            statuses.append(r.status_code)
+        self.assertEqual(statuses, [201] * 5 + [429])

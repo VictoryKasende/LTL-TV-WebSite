@@ -5,18 +5,18 @@ from django.conf.urls.static import static
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView,
 )
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-    TokenVerifyView,
-)
 
+from apps.accounts.views import (
+    ThrottledTokenObtainPairView,
+    ThrottledTokenRefreshView,
+    ThrottledTokenVerifyView,
+)
 from apps.dashboard.views import admin_guide_view
 
 api_v1_patterns = [
-    path('auth/token/',         TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('auth/token/refresh/', TokenRefreshView.as_view(),    name='token_refresh'),
-    path('auth/token/verify/',  TokenVerifyView.as_view(),     name='token_verify'),
+    path('auth/token/',         ThrottledTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/token/refresh/', ThrottledTokenRefreshView.as_view(),    name='token_refresh'),
+    path('auth/token/verify/',  ThrottledTokenVerifyView.as_view(),     name='token_verify'),
     path('accounts/',    include('apps.accounts.urls')),
     path('emissions/',   include('apps.emissions.urls')),
     path('banners/',     include('apps.banners.urls')),

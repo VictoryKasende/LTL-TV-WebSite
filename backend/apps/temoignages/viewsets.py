@@ -11,6 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.common.permissions import IsModerator
+from apps.common.request import client_ip
 
 from .filters import TestimonialFilter
 from .models import Testimonial
@@ -19,13 +20,6 @@ from .serializers import (
     TestimonialPublicSerializer,
     TestimonialSubmissionSerializer,
 )
-
-
-def _client_ip(request) -> str | None:
-    xff = request.META.get('HTTP_X_FORWARDED_FOR')
-    if xff:
-        return xff.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR')
 
 
 @extend_schema(tags=['Témoignages'])
@@ -68,7 +62,7 @@ class TestimonialViewSet(
 
     def perform_create(self, serializer):
         serializer.save(
-            submitted_ip=_client_ip(self.request),
+            submitted_ip=client_ip(self.request),
             submitted_user_agent=(self.request.META.get('HTTP_USER_AGENT', '') or '')[:280],
         )
 

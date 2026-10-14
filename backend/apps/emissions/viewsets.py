@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
 from apps.common.permissions import IsModerator, ReadOnlyOrEditor
+from apps.common.request import client_ip
 
 from .filters import EpisodeFilter, SeriesFilter, ShowFilter
 from .models import Category, Episode, EpisodeComment, Series, Show
@@ -33,13 +34,6 @@ from .serializers import (
 
 def _staff(request) -> bool:
     return bool(request.user and request.user.is_authenticated and request.user.is_staff)
-
-
-def _client_ip(request) -> str | None:
-    xff = request.META.get('HTTP_X_FORWARDED_FOR')
-    if xff:
-        return xff.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR')
 
 
 def _with_comment_count(qs):
@@ -247,7 +241,7 @@ class EpisodeViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save(
                 episode=ep,
-                submitted_ip=_client_ip(request),
+                submitted_ip=client_ip(request),
                 submitted_user_agent=(request.META.get('HTTP_USER_AGENT', '') or '')[:280],
             )
             return Response(

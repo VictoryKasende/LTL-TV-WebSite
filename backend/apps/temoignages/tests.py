@@ -113,11 +113,12 @@ class TestimonialPublicApiTests(TestCase):
             '/api/v1/temoignages/',
             {'author': 'IP Test', 'message': 'Hello'},
             format='json',
-            HTTP_X_FORWARDED_FOR='1.2.3.4, 10.0.0.1',
+            # First entry is client-forged; nginx appends the real peer last.
+            HTTP_X_FORWARDED_FOR='1.2.3.4, 203.0.113.7',
         )
         self.assertEqual(r.status_code, 201)
         t = Testimonial.objects.get(author_name='IP Test')
-        self.assertEqual(t.submitted_ip, '1.2.3.4')
+        self.assertEqual(t.submitted_ip, '203.0.113.7')
 
     def test_missing_required_returns_400(self):
         r = self.client.post('/api/v1/temoignages/', {'author': 'X'}, format='json')

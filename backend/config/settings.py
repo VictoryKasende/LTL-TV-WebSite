@@ -224,7 +224,15 @@ REST_FRAMEWORK = {
         'episode_comment': '5/hour',
     },
     'EXCEPTION_HANDLER': 'apps.common.exceptions.custom_exception_handler',
+    # Exactly one reverse proxy (nginx) sits in front of Django. Without this,
+    # DRF keys throttles on the whole client-supplied X-Forwarded-For header,
+    # so any client can dodge every rate limit by sending a random value.
+    'NUM_PROXIES': config('NUM_PROXIES', default=1, cast=int),
 }
+
+# Self-service sign-up via /api/v1/accounts/register/. Off by default: the
+# public site has no account area and staff accounts are created in the admin.
+ALLOW_PUBLIC_REGISTRATION = config('ALLOW_PUBLIC_REGISTRATION', default=False, cast=bool)
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
