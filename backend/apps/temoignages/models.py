@@ -61,7 +61,8 @@ class Testimonial(TimestampedModel, SluggedModel):
     # --- Story ------------------------------------------------------
     title = models.CharField(
         'Titre du témoignage', max_length=200, blank=True,
-        help_text='Optionnel (ex : « Comment j\'ai retrouvé la paix »).',
+        help_text='Rédigé par l\'équipe après relecture, affiché publiquement en tête '
+                  'du témoignage (ex : « Comment j\'ai retrouvé la paix »). Optionnel.',
     )
     story_short = models.CharField(
         'Résumé court', max_length=280, blank=True,

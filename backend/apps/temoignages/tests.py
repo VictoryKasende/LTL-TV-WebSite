@@ -120,6 +120,16 @@ class TestimonialPublicApiTests(TestCase):
         t = Testimonial.objects.get(author_name='IP Test')
         self.assertEqual(t.submitted_ip, '203.0.113.7')
 
+    def test_submitted_title_is_ignored(self):
+        # The public title is written by the team after review, never the author.
+        r = self.client.post(
+            '/api/v1/temoignages/',
+            {'author': 'Titre Test', 'message': 'Hello', 'title': 'Mon titre'},
+            format='json',
+        )
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(Testimonial.objects.get(author_name='Titre Test').title, '')
+
     def test_missing_required_returns_400(self):
         r = self.client.post('/api/v1/temoignages/', {'author': 'X'}, format='json')
         self.assertEqual(r.status_code, 400)

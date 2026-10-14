@@ -5,7 +5,8 @@ Three distinct shapes:
 - ``TestimonialSubmissionSerializer`` — anonymous POST endpoint. Accepts
   both new (``author_name``, ``city``, ``story``) and legacy (``author``,
   ``location``, ``message``) field names so the existing frontend form
-  keeps working without changes.
+  keeps working without changes. ``title`` is deliberately absent: the
+  team writes it after reviewing the story.
 - ``TestimonialPublicSerializer`` — read shape for /list/ and /retrieve/
   by anonymous users. Hides private fields (email, phone, IP, notes).
 - ``TestimonialAdminSerializer`` — full shape for Moderator+ users.
@@ -34,7 +35,7 @@ class TestimonialSubmissionSerializer(serializers.ModelSerializer):
         fields = (
             'author', 'author_name', 'author_email', 'author_phone',
             'country', 'city', 'location',
-            'title', 'story', 'message', 'story_short',
+            'story', 'message', 'story_short',
             'photo', 'is_photo_public',
             'hp_field',
         )

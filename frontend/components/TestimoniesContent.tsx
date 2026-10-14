@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Container from './ui/Container';
 import Spinner from './ui/Spinner';
 import { useResilientData } from '../lib/useResilientData';
@@ -23,6 +24,10 @@ function initials(name: string) {
 
 function Card({ item, index }: { item: Temoignage; index: number }) {
   const place = [item.city, item.country].filter(Boolean).join(', ');
+  const [expanded, setExpanded] = useState(false);
+  // story_short is either auto-truncated from the story or written by the
+  // team — either way, offer the full text whenever it says something more.
+  const hasMore = !!item.story_short && item.story.trim() !== item.story_short.trim();
   return (
     <div
       className={`relative rounded-xl bg-white border p-6 flex flex-col gap-3.5 ${
@@ -53,8 +58,23 @@ function Card({ item, index }: { item: Temoignage; index: number }) {
           {place && <p className="text-xs text-ink-500 truncate">{place}</p>}
         </div>
       </div>
+      {item.title && (
+        <h3 className="font-bold text-ink-800 leading-snug">{item.title}</h3>
+      )}
       <span aria-hidden className="font-serif text-3xl leading-none text-signal-500/60">&ldquo;</span>
-      <p className="text-sm text-ink-700 leading-relaxed">{item.story_short || item.story}</p>
+      <p className="text-sm text-ink-700 leading-relaxed whitespace-pre-line">
+        {expanded ? item.story : (item.story_short || item.story)}
+      </p>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          className="self-start text-sm font-semibold text-brand-600 hover:text-brand-800 transition-colors"
+        >
+          {expanded ? 'Réduire' : 'Lire la suite'}
+        </button>
+      )}
     </div>
   );
 }

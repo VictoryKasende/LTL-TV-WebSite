@@ -71,13 +71,13 @@ export default function UpcomingShowsClient({ initialData }: { initialData: Pagi
   return (
     <section className="bg-white py-10 md:py-14">
       <div className="max-w-6xl mx-auto px-6 md:px-8">
-        <SectionHeading title="À suivre" href="/programmes" />
+        <SectionHeading title="À suivre" href="/emissions" />
 
         <ul className="flex flex-col divide-y divide-paper-200 border-y border-paper-200">
           {episodes.map((ep) => (
             <li key={ep.id}>
               <Link
-                href={`/emissions/${ep.show_slug}`}
+                href={`/emissions/${ep.show_slug}?episode=${ep.slug}&play=1`}
                 className="group flex items-center gap-4 py-4 md:py-5 hover:bg-paper-100 -mx-2 px-2 rounded transition-colors"
               >
                 <div
@@ -109,7 +109,7 @@ export default function UpcomingShowsClient({ initialData }: { initialData: Pagi
 
         <div className="mt-8 flex justify-center">
           <Link
-            href="/programmes"
+            href="/emissions"
             className="inline-flex items-center justify-center rounded bg-ink-900 text-white font-semibold text-sm px-16 py-3.5 hover:bg-ink-800 transition-colors w-full max-w-md"
           >
             Plus

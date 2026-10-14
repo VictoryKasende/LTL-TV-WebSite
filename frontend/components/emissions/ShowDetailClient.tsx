@@ -143,13 +143,16 @@ function EpisodeRow({
 }
 
 export default function ShowDetailClient({
-  show, series, standalone, initialEpisode, episodeExplicit = false,
+  show, series, standalone, initialEpisode, episodeExplicit = false, autoplay = false,
 }: {
   show: Show;
   series: Series[];
   standalone: Episode[];
   initialEpisode: Episode | null;
   episodeExplicit?: boolean;
+  // `?play=1` alongside `?episode=` — start playback on arrival (links from
+  // the home page's "À suivre" list) instead of waiting for the play button.
+  autoplay?: boolean;
 }) {
   const audioCtx = useAudioPlayerContext();
   const router = useRouter();
@@ -241,7 +244,16 @@ export default function ShowDetailClient({
   // URL: until the visitor actually chooses something, the page is about
   // the show, not any one episode.
   useEffect(() => {
-    if (episodeSelected && playing) syncEpisodeUrl(playing, 'replace');
+    if (autoplay && playing && !audioAlreadyPlayingHere) {
+      selectEpisode(playing);
+      // Drop `play=1` so a reload or a shared link opens paused like any
+      // other deep link.
+      const params = new URLSearchParams(window.location.search);
+      params.delete('play');
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    } else if (episodeSelected && playing) {
+      syncEpisodeUrl(playing, 'replace');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

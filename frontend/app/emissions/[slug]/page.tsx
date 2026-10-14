@@ -7,7 +7,7 @@ export const revalidate = 120;
 
 type Params = {
   params: { slug: string };
-  searchParams: { episode?: string };
+  searchParams: { episode?: string; play?: string };
 };
 
 export async function generateMetadata({ params, searchParams }: Params) {
@@ -70,6 +70,7 @@ export default async function ShowDetailPage({ params, searchParams }: Params) {
         standalone={standalone}
         initialEpisode={initialEpisode}
         episodeExplicit={!!requestedEpisode}
+        autoplay={!!requestedEpisode && searchParams.play === '1'}
       />
       <FollowAlso shows={otherShows} />
     </>
