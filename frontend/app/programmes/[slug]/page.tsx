@@ -4,6 +4,7 @@ import { Clock, User, ArrowLeft, Radio, MapPin } from 'lucide-react';
 import Container from '../../../components/ui/Container';
 import VideoEmbed from '../../../components/VideoEmbed';
 import { apiGet, type Programme } from '../../../lib/api';
+import { pageMetadata } from '../../../lib/seo';
 
 export const revalidate = 60;
 
@@ -19,16 +20,12 @@ export async function generateMetadata({ params }: Params) {
   const programme = await apiGet<Programme>(`/programmes/${params.slug}/`);
   if (!programme) return { title: 'Programme introuvable' };
   const description = programme.description || `Programme ${programme.title} sur LTL TV.`;
-  return {
+  return pageMetadata({
     title: programme.title,
     description,
-    alternates: { canonical: `/programmes/${programme.slug}` },
-    openGraph: {
-      title: programme.title,
-      description,
-      images: programme.image ? [{ url: programme.image }] : undefined,
-    },
-  };
+    path: `/programmes/${programme.slug}`,
+    image: programme.image || programme.thumbnail_url,
+  });
 }
 
 export default async function ProgrammeDetailPage({ params }: Params) {

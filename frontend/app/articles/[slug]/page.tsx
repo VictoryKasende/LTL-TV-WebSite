@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { Calendar, ArrowLeft, ArrowUpRight, BookOpen } from 'lucide-react';
 import Container from '../../../components/ui/Container';
 import { apiGet, getArticles, type Article } from '../../../lib/api';
+import { pageMetadata } from '../../../lib/seo';
 
 export const revalidate = 60;
 
@@ -11,19 +12,16 @@ type Params = { params: { slug: string } };
 export async function generateMetadata({ params }: Params) {
   const article = await apiGet<Article>(`/articles/${params.slug}/`);
   if (!article) return { title: 'Article introuvable' };
-  return {
-    title: article.title,
-    description: article.excerpt,
-    alternates: { canonical: `/articles/${article.slug}` },
-    openGraph: {
-      title: article.title,
-      description: article.excerpt,
-      type: 'article',
-      publishedTime: article.published_at ?? undefined,
-      authors: article.author?.display_name ? [article.author.display_name] : undefined,
-      images: article.cover ? [{ url: article.cover }] : undefined,
-    },
-  };
+  return pageMetadata({
+    title: article.meta_title || article.title,
+    description: article.meta_description || article.excerpt || article.subtitle || 'Un article de la rédaction LTL TV.',
+    path: `/articles/${article.slug}`,
+    image: article.og_image || article.cover,
+    imageAlt: article.cover_alt,
+    type: 'article',
+    publishedTime: article.published_at,
+    authors: article.author?.display_name ? [article.author.display_name] : undefined,
+  });
 }
 
 const fmt = (iso: string | null) => {

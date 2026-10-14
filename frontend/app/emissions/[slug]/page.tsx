@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import ShowDetailClient from '../../../components/emissions/ShowDetailClient';
 import FollowAlso from '../../../components/emissions/FollowAlso';
 import { getEpisodes, getShow, getShowSeries, getShows } from '../../../lib/api';
+import { pageMetadata } from '../../../lib/seo';
 
 export const revalidate = 120;
 
@@ -32,16 +33,13 @@ export async function generateMetadata({ params, searchParams }: Params) {
     ? `/emissions/${show.slug}?episode=${episode.slug}`
     : (show.canonical_url || `/emissions/${show.slug}`);
 
-  return {
+  return pageMetadata({
     title,
     description,
-    alternates: { canonical },
-    openGraph: {
-      title,
-      description,
-      images: image ? [{ url: image }] : undefined,
-    },
-  };
+    path: canonical,
+    image,
+    type: episode ? 'video.other' : 'website',
+  });
 }
 
 export default async function ShowDetailPage({ params, searchParams }: Params) {

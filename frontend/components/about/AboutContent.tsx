@@ -99,10 +99,10 @@ export default function AboutContent({ initialAbout, initialValues, initialTeam 
             <div className="rounded-lg bg-paper-100 p-6 md:p-10">
               <h2 className="font-bold text-2xl md:text-3xl text-ink-800 mb-4">Vision &amp; Mission</h2>
               {about?.vision && (
-                <p className="text-lg text-ink-700 leading-relaxed">{about.vision}</p>
+                <p className="text-lg text-ink-700 leading-relaxed text-justify hyphens-auto">{about.vision}</p>
               )}
               {about?.mission && (
-                <p className="mt-4 text-lg text-ink-700 leading-relaxed">{about.mission}</p>
+                <p className="mt-4 text-lg text-ink-700 leading-relaxed text-justify hyphens-auto">{about.mission}</p>
               )}
             </div>
           </Container>
@@ -113,7 +113,7 @@ export default function AboutContent({ initialAbout, initialValues, initialTeam 
         <section className="bg-white py-4 md:py-6">
           <Container size="narrow">
             <h2 className="font-bold text-2xl md:text-3xl text-ink-800 mb-4">Valeurs</h2>
-            <p className="text-lg text-ink-700 leading-relaxed mb-6">
+            <p className="text-lg text-ink-700 leading-relaxed text-justify hyphens-auto mb-6">
               Pour accomplir la mission que Dieu nous a donnée, voici les valeurs
               que nous nous efforçons de montrer dans tout ce que LTL TV produit :
             </p>
@@ -122,7 +122,7 @@ export default function AboutContent({ initialAbout, initialValues, initialTeam 
                 <li key={v.id}>
                   <span className="font-semibold text-ink-800">{v.title}</span>
                   {v.description && (
-                    <span className="block text-sm text-ink-500 leading-relaxed">{v.description}</span>
+                    <span className="block text-sm text-ink-500 leading-relaxed text-justify hyphens-auto">{v.description}</span>
                   )}
                 </li>
               ))}
@@ -135,7 +135,7 @@ export default function AboutContent({ initialAbout, initialValues, initialTeam 
         <section className="bg-white py-14 md:py-20">
           <Container size="narrow">
             <h2 className="font-bold text-2xl md:text-3xl text-ink-800 mb-4">Historique</h2>
-            <p className="text-lg text-ink-700 leading-relaxed whitespace-pre-line">{about.history_text}</p>
+            <p className="text-lg text-ink-700 leading-relaxed text-justify hyphens-auto whitespace-pre-line">{about.history_text}</p>
             <p className="mt-6 text-lg text-ink-700 leading-relaxed">Merci pour votre soutien !</p>
           </Container>
         </section>

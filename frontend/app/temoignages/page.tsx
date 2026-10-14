@@ -2,14 +2,15 @@ import Container from '../../components/ui/Container';
 import TemoignageForm from '../../components/TemoignageForm';
 import TestimoniesContent from '../../components/TestimoniesContent';
 import { getTestimonials } from '../../lib/api';
+import { pageMetadata } from '../../lib/seo';
 
 export const revalidate = 60;
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: 'Témoignage',
   description: 'Des histoires vraies, des vies transformées. Écoutez et partagez à votre tour.',
-  alternates: { canonical: '/temoignages' },
-};
+  path: '/temoignages',
+});
 
 export default async function TemoignagesPage() {
   const data = await getTestimonials();

@@ -2,14 +2,15 @@ import { Radio } from 'lucide-react';
 import Container from '../../components/ui/Container';
 import WeeklySchedule from '../../components/programmes/WeeklySchedule';
 import { getProgrammes } from '../../lib/api';
+import { pageMetadata } from '../../lib/seo';
 
 export const revalidate = 60;
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: 'Grille TV',
   description: 'La grille complète des programmes LTL TV : émissions, animateurs et horaires.',
-  alternates: { canonical: '/programmes' },
-};
+  path: '/programmes',
+});
 
 function mondayOf(d: Date): Date {
   const day = d.getDay();

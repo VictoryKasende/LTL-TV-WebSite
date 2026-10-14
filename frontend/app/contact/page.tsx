@@ -1,12 +1,13 @@
 import { MessageCircle } from 'lucide-react';
 import Container from '../../components/ui/Container';
 import ContactForm from '../../components/ContactForm';
+import { pageMetadata } from '../../lib/seo';
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: 'Contact',
   description: 'Écrivez à l\'équipe LTL TV.',
-  alternates: { canonical: '/contact' },
-};
+  path: '/contact',
+});
 
 export default function ContactPage() {
   return (

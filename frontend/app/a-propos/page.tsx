@@ -2,6 +2,7 @@ import { Info } from 'lucide-react';
 import Container from '../../components/ui/Container';
 import AboutContent from '../../components/about/AboutContent';
 import { getAboutPage, getTeam, getValues } from '../../lib/api';
+import { pageMetadata } from '../../lib/seo';
 
 export const revalidate = 300;
 
@@ -9,16 +10,12 @@ export async function generateMetadata() {
   const about = await getAboutPage();
   const title = about?.meta_title || 'À propos';
   const description = about?.meta_description || 'Vision, mission, valeurs, histoire et équipe de LTL·TV.';
-  return {
+  return pageMetadata({
     title,
     description,
-    alternates: { canonical: about?.canonical_url || '/a-propos' },
-    openGraph: {
-      title,
-      description,
-      images: (about?.og_image || about?.cover) ? [{ url: (about.og_image || about.cover) as string }] : undefined,
-    },
-  };
+    path: about?.canonical_url || '/a-propos',
+    image: about?.og_image || about?.cover,
+  });
 }
 
 export default async function AboutPage() {

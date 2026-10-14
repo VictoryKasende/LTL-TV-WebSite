@@ -10,6 +10,7 @@ import { AudioPlayerProvider } from '../lib/AudioPlayerContext';
 import { GlobalAudioDock } from '../components/AudioPlayer';
 import MainWithAudioPadding from '../components/MainWithAudioPadding';
 import { getActiveAnnouncement } from '../lib/api';
+import { pageMetadata, SITE_URL } from '../lib/seo';
 
 const anton = Anton({
   subsets: ['latin'],
@@ -19,22 +20,18 @@ const anton = Anton({
 });
 
 export const metadata: Metadata = {
+  // Home page share card; every other page builds its own via pageMetadata.
+  ...pageMetadata({
+    title: 'LTL TV — La chaîne chrétienne',
+    description:
+      'LTL TV, la chaîne chrétienne focalisée à annoncer l\'Évangile par les médias. Programmes, émissions LIVE Zoom et YouTube, témoignages et articles.',
+    path: '/',
+  }),
   title: {
     default: 'LTL TV — La chaîne chrétienne',
     template: '%s · LTL TV',
   },
-  description:
-    'LTL TV, la chaîne chrétienne focalisée à annoncer l\'Évangile par les médias. Programmes, émissions LIVE Zoom et YouTube, témoignages et articles.',
-  metadataBase: new URL('https://ltltv.com'),
-  alternates: { canonical: '/' },
-  openGraph: {
-    title: 'LTL TV — La chaîne chrétienne',
-    description: 'La chaîne chrétienne focalisée à annoncer l\'Évangile par les médias.',
-    url: 'https://ltltv.com',
-    siteName: 'LTL TV',
-    locale: 'fr_FR',
-    type: 'website',
-  },
+  metadataBase: new URL(SITE_URL),
   appleWebApp: {
     capable: true,
     title: 'LTL TV',

@@ -263,6 +263,9 @@ export type Article = {
   created_at: string;
   content_html?: string;
   cover_credit?: string;
+  meta_title?: string;
+  meta_description?: string;
+  og_image?: string | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -318,6 +321,7 @@ export type Event = {
   slug: string;
   title: string;
   subtitle: string;
+  cover: string | null;
   start_date: string;
   end_date: string | null;
   daily_time: string | null;

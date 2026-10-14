@@ -2,14 +2,15 @@ import { Radio } from 'lucide-react';
 import Container from '../../components/ui/Container';
 import EmissionsListClient from '../../components/emissions/EmissionsListClient';
 import { getShows } from '../../lib/api';
+import { pageMetadata } from '../../lib/seo';
 
 export const revalidate = 300;
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: 'Émissions',
   description: 'Toutes les émissions LTL·TV : animateurs, thèmes et horaires.',
-  alternates: { canonical: '/emissions' },
-};
+  path: '/emissions',
+});
 
 export default async function EmissionsPage() {
   const data = await getShows();

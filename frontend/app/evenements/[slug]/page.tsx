@@ -3,6 +3,7 @@ import { CalendarDays } from 'lucide-react';
 import Container from '../../../components/ui/Container';
 import EventRegistrationForm from '../../../components/events/EventRegistrationForm';
 import { getEvent } from '../../../lib/api';
+import { pageMetadata } from '../../../lib/seo';
 
 export const revalidate = 60;
 
@@ -34,11 +35,12 @@ function fmtTime(time: string | null): string {
 export async function generateMetadata({ params }: Params) {
   const event = await getEvent(params.slug);
   if (!event) return { title: 'Événement introuvable' };
-  return {
+  return pageMetadata({
     title: event.title,
     description: event.subtitle || `Inscrivez-vous à « ${event.title} ».`,
-    alternates: { canonical: `/evenements/${event.slug}` },
-  };
+    path: `/evenements/${event.slug}`,
+    image: event.cover,
+  });
 }
 
 export default async function EventPage({ params }: Params) {
