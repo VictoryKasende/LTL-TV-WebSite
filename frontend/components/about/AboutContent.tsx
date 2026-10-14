@@ -134,7 +134,8 @@ export default function AboutContent({ initialAbout, initialValues, initialTeam 
       {about?.history_text && (
         <section className="bg-white py-14 md:py-20">
           <Container size="narrow">
-            <p className="text-lg text-ink-700 leading-relaxed">{about.history_text}</p>
+            <h2 className="font-bold text-2xl md:text-3xl text-ink-800 mb-4">Historique</h2>
+            <p className="text-lg text-ink-700 leading-relaxed whitespace-pre-line">{about.history_text}</p>
             <p className="mt-6 text-lg text-ink-700 leading-relaxed">Merci pour votre soutien !</p>
           </Container>
         </section>

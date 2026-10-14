@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Play, ChevronDown, ChevronRight, ChevronLeft, Lock, Heart, MessageCircle } from 'lucide-react';
@@ -17,7 +17,6 @@ const AUDIO_ONLY_SHOWS = new Set(['rafraichissement']);
 type SortOrder = 'recent' | 'oldest' | 'popular' | 'published';
 
 const STANDALONE_PAGE_SIZE = 6;
-const SERIES_PAGE_SIZE = 5;
 
 function relativeTime(iso: string | null): string {
   if (!iso) return '';
@@ -39,6 +38,43 @@ const fmtAvailableDate = (iso: string | null) => {
     return new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   } catch { return ''; }
 };
+
+const fmtAiredDate = (iso: string | null) => {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  } catch { return ''; }
+};
+
+function fmtDuration(seconds: number): string {
+  if (!seconds) return '';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  return h ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
+}
+
+function fmtSeriesRange(start: string | null, end: string | null): string {
+  const fmt = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+    } catch { return ''; }
+  };
+  if (!start) return '';
+  const a = fmt(start);
+  const b = end ? fmt(end) : '';
+  return b && b !== a ? `${a} – ${b}` : a;
+}
+
+function GroupHeading({ title, count, children }: { title: string; count: number; children?: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 mb-4">
+      <h3 className="text-xs sm:text-sm uppercase tracking-[0.18em] font-bold text-ink-500">
+        {title} <span className="text-ink-400 tabular-nums">({count})</span>
+      </h3>
+      {children}
+    </div>
+  );
+}
 
 function Pagination({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
   if (totalPages <= 1) return null;
@@ -175,13 +211,30 @@ export default function ShowDetailClient({
     episodeExplicit || audioAlreadyPlayingHere
   ));
   const [showEndPrompt, setShowEndPrompt] = useState(false);
+  // The list endpoint only carries the short excerpt — pull the episode's
+  // full description for the info panel once it's actually selected.
+  const [episodeDetail, setEpisodeDetail] = useState<{ slug: string; description: string } | null>(null);
+  useEffect(() => {
+    if (!episodeSelected || !playing) return;
+    let cancelled = false;
+    fetch(`/api/v1/emissions/episodes/${playing.slug}/`, { headers: { Accept: 'application/json' } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: Episode | null) => {
+        if (!cancelled && data) setEpisodeDetail({ slug: data.slug, description: data.description ?? '' });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [episodeSelected, playing?.slug]);
+  // Every series is listed; only the one holding the current episode starts
+  // open (falling back to the first series), so the page stays scannable.
   const [expanded, setExpanded] = useState<Record<number, boolean>>(() => {
-    const firstWithEpisodes = series.find((s) => (s.episodes?.length ?? 0) > 0);
-    return firstWithEpisodes ? { [firstWithEpisodes.id]: true } : {};
+    const current = playing?.series && series.find((s) => s.id === playing.series);
+    const target = current || series.find((s) => (s.episodes?.length ?? 0) > 0);
+    return target ? { [target.id]: true } : {};
   });
   const [sortOrder, setSortOrder] = useState<SortOrder>('recent');
   const [standalonePage, setStandalonePage] = useState(1);
-  const [seriesPage, setSeriesPage] = useState(1);
 
   const sortedStandalone = useMemo(() => {
     const copy = [...standalone];
@@ -209,12 +262,6 @@ export default function ShowDetailClient({
   const seriesWithEpisodes = useMemo(
     () => series.filter((s) => (s.episodes?.length ?? 0) > 0),
     [series],
-  );
-
-  const seriesTotalPages = Math.ceil(seriesWithEpisodes.length / SERIES_PAGE_SIZE) || 1;
-  const visibleSeries = seriesWithEpisodes.slice(
-    (seriesPage - 1) * SERIES_PAGE_SIZE,
-    seriesPage * SERIES_PAGE_SIZE,
   );
 
   // Continuous-playback queue for prev/next and auto-advance: every episode
@@ -274,6 +321,7 @@ export default function ShowDetailClient({
     setIsPlaying(true);
     setEpisodeSelected(true);
     setShowEndPrompt(false);
+    if (ep.series) setExpanded((prev) => ({ ...prev, [ep.series!]: true }));
     syncEpisodeUrl(ep, 'push');
     if (isAudioShow) {
       // Hands off to the site-wide player so playback survives navigating
@@ -301,8 +349,21 @@ export default function ShowDetailClient({
     ? (playing?.cover || playing?.thumbnail_url || show.host_photo || show.cover || '')
     : (show.host_photo || show.cover || '');
 
-  const episodeDescription = episodeSelected ? (playing?.excerpt || playing?.subtitle || '') : '';
-  const descriptionText = episodeDescription || show.description;
+  // Once an episode is picked, the info panel is entirely about that episode
+  // — never the show's blurb, even when the episode has no text of its own.
+  const showingEpisode = episodeSelected && !!playing;
+  const fullDescription = episodeDetail && episodeDetail.slug === playing?.slug ? episodeDetail.description : '';
+  const episodeText = fullDescription || playing?.excerpt || playing?.subtitle || '';
+  const episodeMeta = playing ? [
+    playing.series_title && `Série : ${playing.series_title}`,
+    playing.episode_number && `Épisode ${playing.episode_number}`,
+    playing.speaker,
+    fmtAiredDate(playing.aired_at),
+    fmtDuration(playing.duration_seconds),
+  ].filter(Boolean).join(' · ') : '';
+  const guests = (playing?.guests ?? [])
+    .map((g) => (g.role ? `${g.name} (${g.role})` : g.name))
+    .join(', ');
 
   return (
     <div ref={topRef}>
@@ -370,18 +431,25 @@ export default function ShowDetailClient({
         )}
       </div>
 
-      {descriptionText && (
+      {showingEpisode ? (
         <div className="bg-ink-900 text-white px-4 sm:px-6 md:px-10 py-6 sm:py-8 md:py-10">
           <div className="max-w-6xl mx-auto">
-            <h3 className="font-bold text-lg mb-1">
-              {episodeDescription ? playing?.title : 'Description'}
-            </h3>
-            {episodeDescription && (
-              <p className="text-xs text-white/50 mb-3">
-                {show.title}{playing?.speaker ? ` · ${playing.speaker}` : ''}
-              </p>
+            <p className="text-[11px] uppercase tracking-wider font-bold text-signal-400 mb-2">
+              {isPlaying ? 'En cours de lecture' : 'Épisode sélectionné'}
+            </p>
+            <h3 className="font-bold text-xl md:text-2xl leading-snug">{playing!.title}</h3>
+            {episodeMeta && <p className="text-xs sm:text-sm text-white/55 mt-1.5">{episodeMeta}</p>}
+            {guests && <p className="text-sm text-white/70 mt-1">Avec {guests}</p>}
+            {episodeText && (
+              <p className="mt-4 text-white/85 leading-relaxed max-w-3xl whitespace-pre-line">{episodeText}</p>
             )}
-            <p className="text-white/85 leading-relaxed max-w-3xl">{descriptionText}</p>
+          </div>
+        </div>
+      ) : show.description && (
+        <div className="bg-ink-900 text-white px-4 sm:px-6 md:px-10 py-6 sm:py-8 md:py-10">
+          <div className="max-w-6xl mx-auto">
+            <h3 className="font-bold text-lg mb-1">Description</h3>
+            <p className="text-white/85 leading-relaxed max-w-3xl">{show.description}</p>
           </div>
         </div>
       )}
@@ -392,64 +460,97 @@ export default function ShowDetailClient({
 
       <section className="bg-white py-8 sm:py-10 md:py-14">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-10">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
-            <h2 className="font-bold text-2xl md:text-3xl text-ink-800">Épisodes</h2>
-            {standalone.length > 1 && (
-              <div className="relative shrink-0 self-start sm:self-auto">
-                <select
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value as SortOrder)}
-                  className="appearance-none rounded border border-paper-300 bg-white pl-3 pr-9 py-2 text-sm font-semibold text-ink-700 focus:outline-none focus:border-brand-500"
-                >
-                  <option value="recent">Plus récents</option>
-                  <option value="oldest">Plus anciens</option>
-                  <option value="popular">Plus vus</option>
-                  <option value="published">Récemment publiés</option>
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-400" />
-              </div>
-            )}
-          </div>
+          <h2 className="font-bold text-2xl md:text-3xl text-ink-800 mb-6 md:mb-8">Épisodes</h2>
 
           {seriesWithEpisodes.length > 0 && (
-            <div className="mb-8">
-              <div className="divide-y divide-paper-200 border-y border-paper-200">
-                {visibleSeries.map((s) => (
-                  <div key={s.id}>
-                    <button
-                      type="button"
-                      onClick={() => toggleSeries(s.id)}
-                      className="w-full flex items-center justify-between gap-3 py-4 text-left"
+            <div className="mb-10 md:mb-12">
+              <GroupHeading title="Séries d'enseignement" count={seriesWithEpisodes.length} />
+              <div className="flex flex-col gap-3">
+                {seriesWithEpisodes.map((s) => {
+                  const open = !!expanded[s.id];
+                  const episodes = s.episodes ?? [];
+                  const thumb = s.cover || episodes[0]?.cover || episodes[0]?.thumbnail_url || '';
+                  const containsCurrent = !!playing && episodes.some((ep) => ep.id === playing.id);
+                  const meta = [
+                    `${episodes.length} épisode${episodes.length > 1 ? 's' : ''}`,
+                    fmtSeriesRange(s.starts_on, s.ends_on),
+                  ].filter(Boolean).join(' · ');
+                  return (
+                    <div
+                      key={s.id}
+                      className={`rounded-lg border bg-white overflow-hidden transition-colors ${
+                        open ? 'border-brand-300 shadow-sm' : 'border-paper-200 hover:border-paper-300'
+                      }`}
                     >
-                      <span className="font-semibold text-ink-800">Série : {s.title}</span>
-                      <ChevronRight
-                        className={`h-4 w-4 text-ink-400 shrink-0 transition-transform ${expanded[s.id] ? 'rotate-90' : ''}`}
-                      />
-                    </button>
-                    {expanded[s.id] && (
-                      <ul className="pb-2 flex flex-col divide-y divide-paper-200">
-                        {(s.episodes ?? []).map((ep) => (
-                          <EpisodeRow
-                            key={ep.id}
-                            ep={ep}
-                            onSelect={selectEpisode}
-                            active={isAudioShow
-                              ? audioCtx.playing && audioCtx.track?.episode.id === ep.id
-                              : isPlaying && playing?.id === ep.id}
-                            showEpisodeNumber
-                          />
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
+                      <button
+                        type="button"
+                        onClick={() => toggleSeries(s.id)}
+                        aria-expanded={open}
+                        className="w-full flex items-center gap-3 sm:gap-4 p-3 sm:p-4 text-left"
+                      >
+                        <div className="relative shrink-0 h-14 w-20 sm:h-16 sm:w-28 rounded overflow-hidden bg-brand-900">
+                          {thumb && <img src={thumb} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] uppercase tracking-wider font-bold text-brand-500">Série</p>
+                          <h3 className="font-semibold text-ink-800 leading-snug line-clamp-2">{s.title}</h3>
+                          <p className="text-xs sm:text-sm text-ink-500 mt-0.5">
+                            {meta}
+                            {containsCurrent && !open && <span className="text-brand-600 font-semibold"> · En cours</span>}
+                          </p>
+                        </div>
+                        <ChevronDown
+                          className={`h-5 w-5 text-ink-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                      {open && (
+                        <div className="border-t border-paper-200 px-3 sm:px-4">
+                          {s.theme && <p className="pt-3 text-sm text-ink-500 italic">{s.theme}</p>}
+                          <ul className="flex flex-col divide-y divide-paper-200">
+                            {episodes.map((ep) => (
+                              <EpisodeRow
+                                key={ep.id}
+                                ep={ep}
+                                onSelect={selectEpisode}
+                                active={isAudioShow
+                                  ? audioCtx.playing && audioCtx.track?.episode.id === ep.id
+                                  : isPlaying && playing?.id === ep.id}
+                                showEpisodeNumber
+                              />
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              <Pagination page={seriesPage} totalPages={seriesTotalPages} onChange={setSeriesPage} />
             </div>
           )}
 
           {sortedStandalone.length > 0 && (
             <div>
+              <GroupHeading
+                title={seriesWithEpisodes.length > 0 ? 'Autres épisodes' : 'Tous les épisodes'}
+                count={sortedStandalone.length}
+              >
+                {standalone.length > 1 && (
+                  <div className="relative shrink-0">
+                    <select
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+                      aria-label="Trier les épisodes"
+                      className="appearance-none rounded border border-paper-300 bg-white pl-3 pr-9 py-2 text-sm font-semibold text-ink-700 focus:outline-none focus:border-brand-500"
+                    >
+                      <option value="recent">Plus récents</option>
+                      <option value="oldest">Plus anciens</option>
+                      <option value="popular">Plus vus</option>
+                      <option value="published">Récemment publiés</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-400" />
+                  </div>
+                )}
+              </GroupHeading>
               <ul className="flex flex-col divide-y divide-paper-200 border-y border-paper-200">
                 {visibleStandalone.map((ep) => (
                   <EpisodeRow
