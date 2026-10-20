@@ -119,4 +119,8 @@ jobs:
             docker compose exec -T backend python manage.py migrate --noinput
             docker compose exec -T backend python manage.py setup_roles
             docker compose exec -T backend python manage.py collectstatic --noinput
+            # nginx resolves `backend` / `frontend` only at startup; the
+            # containers recreated above got new IPs, so without this restart
+            # it keeps proxying to the old ones and every route returns 502.
+            docker compose restart nginx
             docker image prune -f

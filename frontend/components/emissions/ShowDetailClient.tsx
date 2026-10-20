@@ -421,7 +421,14 @@ export default function ShowDetailClient({
       </div>
 
       <div
-        className={`relative overflow-hidden ${isAudioShow && isPlaying && playing?.embed_url ? '' : 'h-56 sm:h-80 md:h-96'}`}
+        // Video shows get a true 16:9 stage (capped so the controls and the
+        // title stay in view on wide screens); the audio-only show keeps its
+        // compact banner, or sizes to its expanded audio player while playing.
+        className={`relative overflow-hidden ${
+          isAudioShow
+            ? (isPlaying && playing?.embed_url ? '' : 'h-56 sm:h-80 md:h-96')
+            : 'w-full aspect-video max-h-[80vh] min-h-56'
+        }`}
         style={{ backgroundColor: show.color }}
       >
         {isPlaying && playing?.embed_url ? (
