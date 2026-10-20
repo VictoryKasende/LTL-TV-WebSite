@@ -9,10 +9,11 @@ import type { Episode, Paginated } from '../../lib/api';
 
 const DISPLAY_LIMIT = 4;
 
-// A flat "most recent N" query lets a high-frequency show (e.g. a daily one)
-// crowd out every other show entirely. Pick the latest episode of each show
-// first, then fill any remaining slots by recency, so "À suivre" previews
-// the whole network instead of just whichever show airs most often.
+// `episodes` arrive newest-first by date of publication on the site, already
+// limited to playable ones (no scheduled/locked teasers). A flat "most
+// recent N" would let a high-frequency show crowd out every other one, so
+// take the latest available episode of each show first, then fill any
+// remaining slots by recency.
 function diversifyByShow(episodes: Episode[], limit: number): Episode[] {
   const seenShows = new Set<string>();
   const picked: Episode[] = [];
@@ -30,7 +31,9 @@ function diversifyByShow(episodes: Episode[], limit: number): Episode[] {
       if (!pickedIds.has(ep.id)) picked.push(ep);
     }
   }
-  return picked.sort((a, b) => (b.aired_at && a.aired_at ? Date.parse(b.aired_at) - Date.parse(a.aired_at) : 0));
+  // Back to the API's publication order (newest on the site first).
+  const rank = new Map(episodes.map((ep, i) => [ep.id, i]));
+  return picked.sort((a, b) => rank.get(a.id)! - rank.get(b.id)!);
 }
 
 function relativeTime(iso: string | null): string {
@@ -52,7 +55,7 @@ const GRADIENT = 'linear-gradient(135deg, #212870 0%, #3D53EA 60%, #2BB3A3 130%)
 export default function UpcomingShowsClient({ initialData }: { initialData: Paginated<Episode> | null }) {
   const { data, retrying } = useResilientData(
     initialData,
-    '/api/v1/emissions/episodes/?ordering=-aired_at&page_size=24',
+    '/api/v1/emissions/episodes/?available=true&ordering=-site_published_at&page_size=24',
   );
   const episodes = diversifyByShow(data?.results ?? [], DISPLAY_LIMIT);
 
@@ -100,7 +103,7 @@ export default function UpcomingShowsClient({ initialData }: { initialData: Pagi
                   <h3 className="font-semibold text-ink-800 leading-snug group-hover:text-brand-700 transition-colors line-clamp-2">
                     {ep.title}
                   </h3>
-                  <p className="text-xs md:text-sm text-ink-500 mt-1">{relativeTime(ep.aired_at)}</p>
+                  <p className="text-xs md:text-sm text-ink-500 mt-1">{relativeTime(ep.published_at ?? ep.aired_at)}</p>
                 </div>
               </Link>
             </li>

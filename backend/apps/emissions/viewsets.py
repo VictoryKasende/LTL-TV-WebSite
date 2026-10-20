@@ -7,6 +7,7 @@ published items whose ``published_at`` is in the past.
 from __future__ import annotations
 
 from django.db.models import Count, Prefetch, Q
+from django.db.models.functions import Coalesce
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -157,7 +158,7 @@ class EpisodeViewSet(viewsets.ModelViewSet):
     lookup_field = 'slug'
     filterset_class = EpisodeFilter
     search_fields = ('title', 'subtitle', 'excerpt', 'description', 'speaker')
-    ordering_fields = ('aired_at', 'created_at', 'view_count')
+    ordering_fields = ('aired_at', 'created_at', 'view_count', 'site_published_at')
     permission_classes = [ReadOnlyOrEditor]
 
     def get_queryset(self):
@@ -165,6 +166,10 @@ class EpisodeViewSet(viewsets.ModelViewSet):
             Episode.objects
             .select_related('show')
             .prefetch_related('categories', 'tags')
+            # When it went up on the site: ``published_at`` is only auto-set
+            # by the "publish" action, so fall back to creation for rows
+            # published straight from the form (keeps them out of NULLS FIRST).
+            .annotate(site_published_at=Coalesce('published_at', 'created_at'))
         )
         if not _staff(self.request):
             qs = qs.published_or_scheduled()

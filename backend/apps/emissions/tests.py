@@ -4,10 +4,13 @@ Note: a data migration seeds 3 shows (prends-courage,
 dans-les-profondeurs, rafraichissement). Tests use disjoint titles
 to avoid slug collisions.
 """
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.common.permissions import GROUP_EDITOR
@@ -153,6 +156,30 @@ class EmissionsApiTests(TestCase):
         r = self.client.post(f'/api/v1/emissions/episodes/{self.ep.slug}/view/')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()['view_count'], 1)
+
+    def test_available_episodes_by_site_publication(self):
+        # Home "À suivre": playable episodes, newest on the site first —
+        # regardless of their original broadcast date.
+        now = timezone.now()
+        old_on_site = Episode.objects.create(
+            show=self.show_pub, title='Test Old On Site', status=Episode.Status.PUBLISHED,
+            published_at=now - timedelta(days=10), aired_at=now - timedelta(days=1),
+        )
+        new_on_site = Episode.objects.create(
+            show=self.show_pub, title='Test New On Site', status=Episode.Status.PUBLISHED,
+            published_at=now - timedelta(days=1), aired_at=now - timedelta(days=300),
+        )
+        scheduled = Episode.objects.create(
+            show=self.show_pub, title='Test Scheduled', status=Episode.Status.PUBLISHED,
+            published_at=now + timedelta(days=3),
+        )
+        r = self.client.get(
+            '/api/v1/emissions/episodes/?available=true&ordering=-site_published_at',
+        )
+        self.assertEqual(r.status_code, 200)
+        slugs = [e['slug'] for e in r.json()['results']]
+        self.assertNotIn(scheduled.slug, slugs)
+        self.assertLess(slugs.index(new_on_site.slug), slugs.index(old_on_site.slug))
 
     def test_show_episodes_subroute(self):
         r = self.client.get(f'/api/v1/emissions/shows/{self.show_pub.slug}/episodes/')

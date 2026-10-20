@@ -14,9 +14,17 @@ import EqBars from '../EqBars';
 
 const AUDIO_ONLY_SHOWS = new Set(['rafraichissement']);
 
-type SortOrder = 'recent' | 'oldest' | 'popular' | 'published';
+type SortOrder = 'recent' | 'oldest' | 'popular';
 
 const STANDALONE_PAGE_SIZE = 6;
+const SERIES_PAGE_SIZE = 5;
+
+// When the episode went up on the site (same basis as the home page's
+// "À suivre"), falling back to its broadcast date.
+const siteTime = (ep: Episode) => {
+  const iso = ep.published_at ?? ep.aired_at;
+  return iso ? new Date(iso).getTime() : 0;
+};
 
 function relativeTime(iso: string | null): string {
   if (!iso) return '';
@@ -106,12 +114,14 @@ function Pagination({ page, totalPages, onChange }: { page: number; totalPages: 
 }
 
 function EpisodeRow({
-  ep, onSelect, active, showEpisodeNumber = false,
+  ep, onSelect, active, showEpisodeNumber = false, tinted = false,
 }: {
   ep: Episode;
   onSelect: (ep: Episode) => void;
   active: boolean;
   showEpisodeNumber?: boolean;
+  // Sits on the grey panel of an open series: hover lifts to white instead.
+  tinted?: boolean;
 }) {
   return (
     <li>
@@ -120,7 +130,7 @@ function EpisodeRow({
         onClick={() => onSelect(ep)}
         aria-disabled={ep.is_locked}
         className={`group w-full flex items-center gap-3 sm:gap-4 py-4 text-left -mx-2 px-2 rounded transition-colors ${
-          ep.is_locked ? 'cursor-default' : 'hover:bg-paper-100'
+          ep.is_locked ? 'cursor-default' : tinted ? 'hover:bg-white' : 'hover:bg-paper-100'
         } ${active ? 'bg-brand-50' : ''}`}
       >
         <div className="relative shrink-0 h-14 w-20 sm:h-20 sm:w-32 rounded overflow-hidden bg-brand-900">
@@ -154,7 +164,7 @@ function EpisodeRow({
           ) : (
             <>
               <p className="text-xs md:text-sm text-ink-500 mt-1">
-                {ep.speaker ? `${ep.speaker} · ` : ''}{relativeTime(ep.aired_at)}
+                {ep.speaker ? `${ep.speaker} · ` : ''}{relativeTime(ep.published_at ?? ep.aired_at)}
               </p>
               {(ep.like_count > 0 || ep.comment_count > 0) && (
                 <div className="flex items-center gap-3 mt-1 text-xs text-ink-400">
@@ -236,21 +246,57 @@ export default function ShowDetailClient({
   const [sortOrder, setSortOrder] = useState<SortOrder>('recent');
   const [standalonePage, setStandalonePage] = useState(1);
 
-  const sortedStandalone = useMemo(() => {
-    const copy = [...standalone];
-    const time = (iso: string | null) => (iso ? new Date(iso).getTime() : 0);
-    copy.sort((a, b) => {
-      switch (sortOrder) {
-        case 'oldest': return time(a.aired_at) - time(b.aired_at);
-        case 'popular': return b.view_count - a.view_count;
-        case 'published': return time(b.published_at) - time(a.published_at);
-        default: return time(b.aired_at) - time(a.aired_at);
-      }
-    });
-    return copy;
-  }, [standalone, sortOrder]);
+  // Only series that actually have a visible episode get a section at all.
+  const seriesWithEpisodes = useMemo(
+    () => series.filter((s) => (s.episodes?.length ?? 0) > 0),
+    [series],
+  );
 
-  useEffect(() => { setStandalonePage(1); }, [sortOrder]);
+  // One sort for the whole page: episodes inside each series, the series
+  // themselves (by their newest / oldest / total views) and the standalone
+  // episodes all follow the selector.
+  const sortEpisodes = useMemo(() => {
+    const cmp = (a: Episode, b: Episode) => {
+      switch (sortOrder) {
+        case 'oldest': return siteTime(a) - siteTime(b);
+        case 'popular': return b.view_count - a.view_count;
+        default: return siteTime(b) - siteTime(a);
+      }
+    };
+    return (eps: Episode[]) => [...eps].sort(cmp);
+  }, [sortOrder]);
+
+  const sortedSeries = useMemo(() => {
+    const withSorted = seriesWithEpisodes.map((s) => ({ ...s, episodes: sortEpisodes(s.episodes ?? []) }));
+    const key = (s: Series) => {
+      const eps = s.episodes ?? [];
+      if (sortOrder === 'popular') return eps.reduce((sum, ep) => sum + ep.view_count, 0);
+      const times = eps.map(siteTime);
+      return sortOrder === 'oldest' ? -Math.min(...times) : Math.max(...times);
+    };
+    return withSorted.sort((a, b) => key(b) - key(a));
+  }, [seriesWithEpisodes, sortEpisodes, sortOrder]);
+
+  const sortedStandalone = useMemo(() => sortEpisodes(standalone), [standalone, sortEpisodes]);
+
+  const seriesTotalPages = Math.ceil(sortedSeries.length / SERIES_PAGE_SIZE) || 1;
+  const seriesPageOf = (seriesId: number) => {
+    const index = sortedSeries.findIndex((s) => s.id === seriesId);
+    return index < 0 ? 1 : Math.floor(index / SERIES_PAGE_SIZE) + 1;
+  };
+  // Open on the page holding the current episode's series.
+  const [seriesPage, setSeriesPage] = useState(() => (playing?.series ? seriesPageOf(playing.series) : 1));
+  const visibleSeries = sortedSeries.slice(
+    (seriesPage - 1) * SERIES_PAGE_SIZE,
+    seriesPage * SERIES_PAGE_SIZE,
+  );
+
+  const isFirstSort = useRef(true);
+  useEffect(() => {
+    if (isFirstSort.current) { isFirstSort.current = false; return; }
+    setStandalonePage(1);
+    setSeriesPage(1);
+  }, [sortOrder]);
 
   const standaloneTotalPages = Math.ceil(sortedStandalone.length / STANDALONE_PAGE_SIZE) || 1;
   const visibleStandalone = sortedStandalone.slice(
@@ -258,18 +304,14 @@ export default function ShowDetailClient({
     standalonePage * STANDALONE_PAGE_SIZE,
   );
 
-  // Only series that actually have a visible episode get a section at all.
-  const seriesWithEpisodes = useMemo(
-    () => series.filter((s) => (s.episodes?.length ?? 0) > 0),
-    [series],
-  );
-
-  // Continuous-playback queue for prev/next and auto-advance: every episode
-  // of the show, series-grouped ones first, then standalone ones.
+  // Continuous-playback queue for prev/next and auto-advance. Deliberately
+  // independent of the display sort: a teaching series keeps playing EP1 →
+  // EP2 → EP3 even when the list shows newest first.
   const episodeQueue = useMemo(() => {
     const seriesEpisodes = seriesWithEpisodes.flatMap((s) => s.episodes ?? []);
-    return [...seriesEpisodes, ...sortedStandalone];
-  }, [seriesWithEpisodes, sortedStandalone]);
+    const standaloneNewestFirst = [...standalone].sort((a, b) => siteTime(b) - siteTime(a));
+    return [...seriesEpisodes, ...standaloneNewestFirst];
+  }, [seriesWithEpisodes, standalone]);
 
   // Keeps `?episode=slug` in sync with what's playing so the URL stays
   // shareable/bookmarkable without a full page navigation. `push` (not
@@ -321,7 +363,10 @@ export default function ShowDetailClient({
     setIsPlaying(true);
     setEpisodeSelected(true);
     setShowEndPrompt(false);
-    if (ep.series) setExpanded((prev) => ({ ...prev, [ep.series!]: true }));
+    if (ep.series) {
+      setExpanded((prev) => ({ ...prev, [ep.series!]: true }));
+      setSeriesPage(seriesPageOf(ep.series));
+    }
     syncEpisodeUrl(ep, 'push');
     if (isAudioShow) {
       // Hands off to the site-wide player so playback survives navigating
@@ -460,13 +505,30 @@ export default function ShowDetailClient({
 
       <section className="bg-white py-8 sm:py-10 md:py-14">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-10">
-          <h2 className="font-bold text-2xl md:text-3xl text-ink-800 mb-6 md:mb-8">Épisodes</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 md:mb-8">
+            <h2 className="font-bold text-2xl md:text-3xl text-ink-800">Épisodes</h2>
+            {episodeQueue.length > 1 && (
+              <div className="relative shrink-0 self-start sm:self-auto">
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+                  aria-label="Trier les épisodes"
+                  className="appearance-none rounded border border-paper-300 bg-white pl-3 pr-9 py-2 text-sm font-semibold text-ink-700 focus:outline-none focus:border-brand-500"
+                >
+                  <option value="recent">Plus récents</option>
+                  <option value="oldest">Plus anciens</option>
+                  <option value="popular">Plus vus</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-400" />
+              </div>
+            )}
+          </div>
 
           {seriesWithEpisodes.length > 0 && (
             <div className="mb-10 md:mb-12">
               <GroupHeading title="Séries d'enseignement" count={seriesWithEpisodes.length} />
               <div className="flex flex-col gap-3">
-                {seriesWithEpisodes.map((s) => {
+                {visibleSeries.map((s) => {
                   const open = !!expanded[s.id];
                   const episodes = s.episodes ?? [];
                   const thumb = s.cover || episodes[0]?.cover || episodes[0]?.thumbnail_url || '';
@@ -504,9 +566,9 @@ export default function ShowDetailClient({
                         />
                       </button>
                       {open && (
-                        <div className="border-t border-paper-200 px-3 sm:px-4">
+                        <div className="border-t border-paper-300 bg-paper-200 px-3 sm:px-4">
                           {s.theme && <p className="pt-3 text-sm text-ink-500 italic">{s.theme}</p>}
-                          <ul className="flex flex-col divide-y divide-paper-200">
+                          <ul className="flex flex-col divide-y divide-paper-300">
                             {episodes.map((ep) => (
                               <EpisodeRow
                                 key={ep.id}
@@ -516,6 +578,7 @@ export default function ShowDetailClient({
                                   ? audioCtx.playing && audioCtx.track?.episode.id === ep.id
                                   : isPlaying && playing?.id === ep.id}
                                 showEpisodeNumber
+                                tinted
                               />
                             ))}
                           </ul>
@@ -525,6 +588,7 @@ export default function ShowDetailClient({
                   );
                 })}
               </div>
+              <Pagination page={seriesPage} totalPages={seriesTotalPages} onChange={setSeriesPage} />
             </div>
           )}
 
@@ -533,24 +597,7 @@ export default function ShowDetailClient({
               <GroupHeading
                 title={seriesWithEpisodes.length > 0 ? 'Autres épisodes' : 'Tous les épisodes'}
                 count={sortedStandalone.length}
-              >
-                {standalone.length > 1 && (
-                  <div className="relative shrink-0">
-                    <select
-                      value={sortOrder}
-                      onChange={(e) => setSortOrder(e.target.value as SortOrder)}
-                      aria-label="Trier les épisodes"
-                      className="appearance-none rounded border border-paper-300 bg-white pl-3 pr-9 py-2 text-sm font-semibold text-ink-700 focus:outline-none focus:border-brand-500"
-                    >
-                      <option value="recent">Plus récents</option>
-                      <option value="oldest">Plus anciens</option>
-                      <option value="popular">Plus vus</option>
-                      <option value="published">Récemment publiés</option>
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-400" />
-                  </div>
-                )}
-              </GroupHeading>
+              />
               <ul className="flex flex-col divide-y divide-paper-200 border-y border-paper-200">
                 {visibleStandalone.map((ep) => (
                   <EpisodeRow
