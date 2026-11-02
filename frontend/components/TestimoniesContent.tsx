@@ -6,13 +6,6 @@ import Spinner from './ui/Spinner';
 import { useResilientData } from '../lib/useResilientData';
 import type { Paginated, Temoignage } from '../lib/api';
 
-const AVATAR_GRADIENTS = [
-  'from-brand-400 to-brand-700',
-  'from-terracotta to-signal-500',
-  'from-signal-400 to-terracotta',
-  'from-brand-300 to-signal-500',
-];
-
 function initials(name: string) {
   return name
     .split(' ')
@@ -22,60 +15,85 @@ function initials(name: string) {
     .join('');
 }
 
-function Card({ item, index }: { item: Temoignage; index: number }) {
+function Card({ item }: { item: Temoignage }) {
   const place = [item.city, item.country].filter(Boolean).join(', ');
   const [expanded, setExpanded] = useState(false);
   // story_short is either auto-truncated from the story or written by the
   // team — either way, offer the full text whenever it says something more.
   const hasMore = !!item.story_short && item.story.trim() !== item.story_short.trim();
+  const featured = item.is_featured;
   return (
-    <div
-      className={`relative rounded-xl bg-white border p-6 flex flex-col gap-3.5 ${
-        item.is_featured ? 'border-signal-500 ring-1 ring-signal-500' : 'border-paper-200'
+    <figure
+      className={`rounded p-6 md:p-7 flex flex-col ${
+        featured ? 'bg-brand-700 text-white' : 'bg-white text-ink-800 shadow-card'
       }`}
     >
-      {item.is_featured && (
-        <span className="absolute -top-2.5 left-5 rounded-full bg-signal-500 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5">
-          À la une
+      {/* Fixed height: the display-font glyph leaves a tall empty box below it. */}
+      <div className="h-8 flex items-start justify-between gap-4">
+        <span
+          aria-hidden
+          className={`font-display text-6xl leading-[0.8] ${featured ? 'text-brand-300' : 'text-brand-500'}`}
+        >
+          &ldquo;
         </span>
-      )}
-      <div className="flex items-center gap-3">
-        {item.photo ? (
-          <img
-            src={item.photo}
-            alt={item.author_name}
-            className="h-11 w-11 rounded-full object-cover shrink-0"
-          />
-        ) : (
-          <div
-            className={`h-11 w-11 rounded-full bg-gradient-to-br ${AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length]} flex items-center justify-center font-bold text-sm text-white shrink-0`}
-          >
-            {initials(item.author_name)}
-          </div>
+        {featured && (
+          <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-signal-300">
+            À la une
+          </span>
         )}
-        <div className="min-w-0">
-          <p className="font-bold text-sm text-ink-800 truncate">{item.author_name}</p>
-          {place && <p className="text-xs text-ink-500 truncate">{place}</p>}
-        </div>
       </div>
+
       {item.title && (
-        <h3 className="font-bold text-ink-800 leading-snug">{item.title}</h3>
+        <h3 className="mt-4 font-bold text-lg leading-snug">{item.title}</h3>
       )}
-      <span aria-hidden className="font-serif text-3xl leading-none text-signal-500/60">&ldquo;</span>
-      <p className="text-sm text-ink-700 leading-relaxed whitespace-pre-line">
+      <blockquote
+        className={`mt-3 leading-relaxed whitespace-pre-line ${featured ? 'text-white/85' : 'text-ink-700'}`}
+      >
         {expanded ? item.story : (item.story_short || item.story)}
-      </p>
+      </blockquote>
       {hasMore && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
-          className="self-start text-sm font-semibold text-brand-600 hover:text-brand-800 transition-colors"
+          className={`mt-3 self-start text-sm font-bold underline underline-offset-4 transition-colors ${
+            featured
+              ? 'text-white decoration-white/40 hover:decoration-white'
+              : 'text-brand-500 decoration-brand-500/40 hover:decoration-brand-500'
+          }`}
         >
           {expanded ? 'Réduire' : 'Lire la suite'}
         </button>
       )}
-    </div>
+
+      {/* Signature pinned to the bottom so authors line up across a row. */}
+      <div className="flex-1 min-h-6" />
+      <figcaption
+        className={`pt-5 flex items-center gap-3 border-t ${featured ? 'border-white/15' : 'border-paper-200'}`}
+      >
+        {item.photo ? (
+          <img
+            src={item.photo}
+            alt={item.author_name}
+            className="h-10 w-10 rounded-full object-cover shrink-0"
+          />
+        ) : (
+          <div
+            className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+              featured ? 'bg-white text-brand-700' : 'bg-brand-700 text-white'
+            }`}
+          >
+            {initials(item.author_name)}
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="font-bold text-sm truncate">{item.author_name}</p>
+          {place && (
+            <p className={`text-xs truncate ${featured ? 'text-white/60' : 'text-ink-500'}`}>{place}</p>
+          )}
+        </div>
+      </figcaption>
+    </figure>
   );
 }
 
@@ -101,7 +119,7 @@ export default function TestimoniesContent({ initialData }: { initialData: Pagin
         </Container>
       </section>
 
-      <section className="bg-cream py-16 md:py-20">
+      <section className="bg-brand-50 py-16 md:py-20">
         <Container>
           <div className="flex items-end justify-between gap-6 flex-wrap mb-10">
             <h2 className="font-bold text-display-md text-brand-700">Ce qu'ils en disent</h2>
@@ -126,8 +144,8 @@ export default function TestimoniesContent({ initialData }: { initialData: Pagin
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {sorted.map((item, index) => (
-                <Card key={item.id} item={item} index={index} />
+              {sorted.map((item) => (
+                <Card key={item.id} item={item} />
               ))}
             </div>
           )}
