@@ -161,10 +161,15 @@ export default function WeeklySchedule({
         )}
         {!showLoading && items.map((p) => {
           const duration = fmtDuration(p.start_time, p.end_time);
+          // A programme airing an episode opens it on its show page, like the
+          // other episode links across the site.
+          const href = p.episode_slug && p.episode_show_slug
+            ? `/emissions/${p.episode_show_slug}?episode=${p.episode_slug}&play=1`
+            : `/programmes/${p.slug}`;
           return (
             <Link
               key={p.id}
-              href={`/programmes/${p.slug}`}
+              href={href}
               className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 hover:bg-paper-100 transition-colors"
             >
               <div className="w-11 sm:w-14 shrink-0 text-xs sm:text-sm font-bold text-ink-800">

@@ -7,6 +7,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.common.permissions import GROUP_EDITOR
+from apps.emissions.models import Episode, Show
 
 from .models import ProgramType, WeeklyProgram
 
@@ -118,6 +119,44 @@ class WeeklyProgramApiTests(TestCase):
             f'&date_to={(today + timedelta(days=7)).isoformat()}'
         )
         self.assertEqual(r.status_code, 200)
+
+
+class WeeklyProgramEpisodeLinkTests(TestCase):
+    YT_ID = 'dQw4w9WgXcQ'
+
+    def setUp(self):
+        self.client = APIClient()
+        self.show = Show.objects.create(title='Émission test', status=Show.Status.PUBLISHED)
+        self.episode = Episode.objects.create(
+            show=self.show, title='Épisode diffusé',
+            youtube_url=f'https://youtu.be/{self.YT_ID}',
+            status=Episode.Status.PUBLISHED,
+        )
+
+    def _program(self, **kwargs):
+        return WeeklyProgram.objects.create(
+            title='Diffusion', date=timezone.localdate(), start_time=time(20, 0),
+            status=WeeklyProgram.Status.PUBLISHED, **kwargs,
+        )
+
+    def test_auto_links_episode_by_youtube_id(self):
+        wp = self._program(youtube_url=f'https://www.youtube.com/watch?v={self.YT_ID}')
+        self.assertEqual(wp.episode, self.episode)
+
+    def test_api_exposes_episode_link(self):
+        wp = self._program(episode=self.episode)
+        r = self.client.get(f'/api/v1/programmes/{wp.slug}/')
+        data = r.json()
+        self.assertEqual(data['episode_slug'], self.episode.slug)
+        self.assertEqual(data['episode_show_slug'], self.show.slug)
+
+    def test_draft_episode_not_linked(self):
+        self.episode.status = Episode.Status.DRAFT
+        self.episode.save()
+        wp = self._program(episode=self.episode)
+        r = self.client.get(f'/api/v1/programmes/{wp.slug}/')
+        self.assertIsNone(r.json()['episode_slug'])
+        self.assertIsNone(r.json()['episode_show_slug'])
 
 
 class ProgramTypeApiTests(TestCase):

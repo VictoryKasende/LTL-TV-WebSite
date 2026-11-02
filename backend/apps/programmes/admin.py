@@ -49,6 +49,9 @@ class WeeklyProgramAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishA
     # Slug (auto-généré), ID YouTube (auto-extrait) et latitude/longitude
     # (coordonnées GPS techniques, sans widget de carte) réservés à l'Admin.
     admin_only_fields = ('slug', 'youtube_id', 'latitude', 'longitude')
+    # Les groupes non-Admin n'ont pas forcément la permission de voir les
+    # épisodes : liste déroulante simple plutôt que l'autocomplete (403).
+    admin_only_autocomplete_fields = ('episode',)
     list_display = (
         'date', 'start_time', 'title', 'program_type', 'mode',
         'location', 'status', 'is_featured', 'image_preview',
@@ -57,7 +60,7 @@ class WeeklyProgramAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishA
     list_editable = ('is_featured',)
     search_fields = ('title', 'description', 'responsable', 'location')
     prepopulated_fields = {'slug': ('title',)}
-    autocomplete_fields = ('program_type',)
+    autocomplete_fields = ('program_type', 'episode')
     date_hierarchy = 'date'
     readonly_fields = ('youtube_id', 'image_preview')
     ordering = ('-date', 'start_time', 'order')
@@ -72,7 +75,7 @@ class WeeklyProgramAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishA
             'fields': ('mode', 'location', 'address', 'latitude', 'longitude',
                        'meeting_url'),
         }),
-        ('Média', {'fields': ('image', 'youtube_url', 'youtube_id', 'image_preview')}),
+        ('Média', {'fields': ('image', 'youtube_url', 'youtube_id', 'episode', 'image_preview')}),
         ('Publication', {
             'fields': ('status', 'published_at', 'is_featured'),
         }),
@@ -81,6 +84,12 @@ class WeeklyProgramAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishA
             'fields': ('meta_title', 'meta_description', 'og_image', 'canonical_url'),
         }),
     )
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Episode.__str__ shows the show title — avoid one query per option.
+        if db_field.name == 'episode':
+            kwargs['queryset'] = db_field.related_model.objects.select_related('show')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     @admin.display(description='Aperçu')
     def image_preview(self, obj: WeeklyProgram | None) -> str:

@@ -48,7 +48,7 @@ class WeeklyProgramViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyOrEditor]
 
     def get_queryset(self):
-        qs = WeeklyProgram.objects.select_related('program_type')
+        qs = WeeklyProgram.objects.select_related('program_type', 'episode__show')
         if not _staff(self.request):
             qs = qs.published()
         return qs
@@ -77,7 +77,7 @@ class WeeklyProgramViewSet(viewsets.ModelViewSet):
             limit = 20
         qs = (
             WeeklyProgram.objects.published().upcoming()
-            .select_related('program_type')
+            .select_related('program_type', 'episode__show')
             .order_by('date', 'start_time', 'order')[:limit]
         )
         ser = WeeklyProgramListSerializer(qs, many=True, context={'request': request})

@@ -195,6 +195,9 @@ export type Programme = {
   thumbnail_url: string;
   embed_url: string;
   order: number;
+  episode: number | null;
+  episode_slug: string | null;
+  episode_show_slug: string | null;
   status: string;
   published_at: string | null;
   is_featured: boolean;

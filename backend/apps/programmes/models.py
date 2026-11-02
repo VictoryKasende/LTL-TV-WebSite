@@ -145,6 +145,14 @@ class WeeklyProgram(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
         'ID YouTube', max_length=20, blank=True, db_index=True,
         help_text='Auto-extrait de l\'URL.',
     )
+    episode = models.ForeignKey(
+        'emissions.Episode', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='programmes',
+        verbose_name='Épisode',
+        help_text='Épisode d\'émission diffusé (optionnel). Dans la grille, un clic '
+                  'ouvre alors l\'épisode sur la page de son émission. Renseigné '
+                  'automatiquement si l\'URL YouTube correspond à un épisode.',
+    )
 
     # --- Ordering within a day ------------------------------------
     order = models.PositiveIntegerField(
@@ -172,6 +180,9 @@ class WeeklyProgram(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
     def save(self, *args, **kwargs):
         if self.youtube_url and not self.youtube_id:
             self.youtube_id = extract_youtube_id(self.youtube_url) or ''
+        if self.youtube_id and not self.episode_id:
+            from apps.emissions.models import Episode
+            self.episode = Episode.objects.filter(youtube_id=self.youtube_id).first()
         super().save(*args, **kwargs)
 
     @property

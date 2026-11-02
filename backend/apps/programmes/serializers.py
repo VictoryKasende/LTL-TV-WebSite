@@ -22,6 +22,24 @@ class WeeklyProgramListSerializer(serializers.ModelSerializer):
     is_online_accessible = serializers.BooleanField(read_only=True)
     thumbnail_url = serializers.CharField(read_only=True)
     embed_url = serializers.CharField(read_only=True)
+    episode_slug = serializers.SerializerMethodField()
+    episode_show_slug = serializers.SerializerMethodField()
+
+    def _linked_episode(self, obj):
+        # Drafts / archived episodes 404 on the show page — fall back to the
+        # programme page instead of linking to them.
+        ep = obj.episode
+        if ep and ep.status == ep.Status.PUBLISHED:
+            return ep
+        return None
+
+    def get_episode_slug(self, obj):
+        ep = self._linked_episode(obj)
+        return ep.slug if ep else None
+
+    def get_episode_show_slug(self, obj):
+        ep = self._linked_episode(obj)
+        return ep.show.slug if ep else None
 
     class Meta:
         model = WeeklyProgram
@@ -32,11 +50,13 @@ class WeeklyProgramListSerializer(serializers.ModelSerializer):
             'program_type', 'program_type_id',
             'mode', 'location', 'meeting_url',
             'image', 'youtube_url', 'youtube_id', 'thumbnail_url', 'embed_url', 'order',
+            'episode', 'episode_slug', 'episode_show_slug',
             'status', 'published_at', 'is_featured',
             'is_upcoming', 'is_online_accessible',
         )
         read_only_fields = (
             'id', 'slug', 'youtube_id', 'thumbnail_url', 'embed_url',
+            'episode_slug', 'episode_show_slug',
             'is_upcoming', 'is_online_accessible',
         )
 
