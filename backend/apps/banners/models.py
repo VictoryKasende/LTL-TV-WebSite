@@ -11,13 +11,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.utils import timezone
 from simple_history.models import HistoricalRecords
 
 from apps.common.models import TimestampedModel
 
-from .validators import validate_internal_or_external_url
+from .validators import validate_internal_or_external_url, validate_video_size
 
 
 class BannerQuerySet(models.QuerySet):
@@ -70,6 +71,19 @@ class Banner(TimestampedModel):
         'Cible du lien', max_length=8, choices=LinkTarget.choices, default=LinkTarget.SELF,
     )
 
+    video = models.FileField(
+        'Vidéo d\'annonce', upload_to='banners/videos/', blank=True,
+        validators=[
+            FileExtensionValidator(['mp4', 'webm']),
+            validate_video_size,
+        ],
+        help_text='Vidéo d\'annonce / de pub (MP4 ou WebM, 16:9, 100 Mo max). Elle se lance '
+                  'sans le son dans le carousel (le visiteur peut activer le son) et le '
+                  'carousel attend la fin de la vidéo avant de passer à la suite. Gardez le '
+                  'texte important au centre : les bords peuvent être rognés. Les images de la '
+                  'bannière servent d\'aperçu pendant le chargement.',
+    )
+
     alt_text = models.CharField(
         'Texte alternatif', max_length=200, blank=True,
         help_text='Description de l\'image pour les lecteurs d\'écran (accessibilité). '
@@ -116,6 +130,12 @@ class Banner(TimestampedModel):
                 # (as opposed to our own filename-fallback .update() below,
                 # which bypasses save() entirely) — it's no longer auto.
                 self.title_is_auto = False
+        if not self.title and self.video:
+            # Same admin-only fallback as for images (hidden from visitors).
+            self.title = Path(self.video.name).stem
+            self.title_is_auto = True
+        if not self.alt_text and self.title:
+            self.alt_text = self.title
         super().save(*args, **kwargs)
 
     def fill_missing_labels_from_image(self, image) -> None:

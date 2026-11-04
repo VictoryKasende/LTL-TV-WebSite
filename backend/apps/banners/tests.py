@@ -4,6 +4,7 @@ from io import BytesIO
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.utils import timezone
@@ -93,6 +94,23 @@ class BannerImageTests(TestCase):
             BannerImage.objects.create(
                 banner=banner, variant=BannerImage.Variant.MOBILE, image=_uploaded_png(),
             )
+
+
+class BannerVideoTests(TestCase):
+    def test_video_exposed_and_title_hidden(self):
+        banner = Banner.objects.create(
+            video=SimpleUploadedFile('pub-noel.mp4', b'\x00' * 32, content_type='video/mp4'),
+        )
+        self.assertEqual(banner.title, 'pub-noel')
+        self.assertTrue(banner.title_is_auto)
+        data = APIClient().get('/api/v1/banners/active/').json()[0]
+        self.assertTrue(data['video'].endswith('.mp4'))
+        self.assertEqual(data['public_title'], '')
+
+    def test_rejects_non_video_extension(self):
+        banner = Banner(video=SimpleUploadedFile('pub.exe', b'\x00', content_type='video/mp4'))
+        with self.assertRaises(ValidationError):
+            banner.full_clean()
 
 
 class BannerApiTests(TestCase):

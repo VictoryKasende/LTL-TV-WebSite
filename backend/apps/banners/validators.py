@@ -25,3 +25,16 @@ def validate_internal_or_external_url(value: str) -> None:
             )
         return
     URLValidator(schemes=['http', 'https'])(value)
+
+
+VIDEO_MAX_MB = 100
+
+
+def validate_video_size(file) -> None:
+    """Keeps the homepage carousel light — and under nginx's admin upload
+    limit, so the editor gets a clear message instead of a bare 413."""
+    if file and file.size > VIDEO_MAX_MB * 1024 * 1024:
+        raise ValidationError(
+            f'Vidéo trop lourde ({file.size / (1024 * 1024):.0f} Mo) : {VIDEO_MAX_MB} Mo maximum. '
+            'Compressez-la (ex. HandBrake, préréglage « Fast 1080p30 ») puis réessayez.'
+        )

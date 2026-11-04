@@ -289,6 +289,7 @@ export type Banner = {
   public_title: string;
   link_url: string;
   link_target: '_self' | '_blank';
+  video: string | null;
   alt_text: string;
   is_active: boolean;
   starts_at: string | null;

@@ -61,6 +61,12 @@ class BannerAdmin(HistoryAdmin):
                           'un nom de fichier est utilisé en interne pour organiser l\'admin '
                           'mais rien ne s\'affiche sur le carousel public.',
         }),
+        ('Vidéo d\'annonce (optionnel)', {
+            'fields': ('video',),
+            'description': 'Pour une bannière vidéo (annonce, pub) : ajoutez la vidéo ici. '
+                          'Pour la mettre en avant, donnez-lui le plus petit ordre '
+                          'd\'affichage afin qu\'elle passe en premier.',
+        }),
         ('Cible du clic', {'fields': ('link_url', 'link_target')}),
         ('Planification', {
             'fields': ('is_active', 'starts_at', 'ends_at', 'order'),

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowUpRight, Volume2, VolumeX } from 'lucide-react';
 import Spinner from '../ui/Spinner';
 import { useResilientData } from '../../lib/useResilientData';
 import type { Banner } from '../../lib/api';
@@ -21,18 +21,41 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
   const banners = data ?? [];
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [muted, setMuted] = useState(true);
   const touchStartX = useRef<number | null>(null);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const count = banners.length;
+  const activeIsVideo = !!banners[index]?.video;
 
   const go = useCallback((i: number) => setIndex(((i % count) + count) % count), [count]);
   const next = useCallback(() => go(index + 1), [go, index]);
   const prev = useCallback(() => go(index - 1), [go, index]);
 
+  // Image slides advance on a timer; a video slide advances when the video
+  // ends (see onEnded), so an announcement is always seen in full.
   useEffect(() => {
-    if (count < 2 || paused) return;
-    const id = setInterval(() => setIndex((i) => (i + 1) % count), AUTOPLAY_MS);
-    return () => clearInterval(id);
-  }, [count, paused]);
+    if (count < 2 || paused || activeIsVideo) return;
+    const id = setTimeout(() => setIndex((i) => (i + 1) % count), AUTOPLAY_MS);
+    return () => clearTimeout(id);
+  }, [count, paused, activeIsVideo, index]);
+
+  // Only the visible video plays, restarting from the top each time it
+  // comes back. `muted` is set on the element directly: React doesn't
+  // reliably reflect the prop, and browsers only autoplay muted video.
+  useEffect(() => {
+    videoRefs.current.forEach((video, i) => {
+      if (!video) return;
+      video.muted = muted;
+      if (i === index) {
+        if (video.paused) {
+          video.currentTime = 0;
+          video.play().catch(() => {});
+        }
+      } else {
+        video.pause();
+      }
+    });
+  }, [index, muted, banners]);
 
   useEffect(() => {
     if (count < 2) return;
@@ -106,7 +129,22 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
                 active ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'
               }`}
             >
-              {(desktop || mobile) && (
+              {/* Video: whole 16:9 frame on portrait phones, fills the band from tablet up. */}
+              {banner.video ? (
+                <video
+                  ref={(el) => { videoRefs.current[i] = el; }}
+                  src={banner.video}
+                  poster={desktop ?? mobile ?? undefined}
+                  muted
+                  playsInline
+                  loop={count < 2}
+                  preload={active ? 'auto' : 'none'}
+                  onEnded={() => { if (active && count > 1) next(); }}
+                  onError={() => { if (active && count > 1) next(); }}
+                  aria-label={banner.alt_text || banner.public_title || 'Vidéo d\'annonce LTL·TV'}
+                  className="absolute inset-0 h-full w-full object-contain md:object-cover"
+                />
+              ) : (desktop || mobile) && (
                 <picture>
                   {desktop && <source media="(min-width: 768px)" srcSet={desktop} />}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -117,7 +155,15 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
                   />
                 </picture>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-brand-900/95 via-brand-900/40 to-brand-900/5" />
+              {banner.video ? (
+                // Keep the ad readable: only shade the bottom, and only when
+                // there's a title or button to sit on it.
+                (banner.public_title || banner.link_url) && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-900/85 via-brand-900/10 to-transparent" />
+                )
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-t from-brand-900/95 via-brand-900/40 to-brand-900/5" />
+              )}
 
               <div className="relative h-full flex flex-col items-center justify-end md:justify-center px-6 md:px-14 pb-16 md:pb-0 text-center">
                 {isLive && (
@@ -152,6 +198,18 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
           );
         })}
       </div>
+
+      {activeIsVideo && (
+        <button
+          type="button"
+          aria-label={muted ? 'Activer le son' : 'Couper le son'}
+          aria-pressed={!muted}
+          onClick={() => setMuted((m) => !m)}
+          className="absolute z-20 bottom-4 right-4 md:bottom-6 md:right-8 h-10 w-10 md:h-11 md:w-11 inline-flex items-center justify-center rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/85 hover:bg-white/20 hover:text-white transition-colors"
+        >
+          {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        </button>
+      )}
 
       {count > 1 && (
         <>
