@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight, ArrowUpRight, Volume2, VolumeX } from 'lucide-react';
 import Spinner from '../ui/Spinner';
 import { useResilientData } from '../../lib/useResilientData';
+import { loadYouTubeApi } from '../../lib/youtubeAudio';
 import type { Banner } from '../../lib/api';
 
 const AUTOPLAY_MS = 4000;
@@ -16,6 +17,106 @@ function pickImage(banner: Banner, variant: 'desktop' | 'mobile'): string | null
     ?? null;
 }
 
+/** A YouTube announcement playing as a carousel background: autoplays
+ *  muted, only while its slide is visible (restarting from the top each
+ *  time), and reports the end so the carousel can move on. */
+function YouTubeSlide({
+  videoId, active, muted, loop, poster, title, onEnded,
+}: {
+  videoId: string;
+  active: boolean;
+  muted: boolean;
+  loop: boolean;
+  poster: string | null;
+  title: string;
+  onEnded: () => void;
+}) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null);
+  const [ready, setReady] = useState(false);
+  // The poster covers YouTube's title bar / spinner until frames actually play.
+  const [started, setStarted] = useState(false);
+  // Don't load YouTube for a slide nobody has reached yet.
+  const [wanted, setWanted] = useState(active);
+  const latest = useRef({ active, onEnded });
+  latest.current = { active, onEnded };
+
+  useEffect(() => { if (active) setWanted(true); }, [active]);
+
+  useEffect(() => {
+    if (!wanted || !hostRef.current) return undefined;
+    let cancelled = false;
+    // YT.Player swaps its target for an iframe: give it a node React doesn't own.
+    const target = document.createElement('div');
+    hostRef.current.appendChild(target);
+    loadYouTubeApi().then(() => {
+      if (cancelled) return;
+      playerRef.current = new window.YT.Player(target, {
+        videoId,
+        width: '100%',
+        height: '100%',
+        playerVars: {
+          autoplay: 1, mute: 1, controls: 0, disablekb: 1, playsinline: 1,
+          modestbranding: 1, rel: 0, fs: 0, iv_load_policy: 3,
+          ...(loop ? { loop: 1, playlist: videoId } : {}),
+        },
+        events: {
+          onReady: () => setReady(true),
+          onStateChange: (e: { data: number }) => {
+            if (e.data === window.YT.PlayerState.PLAYING) setStarted(true);
+            if (e.data === window.YT.PlayerState.ENDED && latest.current.active) latest.current.onEnded();
+          },
+          // Private / deleted / embedding disabled: skip rather than stall the carousel.
+          onError: () => { if (latest.current.active) latest.current.onEnded(); },
+        },
+      });
+    });
+    const host = hostRef.current;
+    return () => {
+      cancelled = true;
+      playerRef.current?.destroy?.();
+      playerRef.current = null;
+      host.innerHTML = '';
+      setReady(false);
+    };
+  }, [wanted, videoId, loop]);
+
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!ready || !player) return;
+    if (active) {
+      player.seekTo(0, true);
+      player.playVideo();
+    } else {
+      player.pauseVideo();
+    }
+  }, [active, ready]);
+
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!ready || !player) return;
+    if (muted) player.mute(); else player.unMute();
+  }, [muted, ready]);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden [container-type:size]" aria-label={title} role="img">
+      {/* Whole 16:9 frame on portrait phones; from tablet up, scaled to
+          cover the band like object-cover. Clicks pass through to the slide. */}
+      <div
+        ref={hostRef}
+        className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 w-full aspect-video md:left-1/2 md:-translate-x-1/2 md:aspect-auto md:w-[max(100cqw,177.78cqh)] md:h-[max(100cqh,56.25cqw)]"
+      />
+      <img
+        src={poster ?? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+        alt=""
+        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
+          started ? 'opacity-0' : 'opacity-100'
+        }`}
+      />
+    </div>
+  );
+}
+
 export default function BannerCarousel({ initialData }: { initialData: Banner[] | null }) {
   const { data, retrying } = useResilientData(initialData, '/api/v1/banners/active/');
   const banners = data ?? [];
@@ -23,39 +124,20 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(true);
   const touchStartX = useRef<number | null>(null);
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const count = banners.length;
-  const activeIsVideo = !!banners[index]?.video;
+  const activeIsVideo = !!banners[index]?.youtube_id;
 
   const go = useCallback((i: number) => setIndex(((i % count) + count) % count), [count]);
   const next = useCallback(() => go(index + 1), [go, index]);
   const prev = useCallback(() => go(index - 1), [go, index]);
 
   // Image slides advance on a timer; a video slide advances when the video
-  // ends (see onEnded), so an announcement is always seen in full.
+  // ends (see YouTubeSlide's onEnded), so an announcement is seen in full.
   useEffect(() => {
     if (count < 2 || paused || activeIsVideo) return;
     const id = setTimeout(() => setIndex((i) => (i + 1) % count), AUTOPLAY_MS);
     return () => clearTimeout(id);
   }, [count, paused, activeIsVideo, index]);
-
-  // Only the visible video plays, restarting from the top each time it
-  // comes back. `muted` is set on the element directly: React doesn't
-  // reliably reflect the prop, and browsers only autoplay muted video.
-  useEffect(() => {
-    videoRefs.current.forEach((video, i) => {
-      if (!video) return;
-      video.muted = muted;
-      if (i === index) {
-        if (video.paused) {
-          video.currentTime = 0;
-          video.play().catch(() => {});
-        }
-      } else {
-        video.pause();
-      }
-    });
-  }, [index, muted, banners]);
 
   useEffect(() => {
     if (count < 2) return;
@@ -129,20 +211,15 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
                 active ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'
               }`}
             >
-              {/* Video: whole 16:9 frame on portrait phones, fills the band from tablet up. */}
-              {banner.video ? (
-                <video
-                  ref={(el) => { videoRefs.current[i] = el; }}
-                  src={banner.video}
-                  poster={desktop ?? mobile ?? undefined}
-                  muted
-                  playsInline
+              {banner.youtube_id ? (
+                <YouTubeSlide
+                  videoId={banner.youtube_id}
+                  active={active}
+                  muted={muted}
                   loop={count < 2}
-                  preload={active ? 'auto' : 'none'}
-                  onEnded={() => { if (active && count > 1) next(); }}
-                  onError={() => { if (active && count > 1) next(); }}
-                  aria-label={banner.alt_text || banner.public_title || 'Vidéo d\'annonce LTL·TV'}
-                  className="absolute inset-0 h-full w-full object-contain md:object-cover"
+                  poster={desktop ?? mobile}
+                  title={banner.alt_text || banner.public_title || 'Vidéo d\'annonce LTL·TV'}
+                  onEnded={next}
                 />
               ) : (desktop || mobile) && (
                 <picture>
@@ -155,7 +232,7 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
                   />
                 </picture>
               )}
-              {banner.video ? (
+              {banner.youtube_id ? (
                 // Keep the ad readable: only shade the bottom, and only when
                 // there's a title or button to sit on it.
                 (banner.public_title || banner.link_url) && (

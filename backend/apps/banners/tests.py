@@ -97,18 +97,24 @@ class BannerImageTests(TestCase):
 
 
 class BannerVideoTests(TestCase):
-    def test_video_exposed_and_title_hidden(self):
-        banner = Banner.objects.create(
-            video=SimpleUploadedFile('pub-noel.mp4', b'\x00' * 32, content_type='video/mp4'),
-        )
-        self.assertEqual(banner.title, 'pub-noel')
+    YT_ID = 'dQw4w9WgXcQ'
+
+    def test_youtube_id_exposed_and_title_hidden(self):
+        banner = Banner.objects.create(youtube_url=f'https://youtu.be/{self.YT_ID}')
+        self.assertEqual(banner.youtube_id, self.YT_ID)
         self.assertTrue(banner.title_is_auto)
         data = APIClient().get('/api/v1/banners/active/').json()[0]
-        self.assertTrue(data['video'].endswith('.mp4'))
+        self.assertEqual(data['youtube_id'], self.YT_ID)
         self.assertEqual(data['public_title'], '')
 
-    def test_rejects_non_video_extension(self):
-        banner = Banner(video=SimpleUploadedFile('pub.exe', b'\x00', content_type='video/mp4'))
+    def test_youtube_id_follows_url_changes(self):
+        banner = Banner.objects.create(youtube_url=f'https://youtu.be/{self.YT_ID}')
+        banner.youtube_url = ''
+        banner.save()
+        self.assertEqual(banner.youtube_id, '')
+
+    def test_rejects_non_youtube_url(self):
+        banner = Banner(youtube_url='https://vimeo.com/123456')
         with self.assertRaises(ValidationError):
             banner.full_clean()
 

@@ -29,7 +29,7 @@ class BannerSerializer(serializers.ModelSerializer):
             'title',            # internal — kept for admin/debug, not for display
             'public_title',     # what the frontend should actually show visitors
             'link_url', 'link_target',
-            'video',
+            'youtube_url', 'youtube_id',
             'alt_text',
             'is_active', 'starts_at', 'ends_at',
             'order',
@@ -37,4 +37,4 @@ class BannerSerializer(serializers.ModelSerializer):
             'is_active_now',
             'created_at', 'updated_at',
         )
-        read_only_fields = ('id', 'is_active_now', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'youtube_id', 'is_active_now', 'created_at', 'updated_at')

@@ -11,14 +11,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from django.core.validators import FileExtensionValidator
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from simple_history.models import HistoricalRecords
 
 from apps.common.models import TimestampedModel
+from apps.emissions.youtube import extract_youtube_id
 
-from .validators import validate_internal_or_external_url, validate_video_size
+from .validators import validate_internal_or_external_url
 
 
 class BannerQuerySet(models.QuerySet):
@@ -71,17 +72,17 @@ class Banner(TimestampedModel):
         'Cible du lien', max_length=8, choices=LinkTarget.choices, default=LinkTarget.SELF,
     )
 
-    video = models.FileField(
-        'Vidéo d\'annonce', upload_to='banners/videos/', blank=True,
-        validators=[
-            FileExtensionValidator(['mp4', 'webm']),
-            validate_video_size,
-        ],
-        help_text='Vidéo d\'annonce / de pub (MP4 ou WebM, 16:9, 100 Mo max). Elle se lance '
-                  'sans le son dans le carousel (le visiteur peut activer le son) et le '
-                  'carousel attend la fin de la vidéo avant de passer à la suite. Gardez le '
-                  'texte important au centre : les bords peuvent être rognés. Les images de la '
-                  'bannière servent d\'aperçu pendant le chargement.',
+    youtube_url = models.URLField(
+        'Lien YouTube de la vidéo d\'annonce', blank=True,
+        help_text='Lien YouTube de la vidéo d\'annonce / de pub (ex. https://youtu.be/…). Elle se '
+                  'lance automatiquement sans le son dans le carousel (le visiteur peut activer '
+                  'le son) et le carousel attend la fin de la vidéo avant de passer à la suite. '
+                  'La vidéo doit être publique ou non répertoriée, et autoriser l\'intégration. '
+                  'Gardez le texte important au centre : les bords peuvent être rognés.',
+    )
+    youtube_id = models.CharField(
+        'ID YouTube', max_length=20, blank=True, editable=False,
+        help_text='Auto-extrait du lien.',
     )
 
     alt_text = models.CharField(
@@ -120,6 +121,13 @@ class Banner(TimestampedModel):
     def __str__(self) -> str:
         return self.title or f'Bannière #{self.pk}'
 
+    def clean(self):
+        if self.youtube_url and not extract_youtube_id(self.youtube_url):
+            raise ValidationError({
+                'youtube_url': "Lien YouTube non reconnu. Formats supportés : "
+                               "watch?v=, youtu.be, /embed/, /shorts/, /live/."
+            })
+
     def save(self, *args, **kwargs):
         if self.pk:
             previous_title = (
@@ -130,9 +138,10 @@ class Banner(TimestampedModel):
                 # (as opposed to our own filename-fallback .update() below,
                 # which bypasses save() entirely) — it's no longer auto.
                 self.title_is_auto = False
-        if not self.title and self.video:
+        self.youtube_id = extract_youtube_id(self.youtube_url) or ''
+        if not self.title and self.youtube_id:
             # Same admin-only fallback as for images (hidden from visitors).
-            self.title = Path(self.video.name).stem
+            self.title = f'Vidéo YouTube {self.youtube_id}'
             self.title_is_auto = True
         if not self.alt_text and self.title:
             self.alt_text = self.title
