@@ -99,24 +99,64 @@ class BannerImageTests(TestCase):
 class BannerVideoTests(TestCase):
     YT_ID = 'dQw4w9WgXcQ'
 
+    def _video(self, **kwargs):
+        return Banner.objects.create(
+            kind=Banner.Kind.VIDEO, youtube_url=f'https://youtu.be/{self.YT_ID}', **kwargs,
+        )
+
     def test_youtube_id_exposed_and_title_hidden(self):
-        banner = Banner.objects.create(youtube_url=f'https://youtu.be/{self.YT_ID}')
+        banner = self._video()
         self.assertEqual(banner.youtube_id, self.YT_ID)
         self.assertTrue(banner.title_is_auto)
         data = APIClient().get('/api/v1/banners/active/').json()[0]
+        self.assertEqual(data['kind'], 'video')
         self.assertEqual(data['youtube_id'], self.YT_ID)
         self.assertEqual(data['public_title'], '')
 
-    def test_youtube_id_follows_url_changes(self):
-        banner = Banner.objects.create(youtube_url=f'https://youtu.be/{self.YT_ID}')
-        banner.youtube_url = ''
+    def test_image_banner_never_exposes_a_video(self):
+        banner = self._video()
+        banner.kind = Banner.Kind.IMAGE
         banner.save()
         self.assertEqual(banner.youtube_id, '')
+        # The link is kept so switching back to video restores it.
+        self.assertTrue(banner.youtube_url)
 
-    def test_rejects_non_youtube_url(self):
-        banner = Banner(youtube_url='https://vimeo.com/123456')
-        with self.assertRaises(ValidationError):
-            banner.full_clean()
+    def test_video_banner_requires_youtube_link(self):
+        for url in ('', 'https://vimeo.com/123456'):
+            with self.assertRaises(ValidationError):
+                Banner(kind=Banner.Kind.VIDEO, youtube_url=url).full_clean()
+
+
+class BannerAdminFormTests(TestCase):
+    def setUp(self):
+        admin_user = User.objects.create_superuser(
+            username='root', email='root@x.com', password='StrongPass123',
+        )
+        self.client.force_login(admin_user)
+
+    def _post(self, **fields):
+        data = {
+            'title': 'Annonce', 'alt_text': '', 'link_url': '', 'link_target': '_self',
+            'is_active': 'on', 'order': '0', 'youtube_url': '',
+            'images-TOTAL_FORMS': '1', 'images-INITIAL_FORMS': '0',
+            'images-MIN_NUM_FORMS': '0', 'images-MAX_NUM_FORMS': '4',
+            'images-0-variant': '', 'images-0-image': '',
+            **fields,
+        }
+        return self.client.post('/admin/banners/banner/add/', data)
+
+    def test_video_banner_saves_without_any_image(self):
+        r = self._post(kind='video', youtube_url='https://youtu.be/dQw4w9WgXcQ')
+        self.assertEqual(r.status_code, 302, r.context and r.context['errors'])
+        banner = Banner.objects.get()
+        self.assertEqual(banner.kind, Banner.Kind.VIDEO)
+        self.assertEqual(banner.images.count(), 0)
+
+    def test_image_banner_requires_an_image(self):
+        r = self._post(kind='image')
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Banner.objects.exists())
+        self.assertContains(r, 'Ajoutez au moins une image')
 
 
 class BannerApiTests(TestCase):

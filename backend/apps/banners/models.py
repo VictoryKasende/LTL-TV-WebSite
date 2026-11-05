@@ -72,9 +72,19 @@ class Banner(TimestampedModel):
         'Cible du lien', max_length=8, choices=LinkTarget.choices, default=LinkTarget.SELF,
     )
 
+    class Kind(models.TextChoices):
+        IMAGE = 'image', 'Image'
+        VIDEO = 'video', 'Vidéo YouTube'
+
+    kind = models.CharField(
+        'Type de bannière', max_length=8, choices=Kind.choices, default=Kind.IMAGE,
+        help_text='Image : une ou plusieurs variantes d\'image (mobile, desktop…). '
+                  'Vidéo : un lien YouTube, sans image à ajouter.',
+    )
+
     youtube_url = models.URLField(
-        'Lien YouTube de la vidéo d\'annonce', blank=True,
-        help_text='Lien YouTube de la vidéo d\'annonce / de pub (ex. https://youtu.be/…). Elle se '
+        'Lien YouTube', blank=True,
+        help_text='Lien de la vidéo d\'annonce / de pub (ex. https://youtu.be/…). Elle se '
                   'lance automatiquement sans le son dans le carousel (le visiteur peut activer '
                   'le son) et le carousel attend la fin de la vidéo avant de passer à la suite. '
                   'La vidéo doit être publique ou non répertoriée, et autoriser l\'intégration. '
@@ -122,7 +132,15 @@ class Banner(TimestampedModel):
         return self.title or f'Bannière #{self.pk}'
 
     def clean(self):
-        if self.youtube_url and not extract_youtube_id(self.youtube_url):
+        # Image banners just ignore any leftover link (kept so switching
+        # the type back doesn't lose it) — only video banners validate it.
+        if self.kind != self.Kind.VIDEO:
+            return
+        if not self.youtube_url:
+            raise ValidationError({
+                'youtube_url': 'Collez le lien YouTube de la vidéo (bannière de type Vidéo).',
+            })
+        if not extract_youtube_id(self.youtube_url):
             raise ValidationError({
                 'youtube_url': "Lien YouTube non reconnu. Formats supportés : "
                                "watch?v=, youtu.be, /embed/, /shorts/, /live/."
@@ -138,7 +156,11 @@ class Banner(TimestampedModel):
                 # (as opposed to our own filename-fallback .update() below,
                 # which bypasses save() entirely) — it's no longer auto.
                 self.title_is_auto = False
-        self.youtube_id = extract_youtube_id(self.youtube_url) or ''
+        # The API only exposes a video for video banners — that's what the
+        # carousel keys off.
+        self.youtube_id = (
+            extract_youtube_id(self.youtube_url) or '' if self.kind == self.Kind.VIDEO else ''
+        )
         if not self.title and self.youtube_id:
             # Same admin-only fallback as for images (hidden from visitors).
             self.title = f'Vidéo YouTube {self.youtube_id}'

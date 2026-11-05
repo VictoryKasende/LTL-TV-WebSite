@@ -29,7 +29,7 @@ class BannerSerializer(serializers.ModelSerializer):
             'title',            # internal — kept for admin/debug, not for display
             'public_title',     # what the frontend should actually show visitors
             'link_url', 'link_target',
-            'youtube_url', 'youtube_id',
+            'kind', 'youtube_url', 'youtube_id',
             'alt_text',
             'is_active', 'starts_at', 'ends_at',
             'order',

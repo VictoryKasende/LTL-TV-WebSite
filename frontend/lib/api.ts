@@ -289,8 +289,9 @@ export type Banner = {
   public_title: string;
   link_url: string;
   link_target: '_self' | '_blank';
+  kind: 'image' | 'video';
   youtube_url: string;
-  youtube_id: string;
+  youtube_id: string; // empty unless kind === 'video'
   alt_text: string;
   is_active: boolean;
   starts_at: string | null;
