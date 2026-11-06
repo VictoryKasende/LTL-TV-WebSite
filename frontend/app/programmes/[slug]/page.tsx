@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Clock, User, ArrowLeft, Radio, MapPin } from 'lucide-react';
 import Container from '../../../components/ui/Container';
 import VideoEmbed from '../../../components/VideoEmbed';
-import { apiGet, type Programme } from '../../../lib/api';
+import { apiGet, type Programme, type Show } from '../../../lib/api';
 import { pageMetadata } from '../../../lib/seo';
 
 export const revalidate = 60;
@@ -16,9 +16,19 @@ const fmtDate = (iso: string) => {
 };
 const fmtTime = (t: string) => t?.slice(0, 5) ?? '';
 
+// Episode notifications used to link to /programmes/<show slug>: send
+// those (already in people's notification trays) to the show. Run from
+// generateMetadata too, so it's a real 307 before any HTML streams.
+async function redirectLegacyShowLink(slug: string) {
+  if (await apiGet<Show>(`/emissions/shows/${slug}/`)) redirect(`/emissions/${slug}`);
+}
+
 export async function generateMetadata({ params }: Params) {
   const programme = await apiGet<Programme>(`/programmes/${params.slug}/`);
-  if (!programme) return { title: 'Programme introuvable' };
+  if (!programme) {
+    await redirectLegacyShowLink(params.slug);
+    return { title: 'Programme introuvable' };
+  }
   const description = programme.description || `Programme ${programme.title} sur LTL TV.`;
   return pageMetadata({
     title: programme.title,
@@ -30,7 +40,10 @@ export async function generateMetadata({ params }: Params) {
 
 export default async function ProgrammeDetailPage({ params }: Params) {
   const programme = await apiGet<Programme>(`/programmes/${params.slug}/`);
-  if (!programme) notFound();
+  if (!programme) {
+    await redirectLegacyShowLink(params.slug);
+    notFound();
+  }
 
   return (
     <>

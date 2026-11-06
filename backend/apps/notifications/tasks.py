@@ -93,6 +93,13 @@ def send_campaign(campaign_id: int) -> str:
     except PushCampaign.DoesNotExist:
         return 'missing'
 
+    # A campaign can be queued more than once (content rescheduled, broker
+    # redelivery of a long ETA task): never send it twice, nor early.
+    if campaign.status in {PushCampaign.Status.SENDING, PushCampaign.Status.SENT}:
+        return 'already-sent'
+    if campaign.scheduled_at and campaign.scheduled_at > timezone.now():
+        return 'not-yet'
+
     campaign.status = PushCampaign.Status.SENDING
     campaign.save(update_fields=['status'])
 

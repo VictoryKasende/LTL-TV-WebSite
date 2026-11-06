@@ -20,7 +20,9 @@ self.addEventListener('push', (event) => {
     // Android Chrome can't rasterize SVG for notification icons — falls back to
     // a blank circle. Use PNG here; the SVG stays as the favicon source.
     icon: data.icon || '/notification-icon-512.png',
-    badge: '/notification-icon-192.png',
+    // Status-bar icon: Android keeps only the alpha channel, so it must be a
+    // white shape on transparent — the opaque app icon shows as a white blob.
+    badge: '/notification-badge-96.png',
     image: data.image || undefined,
     data: { url: data.url || '/', campaignId: data.campaign_id || null },
   };
@@ -31,7 +33,8 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const { url, campaignId } = event.notification.data || {};
-  const targetUrl = url || '/';
+  // Absolute, so it compares with open tabs' URLs (relative paths in payloads).
+  const targetUrl = new URL(url || '/', self.location.origin).href;
 
   event.waitUntil((async () => {
     if (campaignId) {

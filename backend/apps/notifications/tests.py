@@ -210,3 +210,90 @@ class PublishSignalTests(TestCase):
         a.title = 'Once (edited)'
         a.save()
         self.assertEqual(PushCampaign.objects.count(), 1)
+
+
+class PushLinkTests(TestCase):
+    """A notification must open the content it announces, never a 404."""
+
+    def setUp(self):
+        from apps.emissions.models import Episode, Show
+        self.show = Show.objects.create(title='Prends Courage test', status=Show.Status.PUBLISHED)
+        self.episode = Episode.objects.create(
+            show=self.show, title='Épisode notif',
+            youtube_url='https://youtu.be/dQw4w9WgXcQ',
+            status=Episode.Status.PUBLISHED, is_featured=True,
+        )
+
+    def _campaign(self, trigger_type):
+        return PushCampaign.objects.get(trigger_type=trigger_type)
+
+    def test_episode_opens_on_its_show_page(self):
+        self.assertEqual(
+            self._campaign('episode').url,
+            f'/emissions/{self.show.slug}?episode={self.episode.slug}&play=1',
+        )
+
+    def test_programme_airing_an_episode_opens_the_episode(self):
+        from datetime import time
+        from django.utils import timezone
+        from apps.programmes.models import WeeklyProgram
+        WeeklyProgram.objects.create(
+            title='Diffusion', date=timezone.localdate(), start_time=time(20, 0),
+            episode=self.episode, status=WeeklyProgram.Status.PUBLISHED, is_featured=True,
+        )
+        self.assertEqual(self._campaign('programme').url, self._campaign('episode').url)
+
+    def test_programme_without_episode_opens_its_page(self):
+        from datetime import time
+        from django.utils import timezone
+        from apps.programmes.models import WeeklyProgram
+        wp = WeeklyProgram.objects.create(
+            title='Culte', date=timezone.localdate(), start_time=time(10, 0),
+            status=WeeklyProgram.Status.PUBLISHED, is_featured=True,
+        )
+        self.assertEqual(self._campaign('programme').url, f'/programmes/{wp.slug}')
+
+
+class ScheduledPushTests(TestCase):
+    """Content published for later is announced when it goes online."""
+
+    def _article(self, when):
+        from apps.articles.models import Article
+        return Article.objects.create(
+            title='Plus tard', content_md='x',
+            status=Article.Status.PUBLISHED, is_featured=True, published_at=when,
+        )
+
+    @patch('apps.notifications.tasks.send_campaign.apply_async')
+    def test_future_article_is_queued_for_its_publication_date(self, apply_async):
+        from datetime import timedelta
+        from django.utils import timezone
+        when = timezone.now() + timedelta(days=2)
+        self._article(when)
+        campaign = PushCampaign.objects.get()
+        self.assertEqual(campaign.status, PushCampaign.Status.SCHEDULED)
+        self.assertEqual(campaign.scheduled_at, when)
+        self.assertEqual(apply_async.call_args.kwargs['eta'], when)
+
+    @patch('apps.notifications.tasks.send_campaign.apply_async')
+    def test_rescheduling_moves_the_push(self, apply_async):
+        from datetime import timedelta
+        from django.utils import timezone
+        article = self._article(timezone.now() + timedelta(days=2))
+        later = timezone.now() + timedelta(days=5)
+        article.published_at = later
+        article.save()
+        self.assertEqual(PushCampaign.objects.get().scheduled_at, later)
+        self.assertEqual(apply_async.call_args.kwargs['eta'], later)
+
+    def test_send_skips_early_and_repeated_runs(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from .tasks import send_campaign
+        early = PushCampaign.objects.create(
+            title='t', body='b', status=PushCampaign.Status.SCHEDULED,
+            scheduled_at=timezone.now() + timedelta(hours=1),
+        )
+        self.assertEqual(send_campaign(early.pk), 'not-yet')
+        done = PushCampaign.objects.create(title='t', body='b', status=PushCampaign.Status.SENT)
+        self.assertEqual(send_campaign(done.pk), 'already-sent')
