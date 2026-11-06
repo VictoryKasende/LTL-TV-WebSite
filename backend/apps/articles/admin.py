@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from django.contrib import admin
 from django.utils.html import format_html
-from unfold.contrib.forms.widgets import WysiwygWidget
+from django_ckeditor_5.widgets import CKEditor5Widget
 
 from apps.common.admin import (
     BaseAdmin,
@@ -61,7 +61,7 @@ class ArticleAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishAdminMi
     admin_only_fields = ('slug',)
     list_display = (
         'title', 'status', 'is_featured', 'category', 'author',
-        'reading_time_minutes', 'view_count', 'published_at', 'cover_preview',
+        'reading_time_minutes', 'view_count', 'like_count', 'published_at', 'cover_preview',
     )
     list_filter = ('status', 'is_featured', 'category', 'author', 'no_index')
     list_editable = ('is_featured',)
@@ -71,7 +71,7 @@ class ArticleAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishAdminMi
     autocomplete_fields = ('author', 'category')
     date_hierarchy = 'published_at'
     readonly_fields = (
-        'reading_time_minutes', 'view_count',
+        'reading_time_minutes', 'view_count', 'like_count',
         'cover_preview', 'created_at', 'updated_at',
     )
     ordering = ('-published_at', '-created_at')
@@ -98,14 +98,14 @@ class ArticleAdmin(HiddenFieldsAdminMixin, SeoFieldsetAdminMixin, PublishAdminMi
         }),
         ('Statistiques', {
             'classes': ('collapse',),
-            'fields': ('reading_time_minutes', 'view_count',
+            'fields': ('reading_time_minutes', 'view_count', 'like_count',
                        'created_at', 'updated_at'),
         }),
     )
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         if db_field.name == 'content_md':
-            kwargs['widget'] = WysiwygWidget()
+            kwargs['widget'] = CKEditor5Widget(config_name='article')
         return super().formfield_for_dbfield(db_field, request, **kwargs)
 
     @admin.display(description='Aperçu cover')

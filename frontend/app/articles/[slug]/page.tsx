@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Calendar, ArrowLeft, ArrowUpRight, BookOpen } from 'lucide-react';
 import Container from '../../../components/ui/Container';
+import ArticleLikeButton from '../../../components/articles/ArticleLikeButton';
 import { apiGet, getArticles, type Article } from '../../../lib/api';
 import { pageMetadata } from '../../../lib/seo';
 
@@ -139,6 +140,10 @@ export default async function ArticleDetailPage({ params }: Params) {
           ) : (
             <p className="italic text-ink-500">Contenu à venir.</p>
           )}
+
+          <div className="max-w-[44rem] mx-auto mt-10">
+            <ArticleLikeButton slug={article.slug} initialCount={article.like_count} />
+          </div>
 
           {article.tags.length > 0 && (
             <div className="max-w-[44rem] mx-auto mt-10 pt-6 border-t border-paper-300 flex flex-wrap gap-2">

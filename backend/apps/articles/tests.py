@@ -215,3 +215,60 @@ class ArticleApiTests(TestCase):
         r = self.client.get('/api/v1/articles/')
         slugs = [a['slug'] for a in r.json()['results']]
         self.assertNotIn('future-article', slugs)
+
+
+class ArticleLikeTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.article = Article.objects.create(
+            title='À aimer', content_md='<p>x</p>',
+            status=Article.Status.PUBLISHED, published_at=timezone.now(),
+        )
+
+    def test_like_and_unlike(self):
+        url = f'/api/v1/articles/{self.article.slug}/'
+        self.assertEqual(self.client.post(url + 'like/').json()['like_count'], 1)
+        self.assertEqual(self.client.get(url).json()['like_count'], 1)
+        self.assertEqual(self.client.post(url + 'unlike/').json()['like_count'], 0)
+        # Floored at zero.
+        self.assertEqual(self.client.post(url + 'unlike/').json()['like_count'], 0)
+
+
+class ArticleSanitizeTests(TestCase):
+    def _html(self, content):
+        a = Article.objects.create(title='Mise en forme', content_md=content)
+        return a.content_html
+
+    def test_editor_formatting_survives(self):
+        html = self._html(
+            '<p style="text-align:center;"><span style="color:#E23737;font-size:24px;">Rouge</span> '
+            '<mark class="marker-yellow">surligné</mark></p>'
+            '<figure class="table"><table><tbody><tr><td colspan="2" style="background-color:#F1F1F3;">a</td></tr></tbody></table></figure>'
+            '<figure class="image image-style-side image_resized" style="width:40%;"><img src="/media/x.png" alt="x"></figure>'
+            '<ul class="todo-list"><li><label class="todo-list__label"><input type="checkbox" disabled checked></label>fait</li></ul>'
+        )
+        for kept in ('text-align:center', 'color:#E23737', 'font-size:24px', 'marker-yellow',
+                     'colspan="2"', 'background-color:#F1F1F3', 'image-style-side', 'width:40%',
+                     'type="checkbox"'):
+            self.assertIn(kept, html)
+
+    def test_dangerous_content_is_removed(self):
+        html = self._html(
+            '<p onclick="alert(1)" style="color:red;background:url(javascript:alert(1))">x</p>'
+            '<script>alert(1)</script><a href="javascript:alert(1)">lien</a>'
+            '<iframe src="https://evil.example/embed/x"></iframe>'
+        )
+        for gone in ('onclick', 'url(', '<script', 'javascript:', 'evil.example'):
+            self.assertNotIn(gone, html)
+        self.assertIn('color:red', html)
+
+    def test_youtube_embed_survives(self):
+        html = self._html(
+            '<figure class="media"><div data-oembed-url="https://youtu.be/dQw4w9WgXcQ">'
+            '<div style="position:relative;padding-bottom:56.2493%;height:0;">'
+            '<iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" '
+            'style="position:absolute;width:100%;height:100%;top:0;left:0;" allowfullscreen></iframe>'
+            '</div></div></figure>'
+        )
+        self.assertIn('src="https://www.youtube.com/embed/dQw4w9WgXcQ"', html)
+        self.assertIn('padding-bottom:56.2493%', html)

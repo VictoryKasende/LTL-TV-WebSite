@@ -52,12 +52,12 @@ class ArticleListSerializer(TaggitSerializer, serializers.ModelSerializer):
             'id', 'slug', 'title', 'subtitle', 'excerpt',
             'cover', 'cover_alt',
             'category', 'author', 'tags',
-            'reading_time_minutes', 'view_count',
+            'reading_time_minutes', 'view_count', 'like_count',
             'status', 'published_at', 'is_featured',
             'created_at',
         )
         read_only_fields = (
-            'id', 'slug', 'reading_time_minutes', 'view_count',
+            'id', 'slug', 'reading_time_minutes', 'view_count', 'like_count',
             'category', 'author', 'created_at',
         )
 
@@ -93,10 +93,10 @@ class ArticleWriteSerializer(TaggitSerializer, serializers.ModelSerializer):
             'meta_title', 'meta_description', 'og_image', 'canonical_url',
             'focus_keyword', 'no_index',
             'status', 'published_at', 'is_featured',
-            'reading_time_minutes', 'view_count',
+            'reading_time_minutes', 'view_count', 'like_count',
             'created_at', 'updated_at',
         )
         read_only_fields = (
-            'id', 'slug', 'reading_time_minutes', 'view_count',
+            'id', 'slug', 'reading_time_minutes', 'view_count', 'like_count',
             'created_at', 'updated_at',
         )

@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from math import ceil
 
-import nh3
 from django.conf import settings
 from django.db import models
 from django.db.models import Count, F, Q
@@ -24,6 +23,8 @@ from apps.common.models import (
     SluggedModel,
     TimestampedModel,
 )
+
+from .sanitize import clean_article_html
 
 
 class Category(TimestampedModel, SluggedModel):
@@ -123,6 +124,7 @@ class Article(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
 
     # --- Stats ---------------------------------------------------
     view_count = models.PositiveIntegerField('Nombre de vues', default=0, editable=False)
+    like_count = models.PositiveIntegerField('Nombre de likes', default=0, editable=False)
 
     history = HistoricalRecords()
 
@@ -145,7 +147,7 @@ class Article(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
         # could run in a reader's browser (<script>, on* handlers, javascript:
         # links…) — the editor's formatting tags are all kept.
         if self.content_md:
-            self.content_html = nh3.clean(self.content_md)
+            self.content_html = clean_article_html(self.content_md)
             word_count = len(strip_tags(self.content_md).split())
             self.reading_time_minutes = max(1, ceil(word_count / 200))
         else:
@@ -163,6 +165,16 @@ class Article(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
     def increment_views(self, by: int = 1) -> None:
         """Atomic, race-safe increment."""
         type(self).objects.filter(pk=self.pk).update(view_count=F('view_count') + by)
+
+    def increment_likes(self) -> None:
+        type(self).objects.filter(pk=self.pk).update(like_count=F('like_count') + 1)
+
+    def decrement_likes(self) -> None:
+        """Floored at 0 — a double "unlike" (double-click, replay) must
+        never wrap the unsigned counter negative."""
+        type(self).objects.filter(pk=self.pk, like_count__gt=0).update(
+            like_count=F('like_count') - 1,
+        )
 
     def get_related(self, limit: int = 3):
         """Articles sharing tags (scored) or category, published, excluding self."""

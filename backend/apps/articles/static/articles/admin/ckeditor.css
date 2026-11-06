@@ -1,0 +1,19 @@
+/* CKEditor inside the Unfold admin. Unfold's Tailwind reset strips list
+   bullets, heading sizes, etc. — restore them inside the editable area so
+   the editor shows what readers will see. */
+.ck.ck-editor { width: 100%; max-width: 100%; }
+.ck-editor__editable_inline { min-height: 420px; }
+.ck-content { font-size: 16px; line-height: 1.7; color: #2C2C2C; }
+.ck-content p { margin: 0 0 1em; }
+.ck-content h2 { font-size: 1.6em; font-weight: 700; color: #212870; margin: 1.2em 0 .5em; }
+.ck-content h3 { font-size: 1.3em; font-weight: 700; color: #212870; margin: 1.1em 0 .4em; }
+.ck-content h4 { font-size: 1.1em; font-weight: 700; color: #212870; margin: 1em 0 .4em; }
+.ck-content ul { list-style: disc; padding-left: 1.6em; margin: 0 0 1em; }
+.ck-content ol { list-style: decimal; padding-left: 1.6em; margin: 0 0 1em; }
+.ck-content ul.todo-list { list-style: none; padding-left: 0; }
+.ck-content a { color: #3D53EA; text-decoration: underline; }
+.ck-content blockquote { border-left: 3px solid #2BB3A3; padding-left: 1em; font-style: italic; color: #212870; }
+.ck-content hr { border-top: 1px solid #E4E4E8; margin: 1.5em 0; }
+.ck-content pre { background: #F1F1F3; padding: 1em; border-radius: 6px; }
+/* Dark mode: the editing surface stays white, like the page it previews. */
+.dark .ck-content { background: #fff; }

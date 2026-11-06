@@ -10,6 +10,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 
 from apps.common.permissions import ReadOnlyOrEditor
 
@@ -109,3 +110,37 @@ class ArticleViewSet(viewsets.ModelViewSet):
         obj.increment_views()
         obj.refresh_from_db(fields=['view_count'])
         return Response({'view_count': obj.view_count})
+
+    @extend_schema(
+        summary='Liker cet article', request=None,
+        responses={200: {'type': 'object', 'properties': {'like_count': {'type': 'integer'}}}},
+    )
+    @action(
+        detail=True, methods=['post'], url_path='like',
+        permission_classes=[permissions.AllowAny],
+    )
+    def like(self, request, slug=None):
+        obj = self.get_object()
+        obj.increment_likes()
+        obj.refresh_from_db(fields=['like_count'])
+        return Response({'like_count': obj.like_count})
+
+    @extend_schema(
+        summary='Retirer son like', request=None,
+        responses={200: {'type': 'object', 'properties': {'like_count': {'type': 'integer'}}}},
+    )
+    @action(
+        detail=True, methods=['post'], url_path='unlike',
+        permission_classes=[permissions.AllowAny],
+    )
+    def unlike(self, request, slug=None):
+        obj = self.get_object()
+        obj.decrement_likes()
+        obj.refresh_from_db(fields=['like_count'])
+        return Response({'like_count': obj.like_count})
+
+    def get_throttles(self):
+        if self.action in ('like', 'unlike'):
+            self.throttle_scope = 'article_like'
+            return [ScopedRateThrottle()]
+        return super().get_throttles()

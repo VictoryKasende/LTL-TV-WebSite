@@ -55,6 +55,7 @@ THIRD_PARTY_APPS = [
     'drf_spectacular',
     'simple_history',
     'taggit',
+    'django_ckeditor_5',
 ]
 
 LOCAL_APPS = [
@@ -224,6 +225,7 @@ REST_FRAMEWORK = {
         'event_registration': '5/hour',
         'episode_like': '30/min',
         'episode_comment': '5/hour',
+        'article_like': '30/min',
     },
     'EXCEPTION_HANDLER': 'apps.common.exceptions.custom_exception_handler',
     # Exactly one reverse proxy (nginx) sits in front of Django. Without this,
@@ -604,3 +606,113 @@ UNFOLD = {
         ],
     },
 }
+
+# ---------------------------------------------------------------------------
+# CKEditor 5 — éditeur des articles (barre d'outils complète, façon Word)
+# ---------------------------------------------------------------------------
+# Couleurs de la charte proposées en premier dans les palettes.
+_CK_BRAND_COLORS = [
+    {'color': '#212870', 'label': 'Bleu LTL'},
+    {'color': '#3D53EA', 'label': 'Bleu vif'},
+    {'color': '#1E8F82', 'label': 'Vert signal'},
+    {'color': '#E85521', 'label': 'Orange'},
+    {'color': '#E23737', 'label': 'Rouge'},
+    {'color': '#F5C24E', 'label': 'Jaune'},
+    {'color': '#2C2C2C', 'label': 'Noir'},
+    {'color': '#707070', 'label': 'Gris'},
+    {'color': '#E4E4E8', 'label': 'Gris clair'},
+    {'color': '#FFFFFF', 'label': 'Blanc', 'hasBorder': True},
+]
+
+CKEDITOR_5_CONFIGS = {
+    'article': {
+        'language': 'fr',
+        # The bundled build also ships these: Markdown would make the editor
+        # save Markdown instead of HTML, FullPage would add <html>/<head>.
+        'removePlugins': ['Markdown', 'FullPage', 'Mention', 'Autosave'],
+        'toolbar': {
+            'items': [
+                'undo', 'redo', '|',
+                'findAndReplace', 'selectAll', '|',
+                'heading', '|',
+                'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', 'highlight', '|',
+                'bold', 'italic', 'underline', 'strikethrough',
+                'subscript', 'superscript', 'code', 'removeFormat', '|',
+                'alignment', 'outdent', 'indent', '|',
+                'bulletedList', 'numberedList', 'todoList', '|',
+                'link', 'insertImage', 'mediaEmbed', 'insertTable',
+                'blockQuote', 'codeBlock', 'horizontalLine', 'pageBreak', 'specialCharacters', '|',
+                'showBlocks', 'sourceEditing',
+            ],
+            # Every tool visible, wrapped onto several rows — like Word's ribbon.
+            'shouldNotGroupWhenFull': True,
+        },
+        'heading': {
+            'options': [
+                {'model': 'paragraph', 'title': 'Paragraphe', 'class': 'ck-heading_paragraph'},
+                {'model': 'heading2', 'view': 'h2', 'title': 'Titre 1', 'class': 'ck-heading_heading2'},
+                {'model': 'heading3', 'view': 'h3', 'title': 'Titre 2', 'class': 'ck-heading_heading3'},
+                {'model': 'heading4', 'view': 'h4', 'title': 'Titre 3', 'class': 'ck-heading_heading4'},
+            ],
+        },
+        'fontFamily': {
+            'options': [
+                'default',
+                'Arial, Helvetica, sans-serif',
+                'Georgia, serif',
+                'Times New Roman, Times, serif',
+                'Trebuchet MS, Helvetica, sans-serif',
+                'Verdana, Geneva, sans-serif',
+                'Courier New, Courier, monospace',
+            ],
+            'supportAllValues': True,
+        },
+        'fontSize': {
+            'options': [10, 12, 14, 'default', 18, 20, 24, 28, 32, 36],
+            'supportAllValues': True,
+        },
+        'fontColor': {'colors': _CK_BRAND_COLORS, 'columns': 5},
+        'fontBackgroundColor': {'colors': _CK_BRAND_COLORS, 'columns': 5},
+        'alignment': {'options': ['left', 'center', 'right', 'justify']},
+        'list': {
+            'properties': {'styles': True, 'startIndex': True, 'reversed': True},
+        },
+        'link': {
+            'addTargetToExternalLinks': True,
+            'defaultProtocol': 'https://',
+        },
+        'image': {
+            'toolbar': [
+                'imageTextAlternative', 'toggleImageCaption', '|',
+                'imageStyle:inline', 'imageStyle:alignLeft', 'imageStyle:alignCenter',
+                'imageStyle:alignRight', 'imageStyle:side', '|',
+                'resizeImage', 'linkImage',
+            ],
+            'styles': {
+                'options': ['inline', 'alignLeft', 'alignCenter', 'alignRight', 'side', 'block'],
+            },
+        },
+        'table': {
+            'contentToolbar': [
+                'tableColumn', 'tableRow', 'mergeTableCells',
+                'tableProperties', 'tableCellProperties', 'toggleTableCaption',
+            ],
+        },
+        # Store the real <iframe> player (YouTube, Vimeo…) so the public site
+        # shows it as is; see apps.articles.sanitize for the allowed hosts.
+        'mediaEmbed': {'previewsInData': True},
+        'codeBlock': {
+            'languages': [
+                {'language': 'plaintext', 'label': 'Texte brut'},
+                {'language': 'html', 'label': 'HTML'},
+                {'language': 'css', 'label': 'CSS'},
+                {'language': 'javascript', 'label': 'JavaScript'},
+                {'language': 'python', 'label': 'Python'},
+            ],
+        },
+    },
+}
+CKEDITOR_5_FILE_UPLOAD_PERMISSION = 'staff'
+CKEDITOR_5_UPLOAD_FILE_TYPES = ['jpeg', 'jpg', 'png', 'gif', 'webp']
+CKEDITOR_5_MAX_FILE_SIZE = 8  # Mo
+CKEDITOR_5_CUSTOM_CSS = 'articles/admin/ckeditor.css'

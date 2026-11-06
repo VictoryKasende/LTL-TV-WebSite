@@ -260,6 +260,7 @@ export type Article = {
   tags: string[];
   reading_time_minutes: number;
   view_count: number;
+  like_count: number;
   status: string;
   published_at: string | null;
   is_featured: boolean;

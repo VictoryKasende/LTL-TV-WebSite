@@ -85,6 +85,61 @@
     font-size: 1.15em;
     margin: 1.8em 0;
   }
+  .prose-editorial h4 { font-weight: 700; font-size: 1.15rem; margin: 1.3em 0 0.4em; color: #212870; }
+  .prose-editorial ul { list-style: disc; padding-left: 1.5em; margin: 0 0 1.3em; }
+  .prose-editorial ol { list-style: decimal; padding-left: 1.5em; margin: 0 0 1.3em; }
+  .prose-editorial li { margin-bottom: 0.35em; }
+  .prose-editorial li > ul, .prose-editorial li > ol { margin: 0.35em 0 0; }
+  .prose-editorial hr { border-top: 1px solid #E4E4E8; margin: 2.2em 0; }
+  .prose-editorial code { font-size: 0.9em; background: #F1F1F3; padding: 0.1em 0.35em; border-radius: 4px; }
+  .prose-editorial pre { background: #F1F1F3; padding: 1em 1.2em; border-radius: 8px; overflow-x: auto; margin: 0 0 1.3em; font-size: 0.9rem; line-height: 1.6; }
+  .prose-editorial pre code { background: none; padding: 0; }
+  .prose-editorial sub, .prose-editorial sup { font-size: 0.75em; line-height: 0; position: relative; }
+  .prose-editorial sup { top: -0.5em; }
+  .prose-editorial sub { bottom: -0.25em; }
+
+  /* --- What CKEditor 5 produces (see backend apps/articles/sanitize.py) --- */
+  /* To-do list */
+  .prose-editorial ul.todo-list { list-style: none; padding-left: 0; }
+  .prose-editorial .todo-list input { margin-right: 0.5em; accent-color: #212870; }
+  /* Highlighter */
+  .prose-editorial .marker-yellow { background: #fdfd77; }
+  .prose-editorial .marker-green  { background: #62f962; }
+  .prose-editorial .marker-pink   { background: #fc7899; }
+  .prose-editorial .marker-blue   { background: #72ccfd; }
+  .prose-editorial .pen-red   { color: #e71313; background: none; }
+  .prose-editorial .pen-green { color: #128a00; background: none; }
+  /* Images: block, aligned, side, resized, with caption */
+  .prose-editorial figure { margin: 1.8em 0; }
+  .prose-editorial figure.image { display: table; clear: both; margin-left: auto; margin-right: auto; }
+  .prose-editorial figure.image img { display: block; width: 100%; height: auto; border-radius: 8px; }
+  .prose-editorial figure.image_resized { max-width: 100%; display: block; }
+  .prose-editorial figcaption { display: table-caption; caption-side: bottom; padding-top: 0.6em; font-size: 0.85rem; color: #707070; text-align: center; }
+  .prose-editorial .image-style-align-left { float: left; margin: 0.3em 1.5em 1em 0; max-width: 50%; }
+  .prose-editorial .image-style-align-right,
+  .prose-editorial .image-style-side { float: right; margin: 0.3em 0 1em 1.5em; max-width: 50%; }
+  .prose-editorial .image-style-align-center { margin-left: auto; margin-right: auto; }
+  .prose-editorial img.image_resized { height: auto; }
+  .prose-editorial::after { content: ''; display: table; clear: both; }
+  /* Tables */
+  .prose-editorial figure.table { display: table; margin: 1.8em auto; max-width: 100%; overflow-x: auto; }
+  .prose-editorial table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+  .prose-editorial th, .prose-editorial td { border: 1px solid #E4E4E8; padding: 0.5em 0.75em; vertical-align: top; }
+  .prose-editorial th { background: #F1F1F3; font-weight: 700; color: #212870; text-align: left; }
+  .prose-editorial figure.table > figcaption { caption-side: top; padding: 0 0 0.6em; }
+  /* Embedded video (YouTube, Vimeo…) */
+  .prose-editorial figure.media { clear: both; }
+  .prose-editorial figure.media iframe { border: 0; border-radius: 8px; }
+  /* Page break: only meaningful when printing */
+  .prose-editorial .page-break { page-break-after: always; height: 0; }
+  .prose-editorial .page-break > span { display: none; }
+
+  @media (max-width: 639px) {
+    .prose-editorial .image-style-align-left,
+    .prose-editorial .image-style-align-right,
+    .prose-editorial .image-style-side { float: none; max-width: 100%; margin: 1.5em auto; }
+  }
+
   /* Drop cap on the article's opening paragraph */
   .prose-editorial > p:first-child::first-letter {
     font-family: var(--font-anton), Impact, sans-serif;

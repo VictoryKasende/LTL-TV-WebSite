@@ -33,6 +33,9 @@ api_v1_patterns = [
 
 urlpatterns = [
     path('admin/guide/', admin_guide_view, name='admin-guide'),
+    # CKEditor image uploads — under /admin/ because nginx only forwards
+    # /admin/ and /api/ to Django in production.
+    path('admin/ckeditor5/', include('django_ckeditor_5.urls')),
     path('admin/', admin.site.urls),
     path('api/v1/', include(api_v1_patterns)),
 
