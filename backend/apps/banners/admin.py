@@ -16,6 +16,19 @@ class BannerImageFormSet(BaseInlineFormSet):
     """An image banner needs at least one image; a video banner needs none
     (its images section is hidden — see banner_kind.js)."""
 
+    # For a video banner the formset holds no forms at all, so the hidden
+    # images section is neither validated nor saved (existing images stay
+    # untouched). Otherwise its blank slot — whose variant <select> always
+    # posts a value — fails validation with an error nobody can see.
+    def _is_video_banner(self) -> bool:
+        return self.instance.kind == Banner.Kind.VIDEO
+
+    def initial_form_count(self):
+        return 0 if self._is_video_banner() else super().initial_form_count()
+
+    def total_form_count(self):
+        return 0 if self._is_video_banner() else super().total_form_count()
+
     def clean(self):
         super().clean()
         if self.instance.kind != Banner.Kind.IMAGE:

@@ -140,7 +140,9 @@ class BannerAdminFormTests(TestCase):
             'is_active': 'on', 'order': '0', 'youtube_url': '',
             'images-TOTAL_FORMS': '1', 'images-INITIAL_FORMS': '0',
             'images-MIN_NUM_FORMS': '0', 'images-MAX_NUM_FORMS': '4',
-            'images-0-variant': '', 'images-0-image': '',
+            # What a browser really sends for the untouched blank slot: the
+            # variant <select> has no empty option, so it posts the first one.
+            'images-0-variant': 'mobile', 'images-0-image': '',
             **fields,
         }
         return self.client.post('/admin/banners/banner/add/', data)
@@ -151,6 +153,26 @@ class BannerAdminFormTests(TestCase):
         banner = Banner.objects.get()
         self.assertEqual(banner.kind, Banner.Kind.VIDEO)
         self.assertEqual(banner.images.count(), 0)
+
+    def test_switching_image_banner_to_video_keeps_its_images(self):
+        banner = Banner.objects.create(title='Ancienne')
+        BannerImage.objects.create(
+            banner=banner, variant=BannerImage.Variant.MOBILE, image=_uploaded_png(),
+        )
+        r = self.client.post(f'/admin/banners/banner/{banner.pk}/change/', {
+            'kind': 'video', 'youtube_url': 'https://youtu.be/dQw4w9WgXcQ',
+            'title': 'Ancienne', 'alt_text': '', 'link_url': '', 'link_target': '_self',
+            'is_active': 'on', 'order': '0',
+            # The browser still posts the (hidden) existing image row.
+            'images-TOTAL_FORMS': '1', 'images-INITIAL_FORMS': '1',
+            'images-MIN_NUM_FORMS': '0', 'images-MAX_NUM_FORMS': '4',
+            'images-0-id': str(banner.images.get().pk), 'images-0-banner': str(banner.pk),
+            'images-0-variant': 'mobile', 'images-0-image': '',
+        })
+        self.assertEqual(r.status_code, 302, r.context and r.context['errors'])
+        banner.refresh_from_db()
+        self.assertEqual(banner.kind, Banner.Kind.VIDEO)
+        self.assertEqual(banner.images.count(), 1)
 
     def test_image_banner_requires_an_image(self):
         r = self._post(kind='image')
