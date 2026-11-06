@@ -15,7 +15,9 @@ from django.utils import timezone
 
 
 def _now():
-    return timezone.now()
+    # Local time, so `.date()` is today in Lubumbashi — matching TruncDate,
+    # which buckets in the current time zone.
+    return timezone.localtime()
 
 
 def _delta(now, days: int):

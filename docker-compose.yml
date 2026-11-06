@@ -88,6 +88,8 @@ services:
       - ./frontend/.env
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://backend:8000}
+      # Server-rendered dates (articles, grille TV…) in Lubumbashi time.
+      TZ: Africa/Lubumbashi
     depends_on:
       - backend
     expose:

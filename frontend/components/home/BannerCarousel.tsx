@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, ArrowUpRight, Volume2, VolumeX } from 'lucide-react';
+import {
+  ChevronLeft, ChevronRight, ArrowUpRight, Pause, Play, Volume2, VolumeX,
+} from 'lucide-react';
 import Spinner from '../ui/Spinner';
 import { useResilientData } from '../../lib/useResilientData';
 import { loadYouTubeApi } from '../../lib/youtubeAudio';
@@ -10,6 +12,8 @@ import type { Banner } from '../../lib/api';
 
 const AUTOPLAY_MS = 4000;
 const SWIPE_THRESHOLD = 50;
+const VIDEO_CONTROL_CLASS =
+  'h-9 w-9 md:h-11 md:w-11 inline-flex items-center justify-center rounded-full bg-brand-900/40 backdrop-blur-sm border border-white/20 text-white/90 hover:bg-white/20 hover:text-white transition-colors';
 
 function pickImage(banner: Banner, variant: 'desktop' | 'mobile'): string | null {
   return banner.images.find((i) => i.variant === variant)?.image
@@ -17,19 +21,22 @@ function pickImage(banner: Banner, variant: 'desktop' | 'mobile'): string | null
     ?? null;
 }
 
-/** A YouTube announcement playing as a carousel background: autoplays
- *  muted, only while its slide is visible (restarting from the top each
- *  time), and reports the end so the carousel can move on. */
+/** A YouTube announcement filling its carousel slide: autoplays (with
+ *  sound when the browser allows it) only while its slide is visible,
+ *  restarting from the top each time, and reports the end so the carousel
+ *  can move on. */
 function YouTubeSlide({
-  videoId, active, muted, loop, poster, title, onEnded,
+  videoId, active, muted, userPaused, loop, poster, title, onEnded, onSoundBlocked,
 }: {
   videoId: string;
   active: boolean;
   muted: boolean;
+  userPaused: boolean;
   loop: boolean;
   poster: string | null;
   title: string;
   onEnded: () => void;
+  onSoundBlocked: () => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
@@ -38,8 +45,8 @@ function YouTubeSlide({
   const [started, setStarted] = useState(false);
   // Don't load YouTube for a slide nobody has reached yet.
   const [wanted, setWanted] = useState(active);
-  const latest = useRef({ active, onEnded });
-  latest.current = { active, onEnded };
+  const latest = useRef({ active, muted, userPaused, onEnded, onSoundBlocked });
+  latest.current = { active, muted, userPaused, onEnded, onSoundBlocked };
 
   useEffect(() => { if (active) setWanted(true); }, [active]);
 
@@ -56,7 +63,7 @@ function YouTubeSlide({
         width: '100%',
         height: '100%',
         playerVars: {
-          autoplay: 1, mute: 1, controls: 0, disablekb: 1, playsinline: 1,
+          autoplay: 0, mute: latest.current.muted ? 1 : 0, controls: 0, disablekb: 1, playsinline: 1,
           modestbranding: 1, rel: 0, fs: 0, iv_load_policy: 3,
           ...(loop ? { loop: 1, playlist: videoId } : {}),
         },
@@ -81,30 +88,61 @@ function YouTubeSlide({
     };
   }, [wanted, videoId, loop]);
 
+  // Coming into view: restart from the top. Leaving: stop.
   useEffect(() => {
     const player = playerRef.current;
     if (!ready || !player) return;
-    if (active) {
-      player.seekTo(0, true);
-      player.playVideo();
-    } else {
-      player.pauseVideo();
-    }
+    if (active) player.seekTo(0, true);
+    else player.pauseVideo();
   }, [active, ready]);
+
+  // Play / pause button.
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!ready || !player || !active) return;
+    if (userPaused) player.pauseVideo(); else player.playVideo();
+  }, [active, ready, userPaused]);
 
   useEffect(() => {
     const player = playerRef.current;
     if (!ready || !player) return;
-    if (muted) player.mute(); else player.unMute();
+    if (muted) {
+      player.mute();
+      // Muting is also the fallback when sound was blocked: start playing.
+      if (latest.current.active && !latest.current.userPaused) player.playVideo();
+    } else {
+      player.unMute();
+    }
   }, [muted, ready]);
+
+  // Browsers refuse to autoplay with sound until the visitor has interacted
+  // with the site: the video just doesn't start. Detect that and let the
+  // carousel fall back to muted (sound comes back on the first tap).
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!ready || !player || !active || muted || userPaused) return undefined;
+    let tries = 0;
+    const id = setInterval(() => {
+      const state = player.getPlayerState?.();
+      const S = window.YT.PlayerState;
+      if (state === S.PLAYING || state === S.ENDED) { clearInterval(id); return; }
+      if (state === S.BUFFERING && ++tries < 6) return;
+      if (++tries >= 2) {
+        clearInterval(id);
+        latest.current.onSoundBlocked();
+      }
+    }, 800);
+    return () => clearInterval(id);
+  }, [active, ready, muted, userPaused]);
 
   return (
     <div className="absolute inset-0 overflow-hidden [container-type:size]" aria-label={title} role="img">
-      {/* Whole 16:9 frame on portrait phones; from tablet up, scaled to
-          cover the band like object-cover. Clicks pass through to the slide. */}
+      {/* Scaled to cover the slide like object-cover (the slide itself is
+          16:9 for videos, so nothing is cropped unless the screen is very
+          short). Clicks pass through to the slide. */}
       <div
         ref={hostRef}
-        className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 w-full aspect-video md:left-1/2 md:-translate-x-1/2 md:aspect-auto md:w-[max(100cqw,177.78cqh)] md:h-[max(100cqh,56.25cqw)]"
+        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[max(100cqw,177.78cqh)] h-[max(100cqh,56.25cqw)]"
       />
       <img
         src={poster ?? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
@@ -122,10 +160,34 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
   const banners = data ?? [];
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [muted, setMuted] = useState(true);
+  // Videos start with sound; if the browser blocks that, they play muted
+  // and the sound comes on at the visitor's first tap / click / key press.
+  const [muted, setMuted] = useState(false);
+  const [soundBlocked, setSoundBlocked] = useState(false);
+  const [videoPaused, setVideoPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const count = banners.length;
   const activeIsVideo = !!banners[index]?.youtube_id;
+
+  useEffect(() => { setVideoPaused(false); }, [index]);
+
+  const onSoundBlocked = useCallback(() => {
+    setSoundBlocked(true);
+    setMuted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!soundBlocked) return undefined;
+    function unmuteOnFirstGesture(e: Event) {
+      // The sound button handles its own click.
+      if ((e.target as Element | null)?.closest?.('[data-sound-toggle]')) return;
+      setSoundBlocked(false);
+      setMuted(false);
+    }
+    const events = ['pointerdown', 'keydown'] as const;
+    events.forEach((t) => window.addEventListener(t, unmuteOnFirstGesture, { once: true }));
+    return () => events.forEach((t) => window.removeEventListener(t, unmuteOnFirstGesture));
+  }, [soundBlocked]);
 
   const go = useCallback((i: number) => setIndex(((i % count) + count) % count), [count]);
   const next = useCallback(() => go(index + 1), [go, index]);
@@ -194,7 +256,16 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
         touchStartX.current = null;
       }}
     >
-      <div className="relative w-full aspect-[3/4] sm:aspect-[16/10] md:aspect-[16/7] lg:aspect-[21/8]">
+      {/* A video slide takes the video's own 16:9 shape on every screen
+          (capped so it never overflows a short viewport); image slides
+          keep their per-breakpoint band. */}
+      <div
+        className={`relative w-full transition-[aspect-ratio] duration-500 ${
+          activeIsVideo
+            ? 'aspect-video max-h-[calc(100svh-7rem)]'
+            : 'aspect-[3/4] sm:aspect-[16/10] md:aspect-[16/7] lg:aspect-[21/8]'
+        }`}
+      >
         <div aria-hidden className="absolute inset-0 bg-hero-rays" />
 
         {banners.map((banner, i) => {
@@ -216,10 +287,12 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
                   videoId={banner.youtube_id}
                   active={active}
                   muted={muted}
+                  userPaused={active && videoPaused}
                   loop={count < 2}
                   poster={desktop ?? mobile}
                   title={banner.alt_text || banner.public_title || 'Vidéo d\'annonce LTL·TV'}
                   onEnded={next}
+                  onSoundBlocked={onSoundBlocked}
                 />
               ) : (desktop || mobile) && (
                 <picture>
@@ -242,7 +315,11 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
                 <div className="absolute inset-0 bg-gradient-to-t from-brand-900/95 via-brand-900/40 to-brand-900/5" />
               )}
 
-              <div className="relative h-full flex flex-col items-center justify-end md:justify-center px-6 md:px-14 pb-16 md:pb-0 text-center">
+              <div
+                className={`relative h-full flex flex-col items-center justify-end md:justify-center px-6 md:px-14 md:pb-0 text-center ${
+                  banner.youtube_id ? 'pb-12' : 'pb-16'
+                }`}
+              >
                 {isLive && (
                   <div className="inline-flex items-center gap-2 text-signal-400 uppercase tracking-[0.15em] text-sm md:text-base font-bold mb-3">
                     <span className="relative flex h-2.5 w-2.5">
@@ -254,7 +331,11 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
                 )}
 
                 {banner.public_title && (
-                  <h1 className="font-display tracking-tight text-[clamp(2rem,6vw,4.5rem)] leading-[0.95] max-w-3xl text-balance">
+                  <h1
+                    className={`font-display tracking-tight leading-[0.95] max-w-3xl text-balance ${
+                      banner.youtube_id ? 'text-[clamp(1.5rem,6vw,4.5rem)]' : 'text-[clamp(2rem,6vw,4.5rem)]'
+                    }`}
+                  >
                     {banner.public_title}
                   </h1>
                 )}
@@ -264,7 +345,9 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
                     href={banner.link_url}
                     target={banner.link_target === '_blank' ? '_blank' : undefined}
                     rel={banner.link_target === '_blank' ? 'noopener noreferrer' : undefined}
-                    className="mt-6 inline-flex items-center gap-2 rounded-full bg-white text-brand-700 font-bold px-6 py-3 text-sm hover:bg-signal-400 transition-colors"
+                    className={`inline-flex items-center gap-2 rounded-full bg-white text-brand-700 font-bold text-sm hover:bg-signal-400 transition-colors ${
+                      banner.youtube_id ? 'mt-3 md:mt-6 px-4 py-2 md:px-6 md:py-3' : 'mt-6 px-6 py-3'
+                    }`}
                   >
                     Découvrir
                     <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
@@ -277,15 +360,26 @@ export default function BannerCarousel({ initialData }: { initialData: Banner[] 
       </div>
 
       {activeIsVideo && (
-        <button
-          type="button"
-          aria-label={muted ? 'Activer le son' : 'Couper le son'}
-          aria-pressed={!muted}
-          onClick={() => setMuted((m) => !m)}
-          className="absolute z-20 bottom-4 right-4 md:bottom-6 md:right-8 h-10 w-10 md:h-11 md:w-11 inline-flex items-center justify-center rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/85 hover:bg-white/20 hover:text-white transition-colors"
-        >
-          {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-        </button>
+        <div className="absolute z-20 bottom-3 right-3 md:bottom-6 md:right-8 flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={videoPaused ? 'Lire la vidéo' : 'Mettre la vidéo en pause'}
+            onClick={() => setVideoPaused((p) => !p)}
+            className={VIDEO_CONTROL_CLASS}
+          >
+            {videoPaused ? <Play className="h-4 w-4 md:h-5 md:w-5 translate-x-px" /> : <Pause className="h-4 w-4 md:h-5 md:w-5" />}
+          </button>
+          <button
+            type="button"
+            data-sound-toggle
+            aria-label={muted ? 'Activer le son' : 'Couper le son'}
+            aria-pressed={!muted}
+            onClick={() => { setSoundBlocked(false); setMuted((m) => !m); }}
+            className={VIDEO_CONTROL_CLASS}
+          >
+            {muted ? <VolumeX className="h-4 w-4 md:h-5 md:w-5" /> : <Volume2 className="h-4 w-4 md:h-5 md:w-5" />}
+          </button>
+        </div>
       )}
 
       {count > 1 && (

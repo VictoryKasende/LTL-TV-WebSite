@@ -169,7 +169,9 @@ AUTH_USER_MODEL = 'accounts.User'
 # I18N
 # ---------------------------------------------------------------------------
 LANGUAGE_CODE = 'fr-fr'
-TIME_ZONE = 'UTC'
+# Heure de Lubumbashi / RDC Est (UTC+2, sans heure d'été) : l'admin affiche et
+# saisit les dates dans ce fuseau. La base, elle, stocke toujours en UTC.
+TIME_ZONE = 'Africa/Lubumbashi'
 USE_I18N = True
 USE_TZ = True
 

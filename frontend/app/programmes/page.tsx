@@ -2,6 +2,7 @@ import { Radio } from 'lucide-react';
 import Container from '../../components/ui/Container';
 import WeeklySchedule from '../../components/programmes/WeeklySchedule';
 import { getProgrammes } from '../../lib/api';
+import { localIsoDate } from '../../lib/dates';
 import { pageMetadata } from '../../lib/seo';
 
 export const revalidate = 60;
@@ -20,7 +21,7 @@ function mondayOf(d: Date): Date {
   return monday;
 }
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+const iso = localIsoDate;
 
 export default async function ProgrammesPage() {
   const monday = mondayOf(new Date());

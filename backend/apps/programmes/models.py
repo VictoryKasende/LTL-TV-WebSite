@@ -54,7 +54,8 @@ class WeeklyProgramQuerySet(PublishableQuerySet):
 
     def upcoming(self):
         """Events whose start (date + start_time) is >= now."""
-        now = timezone.now()
+        # date/start_time are local wall-clock values: compare in local time.
+        now = timezone.localtime()
         today = now.date()
         current = now.time()
         return self.filter(
@@ -63,7 +64,7 @@ class WeeklyProgramQuerySet(PublishableQuerySet):
         )
 
     def past(self):
-        now = timezone.now()
+        now = timezone.localtime()
         today = now.date()
         current = now.time()
         return self.filter(
@@ -197,7 +198,7 @@ class WeeklyProgram(TimestampedModel, SluggedModel, PublishableModel, SeoMixin):
 
     @property
     def is_upcoming(self) -> bool:
-        now = timezone.now()
+        now = timezone.localtime()
         if self.date > now.date():
             return True
         if self.date == now.date():

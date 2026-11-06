@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Spinner from '../ui/Spinner';
 import { useResilientData } from '../../lib/useResilientData';
 import { fixMediaUrls } from '../../lib/api';
+import { localIsoDate } from '../../lib/dates';
 import type { Paginated, Programme } from '../../lib/api';
 
 const MAX_WEEKS_AHEAD = 2;
@@ -13,7 +14,7 @@ const MAX_WEEKS_AHEAD = 2;
 function addDays(iso: string, n: number): string {
   const d = new Date(`${iso}T00:00:00`);
   d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+  return localIsoDate(d);
 }
 
 function fmtDuration(start: string, end: string | null): string {
@@ -70,7 +71,7 @@ export default function WeeklySchedule({
 
   const data = weekOffset === 0 ? currentWeekData : fetchedData;
   const programmes = data?.results ?? [];
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = localIsoDate(new Date());
   const [selected, setSelected] = useState(days.includes(todayIso) ? todayIso : days[0]);
 
   useEffect(() => {
