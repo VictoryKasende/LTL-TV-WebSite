@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { Calendar, ArrowLeft, ArrowUpRight, BookOpen } from 'lucide-react';
 import Container from '../../../components/ui/Container';
 import ArticleLikeButton from '../../../components/articles/ArticleLikeButton';
+import ShareArticle from '../../../components/articles/ShareArticle';
 import { apiGet, getArticles, type Article } from '../../../lib/api';
 import { pageMetadata } from '../../../lib/seo';
 
@@ -91,7 +92,7 @@ export default async function ArticleDetailPage({ params }: Params) {
             <p className="mt-5 text-xl text-ink-500 leading-relaxed max-w-2xl">{article.excerpt}</p>
           )}
 
-          <div className="mt-8 pt-6 border-t border-paper-300 flex items-center gap-3">
+          <div className="mt-8 pt-6 border-t border-paper-300 flex flex-wrap items-center gap-3">
             {article.author?.avatar ? (
               <img src={article.author.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
             ) : (
@@ -112,6 +113,9 @@ export default async function ArticleDetailPage({ params }: Params) {
                   </>
                 )}
               </div>
+            </div>
+            <div className="ml-auto">
+              <ShareArticle slug={article.slug} title={article.title} excerpt={article.excerpt} variant="compact" />
             </div>
           </div>
         </Container>
@@ -141,8 +145,9 @@ export default async function ArticleDetailPage({ params }: Params) {
             <p className="italic text-ink-500">Contenu à venir.</p>
           )}
 
-          <div className="max-w-[44rem] mx-auto mt-10">
+          <div className="max-w-[44rem] mx-auto mt-10 flex flex-col gap-10">
             <ArticleLikeButton slug={article.slug} initialCount={article.like_count} />
+            <ShareArticle slug={article.slug} title={article.title} excerpt={article.excerpt} />
           </div>
 
           {article.tags.length > 0 && (
